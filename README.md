@@ -1,1 +1,61 @@
-# Mglyph-web
+## Docker container
+```sh
+docker-compose build
+```
+
+```sh
+docker-compose up
+```
+
+nebo též 
+```sh
+docker-compose up --build
+```
+
+### pro debugging (hot reload ve Vue)
+```sh
+docker-compose watch
+```
+nebo
+```sh
+docker compose up --build --watch
+```
+
+## Fast API
+
+Available at: `http://localhost:8888` <br>
+Docs at: `http://localhost:8888/docs`
+
+
+## Vue
+Dev available at: `http://localhost:5173/`
+
+## Alembic migrations
+
+Make sure all models are imported in `api/src/db/alembic-migrations/env.py` file.
+
+For all commands enter the `api/src/config` folder.
+
+Useful alembic commands:
+- Autogenerate migration
+    ```sh
+    alembic revision --autogenerate -m "<SHORT_DESCRIPTION>"
+    ```
+- Apply migrations
+    ```sh
+    alembic upgrade head
+    ```
+- Revert all migrations
+    ```sh
+    alembic downgrade base
+    ```
+- Show current revision ID of the database
+    ```sh
+    alembic current
+    ```
+- Set the `alembic_version` table to a specific revision ID without actually running the migration scripts
+    ```sh
+    alembic stamp <REVISION_ID>
+    ```
+
+

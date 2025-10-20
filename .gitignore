@@ -1,0 +1,10 @@
+__pycache__
+*.pyc
+.env
+node_modules
+./.vscode
+*/.vscode
+!*/.vscode/extensions.json
+test-code
+google-auth
+docker_config

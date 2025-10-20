@@ -1,0 +1,57 @@
+name: mglyph-web
+services:
+
+  api:
+    container_name: api
+    depends_on:
+      - db
+    build: 
+      context: ./api
+      dockerfile: ./Dockerfile
+    volumes:
+      - ./api/src:/code/src
+    ports:
+      - 8888:8888
+    read_only: false
+    command: "fastapi run src/main.py --host 0.0.0.0 --port 8888 --reload"
+
+  db:
+    container_name: db
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_USER_FILE: /run/secrets/postgres_user
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
+      POSTGRES_DB_FILE: /run/secrets/postgres_db
+    secrets:
+      - postgres_user
+      - postgres_password
+      - postgres_db
+    ports:
+      - 5432:5432
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+  ui:
+    container_name: ui
+    build: 
+      context: ./ui
+      dockerfile: ./Dev.Dockerfile
+    volumes:
+      - ./ui/mglyph-web-vue:/code/mglyph-web-vue
+      - node_modules:/code/mglyph-web-vue/node_modules
+    ports:
+      - 8080:8080
+      - 5173:5173
+    read_only: false
+
+volumes:
+  db_data: 
+  node_modules:
+
+secrets:
+  postgres_password:
+    file: ./docker_config/postgres_password.secret
+  postgres_user:
+    file: ./docker_config/postgres_user.secret
+  postgres_db:
+    file: ./docker_config/postgres_db.secret
