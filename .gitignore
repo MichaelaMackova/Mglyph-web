@@ -2,9 +2,10 @@ __pycache__
 *.pyc
 .env
 node_modules
-./.vscode
-*/.vscode
-!*/.vscode/extensions.json
+.vscode/*
+!.vscode/extensions.json
 test-code
 google-auth
 docker_config
+Prod.Dockerfile
+docker-compose-prod.yml

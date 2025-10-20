@@ -6,6 +6,8 @@ from decouple import config, Csv
 config.search_path = str(os.path.realpath(os.path.join(os.path.dirname(__file__), "config")))
 
 
+DEBUG_MODE = config("DEBUG", cast=bool, default=False)
+
 DB_URI = config("DB_URI", cast=str)
 
 CORS_ORIGINS = config("CORS_ORIGINS", cast=Csv(cast=str), default='')

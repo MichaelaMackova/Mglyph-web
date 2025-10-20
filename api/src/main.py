@@ -9,12 +9,7 @@ import os
 sys.path.insert(0, os.path.realpath(os.path.dirname(__file__))) 
 
 from db.database import create_db_and_tables
-from settings import CORS_ORIGINS
-
-# NOTE: Import routers
-from api.heroes.router import router as heroes_router
-from api.count.router import router as count_router
-from api.auth.router import router as auth_router
+from settings import CORS_ORIGINS, DEBUG_MODE
 
 
 @asynccontextmanager
@@ -27,10 +22,38 @@ async def lifespan(app: FastAPI):
     # shutdown event
 
 
+# ===== Set metadata for OpenAPI =====
 
-app = FastAPI(lifespan=lifespan)
+description = """
+# Description
+Mglyph-web API helps you do awesome stuff. 🚀
 
-# Enable CORS
+More description to come later...
+"""
+
+# Description of each tag for OpenAPI/Swagger UI
+# order here defines the order in the documentation
+tags_metadata = [
+    {"name": "default", "description": "Default root path"},
+    {"name": "auth", "description": "Authentication routes"},
+    {"name": "heroes", "description": "Hero-related routes"},
+    {"name": "count", "description": "Counting-related routes"},
+]
+
+app = FastAPI(
+    debug=DEBUG_MODE,
+    lifespan=lifespan,
+
+    title="Mglyph-web API",
+    summary="Basic summary of Mglyph-web API",
+    description=description,
+    version="0.0.1",
+    openapi_tags=tags_metadata,
+)
+
+
+
+# ===== Enable CORS =====
 app.add_middleware(
     CORSMiddleware,
     allow_origins=CORS_ORIGINS,
@@ -40,8 +63,7 @@ app.add_middleware(
 )
 
 
-
-app.include_router(auth_router)
+# ===== Default paths =====
 
 @app.get("/")
 def read_root():
@@ -53,5 +75,13 @@ def read_item(item_id: int, q: Union[str, None] = None):
 
 
 
+# ===== API ROUTERS =====
+
+# NOTE: Import routers
+from api.heroes.router import router as heroes_router
+from api.count.router import router as count_router
+from api.auth.router import router as auth_router
+
+app.include_router(auth_router)
 app.include_router(count_router)
 app.include_router(heroes_router)
