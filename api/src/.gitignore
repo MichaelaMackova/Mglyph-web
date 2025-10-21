@@ -1,4 +1,5 @@
-.env
+*.env*
+!example.env
 .vscode/*
 !/.vscode/extensions.json
 __pycache__

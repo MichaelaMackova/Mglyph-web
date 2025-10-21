@@ -1,11 +1,14 @@
 name: mglyph-web
 
-# ! WARNING: .env files have to be set up manually for development purposes !
+# ! WARNING: .env files have to be set up manually for pre-production purposes !
 
-# Docker Compose configuration for Development environment
-# api - uses the development Dockerfile with code volume mounted for live reload
-# ui  - uses the development Dockerfile with code volume mounted for live reload
-# db  - uses the development configuration with volume for persistent data
+# Docker Compose configuration for Pre-Production environment
+# this environment is meant to be as close as possible to production
+# api - uses the production Dockerfile
+# ui  - uses a special pre-production Dockerfile that builds the needed production static
+#       files, but serves them with a `vite preview` server for testing purposes. This allows
+#       testing the production build without needing a full web server setup
+# db  - uses same configuration as development environment
 
 services:
 
@@ -15,13 +18,10 @@ services:
       - db
     build: 
       context: ./api
-      dockerfile: ./Dockerfile
-    volumes:
-      - ./api/src:/code/src
+      dockerfile: ./Prod.Dockerfile
     ports:
       - 8888:8888
     read_only: false
-    command: "fastapi run src/main.py --host 0.0.0.0 --port 8888 --reload"
 
   db:
     container_name: db
@@ -43,18 +43,14 @@ services:
     container_name: ui
     build: 
       context: ./ui
-      dockerfile: ./Dev.Dockerfile
-    volumes:
-      - ./ui/mglyph-web-vue:/code/mglyph-web-vue
-      - node_modules:/code/mglyph-web-vue/node_modules
+      dockerfile: ./Pre-Prod.Dockerfile
     ports:
       - 8080:8080
-      - 5173:5173
+      - 4173:4173
     read_only: false
 
 volumes:
-  db_data: 
-  node_modules:
+  db_data:
 
 secrets:
   postgres_password:

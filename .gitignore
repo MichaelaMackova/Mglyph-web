@@ -1,11 +1,20 @@
 __pycache__
 *.pyc
-.env
+*.env*
+!example.env
 node_modules
 .vscode/*
 !.vscode/extensions.json
 test-code
 google-auth
+start-docker-app.sh
+start-docker-app.ps1
 docker_config
-Prod.Dockerfile
-docker-compose-prod.yml
+
+# Temporarily ignore Dockerfiles and docker-compose files for production
+docker-compose*.yml
+!docker-compose.yml
+!docker-compose.pre-prod.yml
+*.Dockerfile
+!Dev.Dockerfile
+!Pre-Prod.Dockerfile

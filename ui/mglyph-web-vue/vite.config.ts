@@ -6,6 +6,18 @@ import vueDevTools from 'vite-plugin-vue-devtools'
 
 // https://vite.dev/config/
 export default defineConfig({
+  build: {
+    outDir: 'dist',
+    assetsDir: 'static',
+    sourcemap: true,  // Enable for debugging
+    minify: 'esbuild', // Minify with esbuild
+    // minify: 'terser', // Minify with Terser
+    // terserOptions: {
+    //   compress: {
+    //     drop_console: true  // Remove console.logs in prod
+    //   }
+    // }
+  },
   server: {
     watch: {
       usePolling: true,

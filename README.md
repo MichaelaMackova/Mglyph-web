@@ -7,18 +7,23 @@ docker-compose build
 docker-compose up
 ```
 
-nebo též 
+nebo též jedním příkazem
 ```sh
 docker-compose up --build
 ```
 
-### pro debugging (hot reload ve Vue)
+### pro debugging (hot reload)
 ```sh
 docker-compose watch
 ```
 nebo
 ```sh
 docker compose up --build --watch
+```
+
+### pro změnu docker-compose souboru
+```sh
+docker compose -f <FILE> up --build
 ```
 
 ## Fast API
