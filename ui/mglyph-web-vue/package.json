@@ -20,7 +20,7 @@
     "bootstrap": "^5.2.3",
     "env-var": "^7.5.0",
     "jwt-decode": "^4.0.0",
-    "pinia": "^3.0.3",
+    "pinia": "^3.0.4",
     "vue": "^3.5.22",
     "vue-router": "^4.5.1",
     "vue3-google-login": "^2.0.34"

@@ -46,7 +46,8 @@ services:
       dockerfile: ./Dev.Dockerfile
     volumes:
       - ./ui/mglyph-web-vue:/code/mglyph-web-vue
-      - node_modules:/code/mglyph-web-vue/node_modules
+      # - node_modules:/code/mglyph-web-vue/node_modules
+      - /code/mglyph-web-vue/node_modules/
     ports:
       - 8080:8080
       - 5173:5173
@@ -54,7 +55,7 @@ services:
 
 volumes:
   db_data: 
-  node_modules:
+  # node_modules:
 
 secrets:
   postgres_password:
