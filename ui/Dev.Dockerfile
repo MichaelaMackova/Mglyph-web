@@ -7,7 +7,7 @@ WORKDIR /code/mglyph-web-vue
 COPY mglyph-web-vue/package*.json ./
 
 # install project dependencies
-RUN npm install
+RUN npm ci
 
 # copy project files and folders to the current working directory
 COPY ./mglyph-web-vue .
