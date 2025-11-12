@@ -12,12 +12,3 @@ start-docker-app.ps1
 docker_config
 
 extras/*
-
-# Temporarily ignore Dockerfiles and docker-compose files for production
-docker-compose*.yml
-!docker-compose.yml
-!docker-compose.pre-prod.yml
-*.Dockerfile
-!Dev.Dockerfile
-!Pre-Prod.Dockerfile
-ui/nginx.conf

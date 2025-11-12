@@ -1,3 +1,9 @@
+## Before first use
+1. Set `.env` files:
+    - in `api/src/config/` (`example.env` provided)
+    - in `ui/mglyph-web-vue/` (`example.env` provided)
+2. Set PostgreSQL secrets in `docker_config/` (based on `docker_config_example/`)
+
 ## Docker container
 ```sh
 docker-compose build
