@@ -9,7 +9,7 @@ import os
 sys.path.insert(0, os.path.realpath(os.path.dirname(__file__))) 
 
 from db.database import create_db_and_tables
-from settings import CORS_ORIGINS, DEBUG_MODE
+from settings import CORS_ORIGINS, DEBUG_MODE, API_ROOT_PATH
 
 
 @asynccontextmanager
@@ -49,6 +49,7 @@ app = FastAPI(
     description=description,
     version="0.0.1",
     openapi_tags=tags_metadata,
+    root_path=API_ROOT_PATH,
 )
 
 
