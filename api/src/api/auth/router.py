@@ -18,7 +18,7 @@ router = APIRouter(
     # responses={404: {"description": "Not found"}},
 )
 
-@router.post("/google")
+@router.post("/google/")
 def google_auth(credential: CredentialDTO, db: SessionDep) -> LoggedInUserDTO:
     try:
         # Exchange the authorization code for an ID token
@@ -55,7 +55,7 @@ def google_auth(credential: CredentialDTO, db: SessionDep) -> LoggedInUserDTO:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
 
 
-@router.get("/refresh")
+@router.get("/refresh/")
 def refresh_token(user_id: Annotated[str, Depends(validate_refresh_token)], db: SessionDep) -> LoggedInUserDTO:
     db_user = db.get(UserModel, user_id)
     if not db_user:

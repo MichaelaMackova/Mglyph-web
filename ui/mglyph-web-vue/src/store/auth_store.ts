@@ -10,7 +10,7 @@ const useAuthStore = defineStore('auth', () => {
 
   function googleLogin(googleToken: string) {
     return mglyphClient
-      .post('/auth/google', { credential: googleToken }, { authorizeEndpoint: false })
+      .post('/auth/google/', { credential: googleToken }, { authorizeEndpoint: false })
       .then((res) => {
         // console.log('Successfully logged in', res.data)
         accessToken.value = res.data.access_token
@@ -34,7 +34,7 @@ const useAuthStore = defineStore('auth', () => {
     })
 
     return mglyphClient
-      .get('/auth/refresh', {
+      .get('/auth/refresh/', {
         authorizeEndpoint: false,
         headers: { Authorization: `Bearer ${refreshToken.value}` },
       })

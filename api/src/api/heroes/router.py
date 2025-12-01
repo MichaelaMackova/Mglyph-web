@@ -44,7 +44,7 @@ def read_hero(hero_id: int, session: SessionDep) -> HeroPublicDTO:
         raise HTTPException(status_code=404, detail="Hero not found")
     return HeroPublicDTO.from_model(hero)
 
-@router.patch("/heroes/{hero_id}")
+@router.patch("/heroes/{hero_id}/")
 def update_hero(hero_id: int, hero: HeroUpdateDTO, session: SessionDep) -> HeroPublicDTO:
     hero_db = session.get(HeroModel, hero_id)
     if not hero_db:
@@ -56,7 +56,7 @@ def update_hero(hero_id: int, hero: HeroUpdateDTO, session: SessionDep) -> HeroP
     session.refresh(hero_db)
     return HeroPublicDTO.from_model(hero_db)
 
-@router.delete("/{hero_id}", status_code=204, responses={204: {"description": "Hero deleted"}})
+@router.delete("/{hero_id}/", status_code=204, responses={204: {"description": "Hero deleted"}})
 def delete_hero(hero_id: int, session: SessionDep):
     hero = session.get(HeroModel, hero_id)
     if not hero:

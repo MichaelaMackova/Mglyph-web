@@ -103,7 +103,7 @@ async function fetchInitialCount() {
   isLoading.value = true
   errorOccurred.value = false
   try {
-    const response = await mglyphClient.get('/count', { authorizeEndpoint: true })
+    const response = await mglyphClient.get('/count/', { authorizeEndpoint: true })
     responseData.value = response.data
     errorOccurred.value = false
   } catch (err) {

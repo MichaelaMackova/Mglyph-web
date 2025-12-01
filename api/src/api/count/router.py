@@ -12,7 +12,7 @@ router = APIRouter(
     # responses={404: {"description": "Not found"}},
 )
 
-@router.get("/add-one")
+@router.get("/add-one/")
 def add_count(user_id: CurrentUserIdDep, db: SessionDep) -> CountDTO:
     db_user = db.get(UserModel, UUID(user_id))
     if not db_user:
