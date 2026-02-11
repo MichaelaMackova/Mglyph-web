@@ -17,4 +17,9 @@ RUN pip install --no-cache-dir --upgrade -r /code/requirements.txt
 
 COPY ./src /code/src
 EXPOSE 8888
+
+# Apply Alembic migrations
+COPY ./upgrade_all_db_migrations.sh /code/upgrade_all_db_migrations.sh
+ENTRYPOINT ["./upgrade_all_db_migrations.sh"]
+
 CMD ["fastapi", "run", "src/main.py", "--host", "0.0.0.0", "--port", "8888"]
