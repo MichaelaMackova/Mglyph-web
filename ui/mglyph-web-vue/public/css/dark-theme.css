@@ -1,0 +1,51 @@
+:root.dark-theme {
+    --md-sys-color-primary: #E6AFAB;
+    --md-sys-color-on-primary: #4C2421;
+    --md-sys-color-primary-container: #66302C;
+    --md-sys-color-on-primary-container: #E6BFBC;
+    --md-sys-color-secondary: #7FE0E6;
+    --md-sys-color-on-secondary: #00494C;
+    --md-sys-color-secondary-container: #006166;
+    --md-sys-color-on-secondary-container: #9DE2E6;
+    --md-sys-color-tertiary: #7FCEE6;
+    --md-sys-color-on-tertiary: #003B4C;
+    --md-sys-color-tertiary-container: #004F66;
+    --md-sys-color-on-tertiary-container: #9DD5E6;
+    --md-sys-color-quaternary: #E6D6C9;
+    --md-sys-color-on-quaternary: #4C4137;
+    --md-sys-color-quaternary-container: #665749;
+    --md-sys-color-on-quaternary-container: #E6DBD1;
+    --md-sys-color-error: #E68D8D;
+    --md-sys-color-on-error: #4C0B0B;
+    --md-sys-color-error-container: #660E0E;
+    --md-sys-color-on-error-container: #E6A7A7;
+    --md-sys-color-background: #18120B;
+    --md-sys-color-on-background: #EDE0D4;
+    --md-sys-color-surface: #18120B;
+    --md-sys-color-on-surface: #EDE0D4;
+    --md-sys-color-surface-variant: #201B13;
+    --md-sys-color-on-surface-variant: #F3EBE2;
+    --md-sys-color-outline: #B5B2AE;
+
+    /*State Colors*/
+    --md-extended-color-state-color-1: #82E6CB;
+    --md-extended-color-on-state-color-1: #024C39;
+    --md-extended-color-state-color-1-container: #03664B;
+    --md-extended-color-on-state-color-1-container: #9FE6D3;
+    --md-extended-color-state-color-2: #E69EAE;
+    --md-extended-color-on-state-color-2: #4C1723;
+    --md-extended-color-state-color-2-container: #661F2F;
+    --md-extended-color-on-state-color-2-container: #E6B3BE;
+    --md-extended-color-state-color-3: #94A3E6;
+    --md-extended-color-on-state-color-3: #101B4C;
+    --md-extended-color-state-color-3-container: #152466;
+    --md-extended-color-on-state-color-3-container: #ACB6E6;
+    --md-extended-color-state-color-4: #E6D2A4;
+    --md-extended-color-on-state-color-4: #4C3E1C;
+    --md-extended-color-state-color-4-container: #665325;
+    --md-extended-color-on-state-color-4-container: #E6D8B7;
+
+    /* Hyperlink Colors */
+    --md-extended-color-hyperlink-color: #8FA0FF;
+    --md-extended-color-hyperlink-visited-color: #E089E0;
+}
