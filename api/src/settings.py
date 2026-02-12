@@ -11,6 +11,7 @@ DEBUG_MODE = config("DEBUG", cast=bool, default=False)
 API_ROOT_PATH = config("API_ROOT_PATH", cast=str, default="")
 
 DB_URI = config("DB_URI", cast=str)
+AUTO_CREATE_TABLES = config("AUTO_CREATE_TABLES", cast=bool, default=False)
 
 CORS_ORIGINS = config("CORS_ORIGINS", cast=Csv(cast=str), default='')
 

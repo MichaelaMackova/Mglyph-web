@@ -9,13 +9,14 @@ import os
 sys.path.insert(0, os.path.realpath(os.path.dirname(__file__))) 
 
 from db.database import create_db_and_tables
-from settings import CORS_ORIGINS, DEBUG_MODE, API_ROOT_PATH
+from settings import CORS_ORIGINS, DEBUG_MODE, API_ROOT_PATH, AUTO_CREATE_TABLES
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # startup event
-    create_db_and_tables()
+    if AUTO_CREATE_TABLES:
+        create_db_and_tables()
 
     yield
 
