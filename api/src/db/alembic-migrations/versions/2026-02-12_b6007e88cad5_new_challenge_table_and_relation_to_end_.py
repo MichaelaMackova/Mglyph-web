@@ -39,14 +39,12 @@ def upgrade() -> None:
 
     # create challenge_solver table
     op.create_table('challenge_solver',
-        sa.Column('id', sa.Uuid(), nullable=False),
         sa.Column('challenge_id', sa.Uuid(), nullable=False),
         sa.Column('solver_id', sa.Uuid(), nullable=False),
 
         sa.ForeignKeyConstraint(['challenge_id'], ['challenge.id']),
         sa.ForeignKeyConstraint(['solver_id'], ['end_user.id']),
-        sa.PrimaryKeyConstraint('id'),
-        sa.UniqueConstraint('challenge_id', 'solver_id', name='uq_challenge_solver')
+        sa.PrimaryKeyConstraint('challenge_id', 'solver_id')
     )
     op.create_index(op.f('ix_challenge_solver_challenge_id'), 'challenge_solver', ['challenge_id'], unique=False)
     op.create_index(op.f('ix_challenge_solver_solver_id'), 'challenge_solver', ['solver_id'], unique=False)

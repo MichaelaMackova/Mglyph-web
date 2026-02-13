@@ -38,6 +38,7 @@ def google_auth(credential: CredentialDTO, db: SessionDep) -> LoggedInUserDTO:
         if not db_user:
             # create new user
             db_user = UserModel(
+                username=id_info['email'], #TODO: this is not ideal, we should ask the user for a username, but for now we can use the email as the username
                 email=id_info['email'],
                 google_sub=id_info['sub'],
                 count=0
