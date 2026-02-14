@@ -39,6 +39,7 @@ tags_metadata = [
     {"name": "auth", "description": "Authentication routes"},
     {"name": "heroes", "description": "Hero-related routes"},
     {"name": "count", "description": "Counting-related routes"},
+    {"name": "challenges", "description": "Challenge-related routes"},
 ]
 
 app = FastAPI(
@@ -83,7 +84,9 @@ def read_item(item_id: int, q: Union[str, None] = None):
 from api.heroes.router import router as heroes_router
 from api.count.router import router as count_router
 from api.auth.router import router as auth_router
+from api.challenges.router import router as challenges_router
 
 app.include_router(auth_router)
 app.include_router(count_router)
 app.include_router(heroes_router)
+app.include_router(challenges_router)
