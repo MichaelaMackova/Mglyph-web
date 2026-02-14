@@ -1,6 +1,11 @@
-from sqlmodel import Field, SQLModel, UniqueConstraint
+from sqlmodel import Field, SQLModel, UniqueConstraint, Relationship
 from uuid import UUID, uuid4
 from datetime import datetime
+
+import db.models.challengeSolverModel as challengeSolverModel
+import db.models.userModel as userModel
+
+
 
 class ChallengeModel(SQLModel, table=True):
     __tablename__ = "challenge"
@@ -16,3 +21,5 @@ class ChallengeModel(SQLModel, table=True):
     glyph_submit_deadline: datetime = Field()
     submissions_ended: bool = Field(default=False)
     challenge_finished: bool = Field(default=False)
+
+    solvers: list["userModel.UserModel"] = Relationship(back_populates="solver_challenges", link_model=challengeSolverModel.ChallengeSolverModel)
