@@ -10,6 +10,7 @@ from uuid import UUID
 from db.models.challengeModel import ChallengeModel
 from api.challenges.schemas import ChallengePublicDTO, ChallengeCreateDTO
 from db.models.userModel import UserModel
+from db.models.evaluationRoundModel import EvaluationRoundModel
 
 router = APIRouter(
     prefix="/challenges",
@@ -65,4 +66,45 @@ def add_self_as_solver(challenge_id: UUID, user_id: CurrentUserIdDep, session: S
     session.commit()
     session.refresh(challenge_db)
     return ChallengePublicDTO.from_model(challenge_db)
+
+
+#TODO: odstranit
+@router.get("/{challenge_id}/test-rounds")
+def get_test_rounds(challenge_id: UUID, session: SessionDep):
+    challenge_db = session.get(ChallengeModel, challenge_id)
+    if not challenge_db:
+        raise HTTPException(status_code=404, detail="Challenge not found")
     
+    print("Challenge rounds:", challenge_db.evaluation_rounds)
+
+    round_one = EvaluationRoundModel(sequence_number=1, estimated_end_time="2027-12-31T23:59:59", challenge_id=challenge_id)
+    session.add(round_one)
+    session.commit()
+    session.refresh(round_one)
+
+    print("Challenge rounds after adding round one:", challenge_db.evaluation_rounds)
+    print("Round one - next round:", round_one.next_round)
+    print("Round one - previous round:", round_one.previous_round)
+
+
+    round_two = EvaluationRoundModel(sequence_number=2, estimated_end_time="2028-12-31T23:59:59", challenge_id=challenge_id)
+    session.add(round_two)
+    round_one.next_round = round_two
+    session.add(round_one)
+    session.commit()
+    session.refresh(round_one)
+    session.refresh(round_two)
+
+    print("Challenge rounds after adding round two:", challenge_db.evaluation_rounds)
+    print("Round one - next round:", round_one.next_round)
+    print("Round one - previous round:", round_one.previous_round)
+    print("Round two - next round:", round_two.next_round)
+    print("Round two - previous round:", round_two.previous_round)
+
+    # delete rounds
+    session.delete(round_one)
+    session.delete(round_two)
+    session.commit()
+
+
+    return challenge_db.evaluation_rounds

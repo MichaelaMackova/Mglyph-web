@@ -4,6 +4,7 @@ from datetime import datetime
 
 import db.models.challengeSolverModel as challengeSolverModel
 import db.models.challengeEvaluatorModel as challengeEvaluatorModel
+import db.models.evaluationRoundModel as evaluationRoundModel
 import db.models.userModel as userModel
 
 
@@ -23,5 +24,7 @@ class ChallengeModel(SQLModel, table=True):
     submissions_ended: bool = Field(default=False)
     challenge_finished: bool = Field(default=False)
 
+    # Relationships
     solvers: list["userModel.UserModel"] = Relationship(back_populates="solver_challenges", link_model=challengeSolverModel.ChallengeSolverModel)
     challenge_evaluator_links: list["challengeEvaluatorModel.ChallengeEvaluatorModel"] = Relationship(back_populates="challenge")
+    evaluation_rounds: list["evaluationRoundModel.EvaluationRoundModel"] = Relationship(back_populates="challenge")
