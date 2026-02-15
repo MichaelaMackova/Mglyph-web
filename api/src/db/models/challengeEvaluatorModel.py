@@ -14,8 +14,8 @@ class ChallengeEvaluatorModel(SQLModel, table=True):
     )
     
     id: UUID = Field(primary_key=True, default_factory=uuid4)
-    challenge_id: UUID = Field(index=True, foreign_key="challenge.id", primary_key=True)
-    evaluator_id: UUID = Field(index=True, foreign_key="end_user.id", primary_key=True)
+    challenge_id: UUID = Field(index=True, foreign_key="challenge.id")
+    evaluator_id: UUID = Field(index=True, foreign_key="end_user.id")
     
     challenge: "challengeModel.ChallengeModel" = Relationship(back_populates="challenge_evaluator_links")
     evaluator: "userModel.UserModel" = Relationship(back_populates="challenge_evaluator_links")
