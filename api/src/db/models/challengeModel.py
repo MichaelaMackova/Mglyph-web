@@ -3,6 +3,7 @@ from uuid import UUID, uuid4
 from datetime import datetime
 
 import db.models.challengeSolverModel as challengeSolverModel
+import db.models.challengeEvaluatorModel as challengeEvaluatorModel
 import db.models.userModel as userModel
 
 
@@ -23,3 +24,4 @@ class ChallengeModel(SQLModel, table=True):
     challenge_finished: bool = Field(default=False)
 
     solvers: list["userModel.UserModel"] = Relationship(back_populates="solver_challenges", link_model=challengeSolverModel.ChallengeSolverModel)
+    challenge_evaluator_links: list["challengeEvaluatorModel.ChallengeEvaluatorModel"] = Relationship(back_populates="challenge")
