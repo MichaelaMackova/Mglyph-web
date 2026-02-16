@@ -5,6 +5,7 @@ from datetime import datetime
 import db.models.challengeEvaluatorModel as challengeEvaluatorModel
 import db.models.challengeModel as challengeModel
 import db.models.challengeSolverModel as challengeSolverModel
+import db.models.malleableGlyphModel as malleableGlyphModel
 
 class UserModel(SQLModel, table=True):
     __tablename__ = "end_user" # "user" is a reserved keyword, so we use "end_user" instead
@@ -25,3 +26,4 @@ class UserModel(SQLModel, table=True):
 
     solver_challenges: list["challengeModel.ChallengeModel"] = Relationship(back_populates="solvers", link_model=challengeSolverModel.ChallengeSolverModel)
     challenge_evaluator_links: list["challengeEvaluatorModel.ChallengeEvaluatorModel"] = Relationship(back_populates="evaluator")
+    malleable_glyphs: list["malleableGlyphModel.MalleableGlyphModel"] = Relationship(back_populates="creator")
