@@ -4,6 +4,7 @@ from datetime import datetime
 from typing import Optional
 
 import db.models.userModel as userModel
+import db.models.mglyphEvaluationModel as mglyphEvaluationModel
 
 class MalleableGlyphModel(SQLModel, table=True):
     __tablename__ = "malleable_glyph"
@@ -22,3 +23,4 @@ class MalleableGlyphModel(SQLModel, table=True):
 
     # Relationships
     creator: "userModel.UserModel" = Relationship(back_populates="malleable_glyphs")
+    mglyph_evaluation_links: list["mglyphEvaluationModel.MGlyphEvaluationModel"] = Relationship(back_populates="malleable_glyph")

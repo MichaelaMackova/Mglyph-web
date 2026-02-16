@@ -4,6 +4,7 @@ from datetime import datetime
 from typing import Optional
 
 import db.models.challengeModel as challengeModel
+import db.models.mglyphEvaluationModel as mglyphEvaluationModel
 
 
 class EvaluationRoundModel(SQLModel, table=True):
@@ -21,3 +22,4 @@ class EvaluationRoundModel(SQLModel, table=True):
     challenge: "challengeModel.ChallengeModel" = Relationship(back_populates="evaluation_rounds")
     next_round: Optional["EvaluationRoundModel"] = Relationship(back_populates="previous_round", sa_relationship_kwargs=dict(remote_side="EvaluationRoundModel.id")) #, sa_relationship_kwargs={"uselist": False})
     previous_round:  Optional["EvaluationRoundModel"] = Relationship(back_populates="next_round") #, sa_relationship_kwargs={"uselist": False})
+    mglyph_evaluation_links: list["mglyphEvaluationModel.MGlyphEvaluationModel"] = Relationship(back_populates="evaluation_round")
