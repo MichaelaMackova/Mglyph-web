@@ -3,6 +3,7 @@ from uuid import UUID, uuid4
 
 import db.models.challengeModel as challengeModel
 import db.models.userModel as userModel
+import db.models.mglyphEvaluatorModel as mglyphEvaluatorModel
 
 
 # This is a link table for the many-to-many relationship between ChallengeModel and UserModel, specifically for the evaluators of a challenge
@@ -19,3 +20,4 @@ class ChallengeEvaluatorModel(SQLModel, table=True):
     
     challenge: "challengeModel.ChallengeModel" = Relationship(back_populates="challenge_evaluator_links")
     evaluator: "userModel.UserModel" = Relationship(back_populates="challenge_evaluator_links")
+    mglyph_evaluator_links: list["mglyphEvaluatorModel.MGlyphEvaluatorModel"] = Relationship(back_populates="challenge_evaluator")

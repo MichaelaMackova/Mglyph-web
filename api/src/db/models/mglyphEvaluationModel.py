@@ -5,6 +5,7 @@ from typing import Optional
 
 import db.models.malleableGlyphModel as malleableGlyphModel
 import db.models.evaluationRoundModel as evaluationRoundModel
+import db.models.mglyphEvaluatorModel as mglyphEvaluatorModel
 
 
 class MGlyphEvaluationModel(SQLModel, table=True):
@@ -20,3 +21,4 @@ class MGlyphEvaluationModel(SQLModel, table=True):
     # Relationships
     malleable_glyph: "malleableGlyphModel.MalleableGlyphModel" = Relationship(back_populates="mglyph_evaluation_links")
     evaluation_round: "evaluationRoundModel.EvaluationRoundModel" = Relationship(back_populates="mglyph_evaluations")
+    mglyph_evaluator_links: list["mglyphEvaluatorModel.MGlyphEvaluatorModel"] = Relationship(back_populates="mglyph_evaluation")
