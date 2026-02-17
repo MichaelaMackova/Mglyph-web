@@ -5,6 +5,7 @@ from typing import Optional
 
 import db.models.mglyphEvaluationModel as mglyphEvaluationModel
 import db.models.challengeEvaluatorModel as challengeEvaluatorModel
+import db.models.answerModel as answerModel
 
 class MGlyphEvaluatorModel(SQLModel, table=True):
     __tablename__ = "mglyph_evaluator"
@@ -21,3 +22,4 @@ class MGlyphEvaluatorModel(SQLModel, table=True):
     # Relationships
     mglyph_evaluation: "mglyphEvaluationModel.MGlyphEvaluationModel" = Relationship(back_populates="mglyph_evaluator_links")
     challenge_evaluator: "challengeEvaluatorModel.ChallengeEvaluatorModel" = Relationship(back_populates="mglyph_evaluator_links")
+    answers: list["answerModel.AnswerModel"] = Relationship(back_populates="mglyph_evaluator_link")
