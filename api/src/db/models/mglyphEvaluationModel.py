@@ -20,5 +20,5 @@ class MGlyphEvaluationModel(SQLModel, table=True):
 
     # Relationships
     malleable_glyph: "malleableGlyphModel.MalleableGlyphModel" = Relationship(back_populates="mglyph_evaluation_links")
-    evaluation_round: "evaluationRoundModel.EvaluationRoundModel" = Relationship(back_populates="mglyph_evaluations")
+    evaluation_round: "evaluationRoundModel.EvaluationRoundModel" = Relationship(back_populates="mglyph_evaluation_links")
     mglyph_evaluator_links: list["mglyphEvaluatorModel.MGlyphEvaluatorModel"] = Relationship(back_populates="mglyph_evaluation")
