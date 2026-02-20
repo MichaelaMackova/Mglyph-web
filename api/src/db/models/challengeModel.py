@@ -24,7 +24,10 @@ class ChallengeModel(SQLModel, table=True):
     submissions_ended: bool = Field(default=False)
     challenge_finished: bool = Field(default=False)
 
+    creator_id: UUID = Field(foreign_key="end_user.id")
+
     # Relationships
+    creator: "userModel.UserModel" = Relationship(back_populates="created_challenges")
     solvers: list["userModel.UserModel"] = Relationship(back_populates="solver_challenges", link_model=challengeSolverModel.ChallengeSolverModel)
     challenge_evaluator_links: list["challengeEvaluatorModel.ChallengeEvaluatorModel"] = Relationship(back_populates="challenge")
     evaluation_rounds: list["evaluationRoundModel.EvaluationRoundModel"] = Relationship(back_populates="challenge")

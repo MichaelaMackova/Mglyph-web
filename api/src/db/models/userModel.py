@@ -29,5 +29,6 @@ class UserModel(SQLModel, table=True):
     solver_challenges: list["challengeModel.ChallengeModel"] = Relationship(back_populates="solvers", link_model=challengeSolverModel.ChallengeSolverModel)
     challenge_evaluator_links: list["challengeEvaluatorModel.ChallengeEvaluatorModel"] = Relationship(back_populates="evaluator")
     malleable_glyphs: list["malleableGlyphModel.MalleableGlyphModel"] = Relationship(back_populates="creator")
+    created_challenges: list["challengeModel.ChallengeModel"] = Relationship(back_populates="creator")
     reported_flags: list["mglyphReportFlagModel.MGlyphReportFlagModel"] = Relationship(back_populates="user_reporter", sa_relationship_kwargs=dict(foreign_keys="mglyphReportFlagModel.MGlyphReportFlagModel.user_reporter_id"))
     resolved_flags: list["mglyphReportFlagModel.MGlyphReportFlagModel"] = Relationship(back_populates="user_resolver", sa_relationship_kwargs=dict(foreign_keys="mglyphReportFlagModel.MGlyphReportFlagModel.user_resolver_id"))
