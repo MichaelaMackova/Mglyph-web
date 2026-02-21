@@ -4,7 +4,7 @@ from fastapi import APIRouter, Query, HTTPException, status
 from sqlmodel import select
 from db.database import SessionDep
 
-from api.auth.dependencies import CurrentUserIdDep
+from api.auth.dependencies import CurrentAdminUserIdDep, CurrentUserIdDep
 from uuid import UUID
 
 from db.models.challengeModel import ChallengeModel
@@ -21,11 +21,12 @@ router = APIRouter(
 
 
 @router.post("")
-def create_challenge(challenge: ChallengeCreateDTO, session: SessionDep) -> ChallengePublicDTO:
+def create_challenge(challenge: ChallengeCreateDTO, current_user_id: CurrentAdminUserIdDep, session: SessionDep) -> ChallengePublicDTO:
     # TODO: ověřit, že je aktivní uživatel admin
     try:
         db_challenge = ChallengeModel.model_validate(challenge)
         db_challenge.id = None  # Ensure ID is None for new records
+        db_challenge.creator_id = current_user_id
     except ValidationError as e:
         raise HTTPException(status_code=400, detail=str(e))
     session.add(db_challenge)
@@ -51,7 +52,7 @@ def update_challenge(challenge_id: UUID):
     pass
 
 
-@router.post("/{challenge_id}/add-self-as-solver")
+@router.post("/{challenge_id}/add-solver")
 def add_self_as_solver(challenge_id: UUID, user_id: CurrentUserIdDep, session: SessionDep):
     challenge_db = session.get(ChallengeModel, challenge_id)
     if not challenge_db:

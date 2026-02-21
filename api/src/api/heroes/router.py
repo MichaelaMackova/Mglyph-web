@@ -44,7 +44,7 @@ def read_hero(hero_id: int, session: SessionDep) -> HeroPublicDTO:
         raise HTTPException(status_code=404, detail="Hero not found")
     return HeroPublicDTO.from_model(hero)
 
-@router.patch("/heroes/{hero_id}/")
+@router.patch("/{hero_id}/")
 def update_hero(hero_id: int, hero: HeroUpdateDTO, session: SessionDep) -> HeroPublicDTO:
     hero_db = session.get(HeroModel, hero_id)
     if not hero_db:

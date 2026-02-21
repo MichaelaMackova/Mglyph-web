@@ -1,3 +1,5 @@
+# TODO: odstranit
+
 from sqlmodel import Field, SQLModel
 
 class HeroModel(SQLModel, table=True):
