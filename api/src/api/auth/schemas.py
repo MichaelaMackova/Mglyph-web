@@ -18,6 +18,17 @@ class UserBase(BaseModel):
     username: str
     email: str
 
+class UserPublicSimpleDTO(UserBase):
+    id: UUID
+
+    @staticmethod
+    def from_model(userModel: UserModel) -> "UserPublicSimpleDTO":
+        return UserPublicSimpleDTO(
+            id=userModel.id,
+            username=userModel.username,
+            email=userModel.email
+        )
+
 class UserPublicDTO(UserBase):
     id: UUID
     role: str

@@ -2,6 +2,8 @@ from pydantic import BaseModel
 from uuid import UUID
 from datetime import datetime
 
+from api.auth.schemas import UserPublicSimpleDTO
+
 from db.models.challengeModel import ChallengeModel
 
 
@@ -9,16 +11,23 @@ class ChallengeCreateDTO(BaseModel):
     name: str
     glyph_submit_deadline: datetime
 
-class SolverDTO(BaseModel):
+class ChallengePublicSimpleDTO(ChallengeCreateDTO):
     id: UUID
-    username: str
+
+    @staticmethod
+    def from_model(challengeModel: ChallengeModel) -> "ChallengePublicSimpleDTO":
+        return ChallengePublicSimpleDTO(
+            id=challengeModel.id,
+            name=challengeModel.name,
+            glyph_submit_deadline=challengeModel.glyph_submit_deadline
+        )
 
 class ChallengePublicDTO(ChallengeCreateDTO):
     id: UUID
     creation_time: datetime
     submissions_ended: bool
     challenge_finished: bool
-    solvers: list[SolverDTO]
+    solvers: list[UserPublicSimpleDTO]
 
     @staticmethod
     def from_model(challengeModel: ChallengeModel) -> "ChallengePublicDTO":
@@ -29,7 +38,7 @@ class ChallengePublicDTO(ChallengeCreateDTO):
             glyph_submit_deadline=challengeModel.glyph_submit_deadline,
             submissions_ended=challengeModel.submissions_ended,
             challenge_finished=challengeModel.challenge_finished,
-            solvers=[SolverDTO(id=solver.id, username=solver.username) for solver in challengeModel.solvers]
+            solvers=[UserPublicSimpleDTO.from_model(solver) for solver in challengeModel.solvers]
         )
 
 class ChallengeUpdateDTO(BaseModel):

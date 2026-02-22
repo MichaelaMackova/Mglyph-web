@@ -1,11 +1,15 @@
 from typing import Annotated
-from pydantic import ValidationError
-from fastapi import APIRouter, Query, HTTPException, status
+from fastapi import APIRouter, Query, HTTPException, status, responses
+from uuid import UUID
+
 from sqlmodel import select
 from db.database import SessionDep
+from pydantic import ValidationError
+from errors import NotFoundError
 
 from api.auth.dependencies import CurrentAdminUserIdDep, CurrentUserIdDep
-from uuid import UUID
+from api.challenges.services import ChallengeService, EvaluationRoundService, ChallengeServiceDep, EvaluationRoundServiceDep
+
 
 from db.models.challengeModel import ChallengeModel
 from api.challenges.schemas import ChallengePublicDTO, ChallengeCreateDTO
@@ -15,25 +19,19 @@ from db.models.evaluationRoundModel import EvaluationRoundModel
 router = APIRouter(
     prefix="/challenges",
     tags=["challenges"],
-    # responses={404: {"description": "Not found"}},
 )
 
 
 
-@router.post("")
-def create_challenge(challenge: ChallengeCreateDTO, current_user_id: CurrentAdminUserIdDep, session: SessionDep) -> ChallengePublicDTO:
-    # TODO: ověřit, že je aktivní uživatel admin
+@router.post("", 
+             status_code=status.HTTP_201_CREATED, 
+             response_description="Challenge Created Successfully")
+def create_challenge(challenge: ChallengeCreateDTO, current_user_id: CurrentAdminUserIdDep, challenge_service: ChallengeServiceDep) -> ChallengePublicDTO:
     try:
-        db_challenge = ChallengeModel.model_validate(challenge)
-        db_challenge.id = None  # Ensure ID is None for new records
-        db_challenge.creator_id = current_user_id
+        new_challenge = challenge_service.create_challenge(challenge, UUID(current_user_id))
     except ValidationError as e:
         raise HTTPException(status_code=400, detail=str(e))
-    session.add(db_challenge)
-    session.commit()
-    session.refresh(db_challenge)
-    new_challenge = ChallengePublicDTO.from_model(db_challenge)
-    return new_challenge
+    return ChallengePublicDTO.from_model(new_challenge)
     
 
 
@@ -42,9 +40,17 @@ def read_challenges():
     pass
 
 
-@router.get("/{challenge_id}")
-def read_challenge(challenge_id: UUID):
-    pass
+@router.get("/{challenge_id}",
+            responses={
+                NotFoundError.http_code: NotFoundError.response_dict()
+             })
+def read_challenge(challenge_id: UUID, challenge_service: ChallengeServiceDep) -> ChallengePublicDTO:
+    try:
+        challenge = challenge_service.get_challenge_by_id(challenge_id)
+    except NotFoundError as e:
+        raise NotFoundError.HTTPException(e)
+    
+    return ChallengePublicDTO.from_model(challenge)
 
 
 @router.patch("/{challenge_id}")
