@@ -19,6 +19,6 @@ class MGlyphEvaluationModel(SQLModel, table=True):
     evaluation_round_id: UUID = Field(index=True, foreign_key="evaluation_round.id")
 
     # Relationships
-    malleable_glyph: "malleableGlyphModel.MalleableGlyphModel" = Relationship(back_populates="mglyph_evaluation_links")
-    evaluation_round: "evaluationRoundModel.EvaluationRoundModel" = Relationship(back_populates="mglyph_evaluation_links")
-    mglyph_evaluator_links: list["mglyphEvaluatorModel.MGlyphEvaluatorModel"] = Relationship(back_populates="mglyph_evaluation")
+    malleable_glyph: "malleableGlyphModel.MalleableGlyphModel" = Relationship(back_populates="mglyph_evaluation_links", sa_relationship_kwargs=dict(lazy='raise_on_sql'))
+    evaluation_round: "evaluationRoundModel.EvaluationRoundModel" = Relationship(back_populates="mglyph_evaluation_links", sa_relationship_kwargs=dict(lazy='raise_on_sql'))
+    mglyph_evaluator_links: list["mglyphEvaluatorModel.MGlyphEvaluatorModel"] = Relationship(back_populates="mglyph_evaluation", sa_relationship_kwargs=dict(lazy='raise_on_sql'))

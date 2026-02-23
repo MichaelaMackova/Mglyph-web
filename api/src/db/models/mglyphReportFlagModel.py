@@ -22,6 +22,5 @@ class MGlyphReportFlagModel(SQLModel, table=True):
     user_resolver_id: Optional[UUID] = Field(default=None, foreign_key="end_user.id")
 
     # Relationships
-    user_reporter: "userModel.UserModel" = Relationship(back_populates="reported_flags", sa_relationship_kwargs=dict(foreign_keys="MGlyphReportFlagModel.user_reporter_id"))
-    user_resolver: Optional["userModel.UserModel"] = Relationship(back_populates="resolved_flags", sa_relationship_kwargs=dict(foreign_keys="MGlyphReportFlagModel.user_resolver_id"))
-    
+    user_reporter: "userModel.UserModel" = Relationship(back_populates="reported_flags", sa_relationship_kwargs=dict(foreign_keys="MGlyphReportFlagModel.user_reporter_id", lazy='raise_on_sql'))
+    user_resolver: Optional["userModel.UserModel"] = Relationship(back_populates="resolved_flags", sa_relationship_kwargs=dict(foreign_keys="MGlyphReportFlagModel.user_resolver_id", lazy='raise_on_sql'))

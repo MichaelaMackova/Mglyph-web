@@ -23,5 +23,5 @@ class MalleableGlyphModel(SQLModel, table=True):
     creator_id: UUID = Field(index=True, foreign_key="end_user.id")
 
     # Relationships
-    creator: "userModel.UserModel" = Relationship(back_populates="malleable_glyphs")
-    mglyph_evaluation_links: list["mglyphEvaluationModel.MGlyphEvaluationModel"] = Relationship(back_populates="malleable_glyph")
+    creator: "userModel.UserModel" = Relationship(back_populates="malleable_glyphs", sa_relationship_kwargs=dict(lazy='raise_on_sql'))
+    mglyph_evaluation_links: list["mglyphEvaluationModel.MGlyphEvaluationModel"] = Relationship(back_populates="malleable_glyph", sa_relationship_kwargs=dict(lazy='raise_on_sql'))

@@ -1,3 +1,4 @@
+#TODO: odstranit tento model
 from datetime import datetime
 from sqlmodel import Field, SQLModel
 

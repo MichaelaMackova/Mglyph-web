@@ -24,4 +24,4 @@ class AnswerModel(SQLModel, table=True):
     mglyph_evaluator_id: UUID = Field(index=True, foreign_key="mglyph_evaluator.id")
 
     # Relationships
-    mglyph_evaluator_link: "mglyphEvaluatorModel.MGlyphEvaluatorModel" = Relationship(back_populates="answers")
+    mglyph_evaluator_link: "mglyphEvaluatorModel.MGlyphEvaluatorModel" = Relationship(back_populates="answers", sa_relationship_kwargs=dict(lazy='raise_on_sql'))

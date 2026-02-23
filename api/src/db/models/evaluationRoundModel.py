@@ -20,7 +20,7 @@ class EvaluationRoundModel(SQLModel, table=True):
     next_round_id: UUID | None = Field(foreign_key="evaluation_round.id", default=None)
 
     # Relationships
-    challenge: "challengeModel.ChallengeModel" = Relationship(back_populates="evaluation_rounds")
-    next_round: Optional["EvaluationRoundModel"] = Relationship(back_populates="previous_round", sa_relationship_kwargs=dict(remote_side="EvaluationRoundModel.id")) #, sa_relationship_kwargs={"uselist": False})
-    previous_round:  Optional["EvaluationRoundModel"] = Relationship(back_populates="next_round") #, sa_relationship_kwargs={"uselist": False})
-    mglyph_evaluation_links: list["mglyphEvaluationModel.MGlyphEvaluationModel"] = Relationship(back_populates="evaluation_round")
+    challenge: "challengeModel.ChallengeModel" = Relationship(back_populates="evaluation_rounds", sa_relationship_kwargs=dict(lazy='raise_on_sql'))
+    next_round: Optional["EvaluationRoundModel"] = Relationship(back_populates="previous_round", sa_relationship_kwargs=dict(remote_side="EvaluationRoundModel.id", lazy='raise_on_sql')) #, sa_relationship_kwargs={"uselist": False})
+    previous_round:  Optional["EvaluationRoundModel"] = Relationship(back_populates="next_round", sa_relationship_kwargs=dict(lazy='raise_on_sql')) #, sa_relationship_kwargs={"uselist": False})
+    mglyph_evaluation_links: list["mglyphEvaluationModel.MGlyphEvaluationModel"] = Relationship(back_populates="evaluation_round", sa_relationship_kwargs=dict(lazy='raise_on_sql'))

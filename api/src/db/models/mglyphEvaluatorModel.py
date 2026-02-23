@@ -20,6 +20,6 @@ class MGlyphEvaluatorModel(SQLModel, table=True):
     challenge_evaluator_id: UUID = Field(index=True, foreign_key="challenge_evaluator.id")
 
     # Relationships
-    mglyph_evaluation: "mglyphEvaluationModel.MGlyphEvaluationModel" = Relationship(back_populates="mglyph_evaluator_links")
-    challenge_evaluator: "challengeEvaluatorModel.ChallengeEvaluatorModel" = Relationship(back_populates="mglyph_evaluator_links")
-    answers: list["answerModel.AnswerModel"] = Relationship(back_populates="mglyph_evaluator_link")
+    mglyph_evaluation: "mglyphEvaluationModel.MGlyphEvaluationModel" = Relationship(back_populates="mglyph_evaluator_links", sa_relationship_kwargs=dict(lazy='raise_on_sql'))
+    challenge_evaluator: "challengeEvaluatorModel.ChallengeEvaluatorModel" = Relationship(back_populates="mglyph_evaluator_links", sa_relationship_kwargs=dict(lazy='raise_on_sql'))
+    answers: list["answerModel.AnswerModel"] = Relationship(back_populates="mglyph_evaluator_link", sa_relationship_kwargs=dict(lazy='raise_on_sql'))

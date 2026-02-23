@@ -20,6 +20,6 @@ class ChallengeEvaluatorModel(SQLModel, table=True):
     evaluator_id: UUID = Field(index=True, foreign_key="end_user.id")
     
     #Relationships
-    challenge: "challengeModel.ChallengeModel" = Relationship(back_populates="challenge_evaluator_links")
-    evaluator: "userModel.UserModel" = Relationship(back_populates="challenge_evaluator_links")
-    mglyph_evaluator_links: list["mglyphEvaluatorModel.MGlyphEvaluatorModel"] = Relationship(back_populates="challenge_evaluator")
+    challenge: "challengeModel.ChallengeModel" = Relationship(back_populates="challenge_evaluator_links", sa_relationship_kwargs=dict(lazy='raise_on_sql'))
+    evaluator: "userModel.UserModel" = Relationship(back_populates="challenge_evaluator_links", sa_relationship_kwargs=dict(lazy='raise_on_sql'))
+    mglyph_evaluator_links: list["mglyphEvaluatorModel.MGlyphEvaluatorModel"] = Relationship(back_populates="challenge_evaluator", sa_relationship_kwargs=dict(lazy='raise_on_sql'))
