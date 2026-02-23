@@ -26,8 +26,8 @@ def validate_refresh_token(token: str = Depends(get_jwt_token)) -> str:
 CurrentUserIdDep = Annotated[str, Depends(validate_access_token)]
 
 
-def validate_user_is_admin(user_id: CurrentUserIdDep, session: SessionDep) -> str:
-    db_user = session.get(UserModel, user_id)
+async def validate_user_is_admin(user_id: CurrentUserIdDep, session: SessionDep) -> str:
+    db_user = await session.get(UserModel, user_id)
     if not db_user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
     if db_user.role != "admin":

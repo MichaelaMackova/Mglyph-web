@@ -32,8 +32,8 @@ target_metadata = SQLModel.metadata
 
 # Set database URL from environment, config or other source
 # this rewrites the sqlalchemy.url setting in the .ini file
-from settings import DB_URI
-config.set_main_option('sqlalchemy.url', DB_URI)
+from settings import SYNC_DB_URI
+config.set_main_option('sqlalchemy.url', SYNC_DB_URI)
 
 
 # other values from the config, defined by the needs of env.py,

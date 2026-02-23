@@ -19,7 +19,7 @@ router = APIRouter(
 )
 
 @router.post("/google/")
-def google_auth(credential: CredentialDTO, db: SessionDep) -> LoggedInUserDTO:
+async def google_auth(credential: CredentialDTO, db: SessionDep) -> LoggedInUserDTO:
     try:
         # Exchange the authorization code for an ID token
         token_request = requests.Request()
@@ -31,12 +31,13 @@ def google_auth(credential: CredentialDTO, db: SessionDep) -> LoggedInUserDTO:
             raise ValueError('Wrong issuer.')
         # Here you can store the user information or generate a custom token
         # create user if not exists
-        db_user = db.exec(
+        result = await db.execute(
             select(UserModel)
                 .where(UserModel.google_sub == id_info['sub'])
-        ).first()
+        )
+        db_user = result.scalar_one_or_none()
         if not db_user:
-            # create new user
+            #create new user
             db_user = UserModel(
                 username=id_info['email'], #TODO: this is not ideal, we should ask the user for a username, but for now we can use the email as the username
                 email=id_info['email'],
@@ -44,8 +45,8 @@ def google_auth(credential: CredentialDTO, db: SessionDep) -> LoggedInUserDTO:
                 count=0
             )
             db.add(db_user)
-            db.commit()
-            db.refresh(db_user)
+            await db.commit()
+            await db.refresh(db_user)
         user_info = UserPublicDTO.from_model(db_user)
         return LoggedInUserDTO(
             access_token=create_access_token(user_id=str(user_info.id)),
@@ -57,8 +58,8 @@ def google_auth(credential: CredentialDTO, db: SessionDep) -> LoggedInUserDTO:
 
 
 @router.get("/refresh/")
-def refresh_token(user_id: Annotated[str, Depends(validate_refresh_token)], db: SessionDep) -> LoggedInUserDTO:
-    db_user = db.get(UserModel, user_id)
+async def refresh_token(user_id: Annotated[str, Depends(validate_refresh_token)], db: SessionDep) -> LoggedInUserDTO:
+    db_user = await db.get(UserModel, user_id)
     if not db_user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
     user_info = UserPublicDTO.from_model(db_user)
