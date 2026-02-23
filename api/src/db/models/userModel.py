@@ -1,6 +1,7 @@
-from sqlmodel import Field, SQLModel, UniqueConstraint, Relationship
+from sqlmodel import Field, SQLModel, UniqueConstraint, Relationship, DateTime
 from uuid import UUID, uuid4
 from datetime import datetime
+from utils import get_current_utc_time
 
 import db.models.challengeEvaluatorModel as challengeEvaluatorModel
 import db.models.challengeModel as challengeModel
@@ -22,7 +23,7 @@ class UserModel(SQLModel, table=True):
     role: str = Field(default="user") # Possible values: "user", "admin"
     email: str = Field(index=True, unique=True)
     google_sub: str | None = Field(index=True, unique=True)
-    # creation_time: datetime = Field(default_factory=datetime.now) # TODO: add
+    creation_time: datetime = Field(default_factory=get_current_utc_time, sa_type=DateTime(timezone=True))
     count: int = Field(default=0) #TODO: remove this field, it's only for testing purposes
 
     # Relationships

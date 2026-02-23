@@ -1,7 +1,8 @@
-from sqlmodel import Field, SQLModel, UniqueConstraint, Relationship
+from sqlmodel import Field, SQLModel, UniqueConstraint, Relationship, DateTime
 from uuid import UUID, uuid4
 from datetime import datetime, timedelta
 from typing import Optional
+from utils import get_current_utc_time
 
 import db.models.mglyphEvaluatorModel as mglyphEvaluatorModel
 
@@ -15,7 +16,7 @@ class AnswerModel(SQLModel, table=True):
     answered_symbol: str = Field(max_length=1)
     is_answer_correct: bool = Field()
     glyph_distance: float = Field()
-    answer_time: datetime = Field(default_factory=datetime.now)
+    answer_time: datetime = Field(default_factory=get_current_utc_time, sa_type=DateTime(timezone=True))
     time_taken: timedelta = Field()
     rotation_type: Optional[str] = Field(default=None)
     first_glyph_rotation_angle: float = Field(default=0.0)
