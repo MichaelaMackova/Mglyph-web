@@ -1,6 +1,8 @@
 from sqlmodel import Field, SQLModel, UniqueConstraint, Relationship
+from sqlalchemy.types import DateTime
 from uuid import UUID, uuid4
 from datetime import datetime
+from utils import get_current_utc_time
 
 import db.models.challengeSolverModel as challengeSolverModel
 import db.models.challengeEvaluatorModel as challengeEvaluatorModel
@@ -19,8 +21,8 @@ class ChallengeModel(SQLModel, table=True):
     id: UUID = Field(primary_key=True, default_factory=uuid4)
     name: str = Field(index=True, unique=True)
     # description: str = Field()
-    creation_time: datetime = Field(default_factory=datetime.now)
-    glyph_submit_deadline: datetime = Field()
+    creation_time: datetime = Field(default_factory=get_current_utc_time, sa_type=DateTime(timezone=True))
+    glyph_submit_deadline: datetime = Field(sa_type=DateTime(timezone=True))
     submissions_ended: bool = Field(default=False)
     challenge_finished: bool = Field(default=False)
 

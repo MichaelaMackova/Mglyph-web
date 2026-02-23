@@ -1,6 +1,7 @@
-from sqlmodel import Field, SQLModel, UniqueConstraint, Relationship
+from sqlmodel import Field, SQLModel, UniqueConstraint, Relationship, DateTime, func
 from uuid import UUID, uuid4
 from datetime import datetime
+from utils import get_current_utc_time
 from typing import Optional
 
 import db.models.challengeModel as challengeModel
@@ -12,8 +13,8 @@ class EvaluationRoundModel(SQLModel, table=True):
 
     id: UUID = Field(primary_key=True, default_factory=uuid4)
     sequence_number: int = Field() # The sequence number of the evaluation round for a specific challenge, starting from 1
-    estimated_end_time: datetime = Field()
-    creation_time: datetime = Field(default_factory=datetime.now)
+    estimated_end_time: datetime = Field(sa_type=DateTime(timezone=True))
+    creation_time: datetime = Field(default_factory=get_current_utc_time, sa_type=DateTime(timezone=True))
 
     challenge_id: UUID = Field(index=True, foreign_key="challenge.id")
     next_round_id: UUID | None = Field(foreign_key="evaluation_round.id", default=None)
