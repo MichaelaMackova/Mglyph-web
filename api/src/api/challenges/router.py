@@ -93,6 +93,8 @@ async def delete_challenge(challenge_id: UUID, current_user_id: CurrentAdminUser
         await challenge_service.delete_challenge(challenge_id)
     except NotFoundError as e:
         raise NotFoundError.HTTPException(e)
+    except BadRequestError as e:
+        raise BadRequestError.HTTPException(e)
 
 
 #TODO: odstranit

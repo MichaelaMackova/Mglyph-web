@@ -31,5 +31,5 @@ class ChallengeModel(SQLModel, table=True):
     # Relationships
     creator: "userModel.UserModel" = Relationship(back_populates="created_challenges", sa_relationship_kwargs=dict(lazy='raise_on_sql'))
     solvers: list["userModel.UserModel"] = Relationship(back_populates="solver_challenges", link_model=challengeSolverModel.ChallengeSolverModel, sa_relationship_kwargs=dict(lazy='raise_on_sql'))
-    challenge_evaluator_links: list["challengeEvaluatorModel.ChallengeEvaluatorModel"] = Relationship(back_populates="challenge", sa_relationship_kwargs=dict(lazy='raise_on_sql'))
-    evaluation_rounds: list["evaluationRoundModel.EvaluationRoundModel"] = Relationship(back_populates="challenge", sa_relationship_kwargs=dict(lazy='raise_on_sql'))
+    challenge_evaluator_links: list["challengeEvaluatorModel.ChallengeEvaluatorModel"] = Relationship(back_populates="challenge", cascade_delete=True, sa_relationship_kwargs=dict(lazy='raise_on_sql'))
+    evaluation_rounds: list["evaluationRoundModel.EvaluationRoundModel"] = Relationship(back_populates="challenge", cascade_delete=True, sa_relationship_kwargs=dict(lazy='raise_on_sql'))

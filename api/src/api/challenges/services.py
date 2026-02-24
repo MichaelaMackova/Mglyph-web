@@ -13,6 +13,7 @@ from db.models.userModel import UserModel
 from db.models.evaluationRoundModel import EvaluationRoundModel
 
 from db.repos.challengeRepository import ChallengeRepository, ChallengeRepositoryDep
+from db.repos.evaluationRoundRepository import EvaluationRoundRepository, EvaluationRoundRepositoryDep
 
 from api.challenges.schemas import ChallengePublicDTO, ChallengeCreateDTO, ChallengeUpdateDTO
 
@@ -52,9 +53,10 @@ EvaluationRoundServiceDep = Annotated[EvaluationRoundService, Depends(get_evalua
 #           - při updatu zkontrolovat, že se nemění submissions_ended nebo challenge_finished z True na False
 
 class ChallengeService:
-    def __init__(self, db_session: AsyncSession, challenge_repository: ChallengeRepository, evaluation_round_service: EvaluationRoundService):
+    def __init__(self, db_session: AsyncSession, challenge_repository: ChallengeRepository, evaluation_round_repository: EvaluationRoundRepository, evaluation_round_service: EvaluationRoundService):
         self.db_session = db_session
         self.challenge_repository = challenge_repository
+        self.evaluation_round_repository = evaluation_round_repository
         self.evaluation_round_service = evaluation_round_service
 
 
@@ -101,10 +103,14 @@ class ChallengeService:
     
 
     async def delete_challenge(self, challenge_id: UUID):
-        challenge_db = await self.db_session.get(ChallengeModel, challenge_id)
+        challenge_db = await self.challenge_repository.get_challenge_by_id(challenge_id)
         if not challenge_db:
             raise mglyph_errors.NotFoundError("Challenge")
-        await self.db_session.delete(challenge_db) # TODO: add cascades
+        first_round = await self.evaluation_round_repository.get_first_round_in_challenge(challenge_id, load_options=EvaluationRoundRepository.LoadOptions(load_mglyph_evaluation_links=True))
+        if first_round:
+            if first_round.mglyph_evaluation_links:
+                raise mglyph_errors.BadRequestError("Cannot delete challenge with existing assigned malleable glyphs")
+        await self.db_session.delete(challenge_db)
         await self.db_session.commit()
     
 
@@ -125,7 +131,7 @@ class ChallengeService:
 
 
 
-def get_challenge_service(db_session: SessionDep, challenge_repository: ChallengeRepositoryDep, evaluation_round_service: EvaluationRoundServiceDep):
-    return ChallengeService(db_session, challenge_repository, evaluation_round_service)
+def get_challenge_service(db_session: SessionDep, challenge_repository: ChallengeRepositoryDep, evaluation_round_repository: EvaluationRoundRepositoryDep, evaluation_round_service: EvaluationRoundServiceDep):
+    return ChallengeService(db_session, challenge_repository, evaluation_round_repository, evaluation_round_service)
 
 ChallengeServiceDep = Annotated[ChallengeService, Depends(get_challenge_service)]
