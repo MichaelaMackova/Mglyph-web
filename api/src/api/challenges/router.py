@@ -5,14 +5,14 @@ from uuid import UUID
 from sqlmodel import select
 from db.database import SessionDep
 from pydantic import ValidationError
-from errors import NotFoundError
+from errors import NotFoundError, BadRequestError
 
 from api.auth.dependencies import CurrentAdminUserIdDep, CurrentUserIdDep
-from api.challenges.services import ChallengeService, EvaluationRoundService, ChallengeServiceDep, EvaluationRoundServiceDep
+from api.challenges.services import ChallengeServiceDep, EvaluationRoundServiceDep
 
 
 from db.models.challengeModel import ChallengeModel
-from api.challenges.schemas import ChallengePublicDTO, ChallengeCreateDTO
+from api.challenges.schemas import ChallengePublicDTO, ChallengePublicSimpleDTO, ChallengeCreateDTO
 from db.models.userModel import UserModel
 from db.models.evaluationRoundModel import EvaluationRoundModel
 
@@ -26,9 +26,9 @@ router = APIRouter(
 @router.post("", 
              status_code=status.HTTP_201_CREATED, 
              response_description="Challenge Created Successfully")
-def create_challenge(challenge: ChallengeCreateDTO, current_user_id: CurrentAdminUserIdDep, challenge_service: ChallengeServiceDep) -> ChallengePublicDTO:
+async def create_challenge(challenge: ChallengeCreateDTO, current_user_id: CurrentAdminUserIdDep, challenge_service: ChallengeServiceDep) -> ChallengePublicDTO:
     try:
-        new_challenge = challenge_service.create_challenge(challenge, UUID(current_user_id))
+        new_challenge = await challenge_service.create_challenge(challenge, UUID(current_user_id))
     except ValidationError as e:
         raise HTTPException(status_code=400, detail=str(e))
     return ChallengePublicDTO.from_model(new_challenge)
@@ -36,17 +36,23 @@ def create_challenge(challenge: ChallengeCreateDTO, current_user_id: CurrentAdmi
 
 
 @router.get("")
-def read_challenges():
-    pass
+async def read_challenges(
+    challenge_service: ChallengeServiceDep,
+    offset: int = 0,
+    limit: Annotated[int, Query(le=100)] = 100
+) -> list[ChallengePublicSimpleDTO]:
+    challenges = await challenge_service.get_paginated_challenges(offset=offset, limit=limit)
+    return [ChallengePublicSimpleDTO.from_model(challenge) for challenge in challenges]
+
 
 
 @router.get("/{challenge_id}",
             responses={
                 NotFoundError.http_code: NotFoundError.response_dict()
              })
-def read_challenge(challenge_id: UUID, challenge_service: ChallengeServiceDep) -> ChallengePublicDTO:
+async def read_challenge(challenge_id: UUID, challenge_service: ChallengeServiceDep) -> ChallengePublicDTO:
     try:
-        challenge = challenge_service.get_challenge_by_id(challenge_id)
+        challenge = await challenge_service.get_challenge_by_id(challenge_id)
     except NotFoundError as e:
         raise NotFoundError.HTTPException(e)
     
@@ -58,21 +64,35 @@ def update_challenge(challenge_id: UUID):
     pass
 
 
-@router.post("/{challenge_id}/add-solver")
-def add_self_as_solver(challenge_id: UUID, user_id: CurrentUserIdDep, session: SessionDep):
-    challenge_db = session.get(ChallengeModel, challenge_id)
-    if not challenge_db:
-        raise HTTPException(status_code=404, detail="Challenge not found")
-    current_user_db = session.get(UserModel, UUID(user_id))
-    if not current_user_db:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-    if current_user_db in challenge_db.solvers:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="User is already a solver of this challenge")
-    challenge_db.solvers.append(current_user_db)
-    session.add(challenge_db)
-    session.commit()
-    session.refresh(challenge_db)
+@router.post("/{challenge_id}/add-solver",
+                responses={
+                    NotFoundError.http_code: NotFoundError.response_dict(),
+                    BadRequestError.http_code: BadRequestError.response_dict()
+                }
+             )
+async def add_self_as_solver(challenge_id: UUID, user_id: CurrentUserIdDep, challenge_service: ChallengeServiceDep) -> ChallengePublicDTO:
+    try:
+        challenge_db = await challenge_service.add_solver_to_challenge(challenge_id, UUID(user_id))
+    except NotFoundError as e:
+        raise NotFoundError.HTTPException(e)
+    except BadRequestError as e:
+        raise BadRequestError.HTTPException(e)
     return ChallengePublicDTO.from_model(challenge_db)
+
+
+
+@router.delete("/{challenge_id}", 
+                status_code=status.HTTP_204_NO_CONTENT,
+                responses={
+                    status.HTTP_204_NO_CONTENT: {"description": "Challenge Deleted Successfully"},
+                    NotFoundError.http_code: NotFoundError.response_dict()
+                    }
+            )
+async def delete_challenge(challenge_id: UUID, current_user_id: CurrentAdminUserIdDep, challenge_service: ChallengeServiceDep):
+    try:
+        await challenge_service.delete_challenge(challenge_id)
+    except NotFoundError as e:
+        raise NotFoundError.HTTPException(e)
 
 
 #TODO: odstranit

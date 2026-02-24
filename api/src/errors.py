@@ -45,5 +45,12 @@ class NotFoundError(MGlyphApiError):
         super().__init__(f"{resource_info} not found.", http_code=self.http_code)
 
 
+class BadRequestError(MGlyphApiError):
+    """Raised when the client sends a bad request."""
 
+    http_code : int = status.HTTP_400_BAD_REQUEST
+    https_response_description : str = "Bad Request"
+
+    def __init__(self, message: str):
+        super().__init__(message, http_code=self.http_code)
 
