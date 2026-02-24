@@ -15,6 +15,8 @@ class ChallengeEvaluatorModel(SQLModel, table=True):
     )
     
     id: UUID = Field(primary_key=True, default_factory=uuid4)
+    # Possible values: "volunteer_pending", "volunteer_rejected", "confirmed", "invited_pending", "invited_rejected"
+    state: str = Field()
     
     challenge_id: UUID = Field(index=True, foreign_key="challenge.id")
     evaluator_id: UUID = Field(index=True, foreign_key="end_user.id")
