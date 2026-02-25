@@ -1,9 +1,18 @@
-from sqlmodel import Field, SQLModel, UniqueConstraint, Relationship
+from sqlmodel import Field, SQLModel, UniqueConstraint, Relationship, Enum
 from uuid import UUID, uuid4
+from enum import Enum as PyEnum
 
 import db.models.challengeModel as challengeModel
 import db.models.userModel as userModel
 import db.models.mglyphEvaluatorModel as mglyphEvaluatorModel
+
+
+class ChallengeEvaluatorState(str, PyEnum):
+    volunteer_pending = "volunteer_pending"
+    volunteer_rejected = "volunteer_rejected"
+    confirmed = "confirmed"
+    invited_pending = "invited_pending"
+    invited_rejected = "invited_rejected"
 
 
 # This is a link table for the many-to-many relationship between ChallengeModel and UserModel, specifically for the evaluators of a challenge
@@ -15,8 +24,7 @@ class ChallengeEvaluatorModel(SQLModel, table=True):
     )
     
     id: UUID = Field(primary_key=True, default_factory=uuid4)
-    # Possible values: "volunteer_pending", "volunteer_rejected", "confirmed", "invited_pending", "invited_rejected"
-    state: str = Field()
+    state: ChallengeEvaluatorState = Field(sa_type=Enum(ChallengeEvaluatorState))
     
     challenge_id: UUID = Field(index=True, foreign_key="challenge.id")
     evaluator_id: UUID = Field(index=True, foreign_key="end_user.id")

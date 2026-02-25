@@ -1,20 +1,31 @@
-from sqlmodel import Field, SQLModel, UniqueConstraint, Relationship, DateTime
+from sqlmodel import Field, SQLModel, UniqueConstraint, Relationship, DateTime, Enum
 from uuid import UUID, uuid4
 from datetime import datetime
 from utils import get_current_utc_time
 from typing import Optional
+from enum import Enum as PyEnum
 
 import db.models.userModel as userModel
+
+
+
+class MGlyphFlagType(str, PyEnum):
+    other = "other"
+
+
+class MGlyphFlagStatus(str, PyEnum):
+    open = "open"
+    closed = "closed"
 
 
 class MGlyphReportFlagModel(SQLModel, table=True):
     __tablename__ = "mglyph_report_flag"
 
     id: UUID = Field(primary_key=True, default_factory=uuid4)
-    flag_type: str = Field()
+    flag_type: MGlyphFlagType = Field(sa_type=Enum(MGlyphFlagType))
     comment: Optional[str] = Field(default=None)
     creation_time: datetime = Field(default_factory=get_current_utc_time, sa_type=DateTime(timezone=True))
-    status: str = Field(default="open") # Possible values: "open", "closed"
+    status: MGlyphFlagStatus = Field(default=MGlyphFlagStatus.open, sa_type=Enum(MGlyphFlagStatus))
     last_updated_time: datetime | None = Field(default=None, sa_type=DateTime(timezone=True))
     history: str = Field() # A string that keeps track of the history of the flag, e.g. when it was created, when it was closed, etc.
 

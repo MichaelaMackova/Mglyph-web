@@ -1,13 +1,21 @@
-from sqlmodel import Field, SQLModel, UniqueConstraint, Relationship, DateTime
+from sqlmodel import Field, SQLModel, UniqueConstraint, Relationship, DateTime, Enum
 from uuid import UUID, uuid4
 from datetime import datetime
 from utils import get_current_utc_time
+from enum import Enum as PyEnum
 
 import db.models.challengeEvaluatorModel as challengeEvaluatorModel
 import db.models.challengeModel as challengeModel
 import db.models.challengeSolverModel as challengeSolverModel
 import db.models.malleableGlyphModel as malleableGlyphModel
 import db.models.mglyphReportFlagModel as mglyphReportFlagModel
+
+
+
+class UserRole(str, PyEnum):
+    user = "user"
+    admin = "admin"
+
 
 class UserModel(SQLModel, table=True):
     __tablename__ = "end_user" # "user" is a reserved keyword, so we use "end_user" instead
@@ -20,7 +28,7 @@ class UserModel(SQLModel, table=True):
 
     id: UUID = Field(primary_key=True, default_factory=uuid4)
     username: str = Field(index=True, unique=True)
-    role: str = Field(default="user") # Possible values: "user", "admin"
+    role: UserRole = Field(default=UserRole.user, sa_type=Enum(UserRole))
     email: str = Field(index=True, unique=True)
     google_sub: str | None = Field(index=True, unique=True)
     creation_time: datetime = Field(default_factory=get_current_utc_time, sa_type=DateTime(timezone=True))

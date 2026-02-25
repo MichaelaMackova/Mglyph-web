@@ -5,6 +5,8 @@ from sqlalchemy import pool
 
 from alembic import context
 
+import alembic_postgresql_enum
+
 
 import sys
 import os

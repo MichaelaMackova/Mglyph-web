@@ -1,5 +1,4 @@
-from sqlmodel import Field, SQLModel, UniqueConstraint, Relationship
-from sqlalchemy.types import DateTime
+from sqlmodel import Field, SQLModel, UniqueConstraint, Relationship, DateTime
 from uuid import UUID, uuid4
 from datetime import datetime
 from utils import get_current_utc_time
