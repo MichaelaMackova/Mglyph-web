@@ -37,9 +37,10 @@ More description to come later...
 tags_metadata = [
     {"name": "default", "description": "Default root path"},
     {"name": "auth", "description": "Authentication routes"},
+    {"name": "challenges", "description": "Challenge-related routes"},
+    {"name": "users", "description": "User-related routes"},
     {"name": "heroes", "description": "Hero-related routes"},
     {"name": "count", "description": "Counting-related routes"},
-    {"name": "challenges", "description": "Challenge-related routes"},
 ]
 
 app = FastAPI(
@@ -72,10 +73,6 @@ app.add_middleware(
 def read_root():
     return {"Hello": "World"}
 
-@app.get("/items/{item_id}/")
-def read_item(item_id: int, q: Union[str, None] = None):
-    return {"item_id": item_id, "q": q}
-
 
 
 # ===== API ROUTERS =====
@@ -85,8 +82,10 @@ from api.heroes.router import router as heroes_router
 from api.count.router import router as count_router
 from api.auth.router import router as auth_router
 from api.challenges.router import router as challenges_router
+from api.users.router import router as users_router
 
 app.include_router(auth_router)
 app.include_router(count_router)
 app.include_router(heroes_router)
 app.include_router(challenges_router)
+app.include_router(users_router)

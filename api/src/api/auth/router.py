@@ -5,7 +5,8 @@ from google.oauth2 import id_token
 from google.auth.transport import requests
 from sqlmodel import select
 
-from api.auth.schemas import CredentialDTO, LoggedInUserDTO, UserPublicDTO
+from api.auth.schemas import CredentialDTO, LoggedInUserDTO, GoogleUserCreateDTO
+from api.users.schemas import UserPublicSimpleDTO
 from api.auth.utils import create_access_token, create_refresh_token
 from api.auth.dependencies import validate_refresh_token
 from db.models.userModel import UserModel
@@ -47,7 +48,7 @@ async def google_auth(credential: CredentialDTO, db: SessionDep) -> LoggedInUser
             db.add(db_user)
             await db.commit()
             await db.refresh(db_user)
-        user_info = UserPublicDTO.from_model(db_user)
+        user_info = UserPublicSimpleDTO.from_model(db_user)
         return LoggedInUserDTO(
             access_token=create_access_token(user_id=str(user_info.id)),
             refresh_token=create_refresh_token(user_id=str(user_info.id)),
@@ -55,6 +56,11 @@ async def google_auth(credential: CredentialDTO, db: SessionDep) -> LoggedInUser
         )
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
+    
+
+@router.post("/google/create-user/")
+async def google_auth_create_user(google_user: GoogleUserCreateDTO, db: SessionDep) -> UserPublicSimpleDTO:
+    pass
 
 
 @router.get("/refresh/")
@@ -62,7 +68,7 @@ async def refresh_token(user_id: Annotated[str, Depends(validate_refresh_token)]
     db_user = await db.get(UserModel, user_id)
     if not db_user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-    user_info = UserPublicDTO.from_model(db_user)
+    user_info = UserPublicSimpleDTO.from_model(db_user)
     return LoggedInUserDTO(
         access_token=create_access_token(user_id=str(user_info.id)),
         refresh_token=create_refresh_token(user_id=str(user_info.id)),

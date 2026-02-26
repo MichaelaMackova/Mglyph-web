@@ -3,7 +3,7 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from uuid import UUID
 from db.database import SessionDep
-from db.models.userModel import UserModel
+from db.models.userModel import UserModel, UserRole
 
 
 from api.auth.utils import JWT_ACCESS_SECRET_KEY, JWT_REFRESH_SECRET_KEY, validate_jwt_token
@@ -29,9 +29,9 @@ CurrentUserIdDep = Annotated[str, Depends(validate_access_token)]
 async def validate_user_is_admin(user_id: CurrentUserIdDep, session: SessionDep) -> str:
     db_user = await session.get(UserModel, user_id)
     if not db_user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-    if db_user.role != "admin":
-        raise HTTPException(status_code=403, detail="User does not have admin privileges")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Current user not found")
+    if db_user.role != UserRole.admin:
+        raise HTTPException(status_code=403, detail="Current user does not have admin privileges")
     return user_id
 
 

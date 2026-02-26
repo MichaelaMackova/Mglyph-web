@@ -54,3 +54,13 @@ class BadRequestError(MGlyphApiError):
     def __init__(self, message: str):
         super().__init__(message, http_code=self.http_code)
 
+
+
+class UnauthorizedError(MGlyphApiError):
+    """Raised when the client is unauthorized to access a resource."""
+
+    http_code : int = status.HTTP_401_UNAUTHORIZED
+    https_response_description : str = "Unauthorized"
+
+    def __init__(self, message: str = "Unauthorized access."):
+        super().__init__(message, http_code=self.http_code)
