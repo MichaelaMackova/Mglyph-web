@@ -8,6 +8,8 @@ from uuid import UUID
 
 from db.models.userModel import UserModel
 
+from api.users.schemas import UserCreateDTO
+
 
 
 class UserRepository:
@@ -53,6 +55,31 @@ class UserRepository:
         result = await self.db_session.execute(select_exec)
         user_db = result.scalar_one_or_none()
         return user_db
+    
+
+    async def get_user_by_email(self, email: str, load_options: LoadOptions = LoadOptions()) -> UserModel | None:
+        select_exec = select(UserModel).where(UserModel.email == email)
+        select_exec = load_options.add_options_to_statement(select_exec)
+        result = await self.db_session.execute(select_exec)
+        user_db = result.scalar_one_or_none()
+        return user_db
+    
+
+    async def get_user_by_google_sub(self, google_sub: str, load_options: LoadOptions = LoadOptions()) -> UserModel | None:
+        select_exec = select(UserModel).where(UserModel.google_sub == google_sub)
+        select_exec = load_options.add_options_to_statement(select_exec)
+        result = await self.db_session.execute(select_exec)
+        user_db = result.scalar_one_or_none()
+        return user_db
+    
+
+    async def get_user_by_username(self, username: str, load_options: LoadOptions = LoadOptions()) -> UserModel | None:
+        select_exec = select(UserModel).where(UserModel.username == username)
+        select_exec = load_options.add_options_to_statement(select_exec)
+        result = await self.db_session.execute(select_exec)
+        user_db = result.scalar_one_or_none()
+        return user_db
+
 
     async def get_paginated_users(self, offset: int = 0, limit: int = 100, load_options: LoadOptions = LoadOptions()) -> list[UserModel]:
         select_exec = select(UserModel).offset(offset).limit(limit)

@@ -73,6 +73,7 @@ class ChallengeService:
     
 
     async def create_challenge(self, challenge: ChallengeCreateDTO, current_user_id: UUID) -> ChallengeModel:
+        # TODO: check if challenge name already exists
         try:
             challenge_data = challenge.model_dump()
             challenge_data["creator_id"] = current_user_id
@@ -80,7 +81,7 @@ class ChallengeService:
             db_challenge = ChallengeModel.model_validate(challenge_data)
             db_challenge.id = None  # Ensure ID is None for new records
         except ValidationError as e:
-            pass # TODO: raise exception
+            raise mglyph_errors.BadRequestError(f"Invalid challenge data: {e}")
         self.db_session.add(db_challenge)
         await self.db_session.flush()
 

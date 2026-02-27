@@ -59,6 +59,20 @@ class UserService:
         return user_db
     
 
+    async def create_user(self, user_create: UserCreateDTO) -> UserModel:
+        # TODO: check if username or email already exists
+        try:
+            user_data = user_create.model_dump()
+            user_db = UserModel.model_validate(user_data)
+            user_db.id = None  # Ensure ID is None for new records
+        except ValidationError as e:
+            raise mglyph_errors.BadRequestError(f"Invalid user data: {e}")
+        self.db_session.add(user_db)
+        await self.db_session.commit()
+        user_db = await self.user_repository.get_user_by_id(user_db.id)
+        return user_db
+    
+
 
 
 def get_user_service(db_session: SessionDep, user_repository: UserRepositoryDep):

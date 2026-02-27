@@ -1,12 +1,15 @@
 from datetime import datetime, timedelta, timezone
-from pydantic import ValidationError
+from pydantic import BaseModel, ValidationError
 from jose import jwt
 from fastapi import HTTPException, status
 
-from api.auth.schemas import TokenPayload
 from settings import JWT_ACCESS_SECRET_KEY, JWT_REFRESH_SECRET_KEY, JWT_ACCESS_TOKEN_EXPIRE_MINUTES, JWT_REFRESH_TOKEN_EXPIRE_MINUTES
 
 ALGORITHM = "HS256" # TODO: .env?
+
+class TokenPayload(BaseModel):
+    exp: datetime
+    user_id: str
 
 
 def create_jwt_token(user_id: str, jwt_secret_key: str, expires_delta: timedelta) -> str:

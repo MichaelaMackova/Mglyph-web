@@ -4,9 +4,13 @@ from fastapi import HTTPException, status
 from google.oauth2 import id_token
 from google.auth.transport import requests
 from sqlmodel import select
+from uuid import UUID
 
+from api.auth.services import AuthServiceDep
+from api.users.services import UserServiceDep
+from db.repos.userRepository import UserRepositoryDep
 from api.auth.schemas import CredentialDTO, LoggedInUserDTO, GoogleUserCreateDTO
-from api.users.schemas import UserPublicSimpleDTO
+from api.users.schemas import UserPublicSimpleDTO, UserCreateDTO
 from api.auth.utils import create_access_token, create_refresh_token
 from api.auth.dependencies import validate_refresh_token
 from db.models.userModel import UserModel
@@ -20,57 +24,39 @@ router = APIRouter(
 )
 
 @router.post("/google/")
-async def google_auth(credential: CredentialDTO, db: SessionDep) -> LoggedInUserDTO:
+async def google_auth(credential: CredentialDTO, user_repo: UserRepositoryDep, auth_service: AuthServiceDep) -> LoggedInUserDTO:
     try:
-        # Exchange the authorization code for an ID token
-        token_request = requests.Request()
-        id_info = id_token.verify_oauth2_token(
-            credential.credential, token_request, GOOGLE_CLIENT_ID
-        )
-        # Check if the token is valid and the user is authenticated
-        if id_info['iss'] not in ['accounts.google.com', 'https://accounts.google.com']:
-            raise ValueError('Wrong issuer.')
-        # Here you can store the user information or generate a custom token
-        # create user if not exists
-        result = await db.execute(
-            select(UserModel)
-                .where(UserModel.google_sub == id_info['sub'])
-        )
-        db_user = result.scalar_one_or_none()
-        if not db_user:
-            #create new user
-            db_user = UserModel(
-                username=id_info['email'], #TODO: this is not ideal, we should ask the user for a username, but for now we can use the email as the username
-                email=id_info['email'],
-                google_sub=id_info['sub'],
-                count=0
-            )
-            db.add(db_user)
-            await db.commit()
-            await db.refresh(db_user)
-        user_info = UserPublicSimpleDTO.from_model(db_user)
-        return LoggedInUserDTO(
-            access_token=create_access_token(user_id=str(user_info.id)),
-            refresh_token=create_refresh_token(user_id=str(user_info.id)),
-            user_info=user_info
-        )
+        id_info = auth_service.get_google_user_info(credential)
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
+    db_user = await user_repo.get_user_by_google_sub(id_info['sub'])
+    if not db_user:
+        raise ValueError('User not found, please create an account first.') #TODO: different error
+    user_info = UserPublicSimpleDTO.from_model(db_user)
+    return LoggedInUserDTO.init_with_new_tokens(user_info)
     
 
 @router.post("/google/create-user/")
-async def google_auth_create_user(google_user: GoogleUserCreateDTO, db: SessionDep) -> UserPublicSimpleDTO:
-    pass
+async def google_auth_create_user(google_user: GoogleUserCreateDTO, auth_service: AuthServiceDep, user_service: UserServiceDep) -> LoggedInUserDTO:
+    try:
+        id_info = auth_service.get_google_user_info(google_user.credential)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
+    # Create new user
+    user_create = UserCreateDTO(
+        username=google_user.username,
+        email=id_info['email'],
+        google_sub=id_info['sub']
+    )
+    db_user = await user_service.create_user(user_create)
+    return LoggedInUserDTO.init_with_new_tokens(UserPublicSimpleDTO.from_model(db_user))
+
 
 
 @router.get("/refresh/")
-async def refresh_token(user_id: Annotated[str, Depends(validate_refresh_token)], db: SessionDep) -> LoggedInUserDTO:
-    db_user = await db.get(UserModel, user_id)
+async def refresh_token(user_id: Annotated[str, Depends(validate_refresh_token)], user_repo: UserRepositoryDep) -> LoggedInUserDTO:
+    db_user = await user_repo.get_user_by_id(UUID(user_id))
     if not db_user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
     user_info = UserPublicSimpleDTO.from_model(db_user)
-    return LoggedInUserDTO(
-        access_token=create_access_token(user_id=str(user_info.id)),
-        refresh_token=create_refresh_token(user_id=str(user_info.id)),
-        user_info=user_info
-    )
+    return LoggedInUserDTO.init_with_new_tokens(user_info)
