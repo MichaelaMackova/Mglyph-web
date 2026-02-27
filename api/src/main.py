@@ -8,6 +8,8 @@ import os
 # Add project root to sys.path (for absolute imports)
 sys.path.insert(0, os.path.realpath(os.path.dirname(__file__))) 
 
+from errors import MGlyphApiError, MGlyphApiError_exception_handler, MGlyphApiError_http_exception_handler
+
 from db.database import create_db_and_tables
 from settings import CORS_ORIGINS, DEBUG_MODE, API_ROOT_PATH, AUTO_CREATE_TABLES
 
@@ -65,6 +67,13 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+
+# ===== Custom exception handling =====
+app.add_exception_handler(MGlyphApiError, MGlyphApiError_exception_handler)
+app.add_exception_handler(MGlyphApiError.HTTPException, MGlyphApiError_http_exception_handler)
+
 
 
 # ===== Default paths =====

@@ -2,6 +2,7 @@ from fastapi import status, HTTPException
 from pydantic.dataclasses import dataclass
 from enum import IntEnum
 from typing import Dict
+from fastapi.responses import JSONResponse
 
 
 class ErrorCode(IntEnum):
@@ -52,7 +53,9 @@ class MGlyphApiError(Exception):
         super().__init__(message)
 
     class HTTPException(HTTPException):
-        """Custom HTTPException that includes the MGlyphApiError details."""
+        """ Custom HTTPException that includes the MGlyphApiError details with custom response format.
+        
+        Note: If not using 'headers' parameter, acts the same as raising the MGlyphApiError directly."""
         def __init__(self, error: 'MGlyphApiError', headers: Dict[str, str] | None = None):
             super().__init__(
                 status_code=error.http_code, 
@@ -68,6 +71,15 @@ class MGlyphApiError(Exception):
             "model": cls.ErrorResponseModel
         }
 
+
+
+async def MGlyphApiError_exception_handler(request, exc : MGlyphApiError):
+    content = exc.ErrorResponseModel(err_code=exc.err_code, detail=str(exc)).__dict__
+    return JSONResponse(content, status_code=exc.http_code)
+
+async def MGlyphApiError_http_exception_handler(request, exc : MGlyphApiError.HTTPException):
+    content = exc.detail
+    return JSONResponse(content, status_code=exc.status_code, headers=exc.headers)
 
 
 
