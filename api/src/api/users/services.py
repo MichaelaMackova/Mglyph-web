@@ -60,13 +60,25 @@ class UserService:
     
 
     async def create_user(self, user_create: UserCreateDTO) -> UserModel:
-        # TODO: check if username or email already exists
         try:
             user_data = user_create.model_dump()
             user_db = UserModel.model_validate(user_data)
             user_db.id = None  # Ensure ID is None for new records
         except ValidationError as e:
             raise mglyph_errors.BadRequestError(f"Invalid user data: {e}")
+        # check if email already exists
+        existing_user = await self.user_repository.get_user_by_email(user_db.email)
+        if existing_user:
+            raise mglyph_errors.BadRequestError("User with this email already exists", mglyph_errors.ErrorCode.BAD_REQUEST_CREATE_USER_EMAIL_TAKEN)
+        # check if google sub already exists
+        if user_db.google_sub:
+            existing_user = await self.user_repository.get_user_by_google_sub(user_db.google_sub)
+            if existing_user:
+                raise mglyph_errors.BadRequestError("User with this Google sub already exists", mglyph_errors.ErrorCode.BAD_REQUEST_CREATE_USER_GOOGLE_SUB_TAKEN)
+        # check if username already exists
+        existing_user = await self.user_repository.get_user_by_username(user_db.username)
+        if existing_user:
+            raise mglyph_errors.BadRequestError("User with this username already exists", mglyph_errors.ErrorCode.BAD_REQUEST_CREATE_USER_USERNAME_TAKEN)
         self.db_session.add(user_db)
         await self.db_session.commit()
         user_db = await self.user_repository.get_user_by_id(user_db.id)
