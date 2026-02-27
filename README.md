@@ -68,5 +68,9 @@ Useful alembic commands:
     ```sh
     alembic stamp <REVISION_ID>
     ```
+- Generate SQL for specific migration
+    ```sh
+    alembic upgrade <previous>:<current> --sql
+    ```
 
 
