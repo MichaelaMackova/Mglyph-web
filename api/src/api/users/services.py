@@ -31,15 +31,15 @@ class UserService:
     async def get_user_by_id(self, user_id: UUID) -> UserModel:
         user_db = await self.user_repository.get_user_by_id(user_id, load_options=UserRepository.LoadOptions(True, True, True, True, True, True))
         if not user_db:
-            raise mglyph_errors.NotFoundError("User")
+            raise mglyph_errors.NotFoundError("User", mglyph_errors.ErrorCode.NOT_FOUND_ID)
         return user_db
     
     async def give_admin_role(self, user_id: UUID) -> UserModel:
         user_db = await self.user_repository.get_user_by_id(user_id)
         if not user_db:
-            raise mglyph_errors.NotFoundError("User")
+            raise mglyph_errors.NotFoundError("User", mglyph_errors.ErrorCode.NOT_FOUND_ID)
         if user_db.role == UserRole.admin:
-            raise mglyph_errors.BadRequestError("User already has admin role")
+            raise mglyph_errors.BadRequestError("User already has admin role", mglyph_errors.ErrorCode.BAD_REQUEST_ALREADY_DONE)
         user_db.role = UserRole.admin
         self.db_session.add(user_db)
         await self.db_session.commit()
@@ -49,9 +49,9 @@ class UserService:
     async def revoke_admin_role(self, user_id: UUID) -> UserModel:
         user_db = await self.user_repository.get_user_by_id(user_id)
         if not user_db:
-            raise mglyph_errors.NotFoundError("User")
+            raise mglyph_errors.NotFoundError("User", mglyph_errors.ErrorCode.NOT_FOUND_ID)
         if user_db.role != UserRole.admin:
-            raise mglyph_errors.BadRequestError("User already does not have admin role")
+            raise mglyph_errors.BadRequestError("User already does not have admin role", mglyph_errors.ErrorCode.BAD_REQUEST_ALREADY_DONE)
         user_db.role = UserRole.user
         self.db_session.add(user_db)
         await self.db_session.commit()

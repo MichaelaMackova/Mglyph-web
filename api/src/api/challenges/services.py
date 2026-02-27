@@ -63,7 +63,7 @@ class ChallengeService:
     async def get_challenge_by_id(self, challenge_id: UUID) -> ChallengeModel:
         db_challenge = await self.challenge_repository.get_challenge_by_id(challenge_id, load_options=ChallengeRepository.LoadOptions(load_creator=True, load_solvers=True, load_challenge_evaluator_links=True, load_evaluation_rounds=True))
         if not db_challenge:
-            raise mglyph_errors.NotFoundError("Challenge")
+            raise mglyph_errors.NotFoundError("Challenge", mglyph_errors.ErrorCode.NOT_FOUND_ID)
         return db_challenge
 
 
@@ -94,7 +94,7 @@ class ChallengeService:
     async def update_challenge(self, challenge_id: UUID, challenge_update: ChallengeUpdateDTO) -> ChallengeModel:
         challenge_db = await self.challenge_repository.get_challenge_by_id(challenge_id)
         if not challenge_db:
-            raise mglyph_errors.NotFoundError("Challenge")
+            raise mglyph_errors.NotFoundError("Challenge", mglyph_errors.ErrorCode.NOT_FOUND_ID)
         challenge_data = challenge_update.model_dump(exclude_unset=True)
         challenge_db.sqlmodel_update(challenge_data)
         self.db_session.add(challenge_db)
@@ -106,11 +106,11 @@ class ChallengeService:
     async def delete_challenge(self, challenge_id: UUID):
         challenge_db = await self.challenge_repository.get_challenge_by_id(challenge_id)
         if not challenge_db:
-            raise mglyph_errors.NotFoundError("Challenge")
+            raise mglyph_errors.NotFoundError("Challenge", mglyph_errors.ErrorCode.NOT_FOUND_ID)
         first_round = await self.evaluation_round_repository.get_first_round_in_challenge(challenge_id, load_options=EvaluationRoundRepository.LoadOptions(load_mglyph_evaluation_links=True))
         if first_round:
             if first_round.mglyph_evaluation_links:
-                raise mglyph_errors.BadRequestError("Cannot delete challenge with existing assigned malleable glyphs")
+                raise mglyph_errors.BadRequestError("Cannot delete challenge with existing assigned malleable glyphs", mglyph_errors.ErrorCode.BAD_REQUEST_DELETE_CONFLICT)
         await self.db_session.delete(challenge_db)
         await self.db_session.commit()
     
@@ -118,12 +118,12 @@ class ChallengeService:
     async def add_solver_to_challenge(self, challenge_id: UUID, solver_id: UUID) -> ChallengeModel:
         challenge_db = await self.challenge_repository.get_challenge_by_id(challenge_id, load_options=ChallengeRepository.LoadOptions(load_solvers=True))
         if not challenge_db:
-            raise mglyph_errors.NotFoundError("Challenge")
+            raise mglyph_errors.NotFoundError("Challenge", mglyph_errors.ErrorCode.NOT_FOUND_ID)
         user_db = await self.db_session.get(UserModel, solver_id)
         if not user_db:
-            raise mglyph_errors.NotFoundError("User")
+            raise mglyph_errors.NotFoundError("User", mglyph_errors.ErrorCode.NOT_FOUND_ID)
         if user_db in challenge_db.solvers:
-            raise mglyph_errors.BadRequestError("User is already a solver of this challenge")
+            raise mglyph_errors.BadRequestError("User is already a solver of this challenge", mglyph_errors.ErrorCode.BAD_REQUEST_ALREADY_DONE)
         challenge_db.solvers.append(user_db)
         self.db_session.add(challenge_db)
         await self.db_session.commit()

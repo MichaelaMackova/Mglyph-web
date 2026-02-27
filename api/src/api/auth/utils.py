@@ -2,6 +2,7 @@ from datetime import datetime, timedelta, timezone
 from pydantic import BaseModel, ValidationError
 from jose import jwt
 from fastapi import HTTPException, status
+import errors as mglyph_errors
 
 from settings import JWT_ACCESS_SECRET_KEY, JWT_REFRESH_SECRET_KEY, JWT_ACCESS_TOKEN_EXPIRE_MINUTES, JWT_REFRESH_TOKEN_EXPIRE_MINUTES
 
@@ -35,23 +36,10 @@ def validate_jwt_token(token: str, secret_key: str) -> str:
         payload = jwt.decode(token, secret_key, algorithms=[ALGORITHM], options={"verify_exp": False})
         token_data = TokenPayload(**payload)
 
-        # TODO: co je hezčí?
         if token_data.exp < datetime.now(timezone.utc):
-            raise HTTPException(
-                status_code = status.HTTP_401_UNAUTHORIZED,
-                detail="Token expired",
-                headers={"WWW-Authenticate": "Bearer"},
-            )
-    # except (jwt.ExpiredSignatureError):
-    #     raise HTTPException(
-    #         status_code=status.HTTP_401_UNAUTHORIZED,
-    #         detail="Token expired",
-    #         headers={"WWW-Authenticate": "Bearer"},
-    #     )
+            err = mglyph_errors.UnauthorizedError("Token expired", mglyph_errors.ErrorCode.UNAUTHORIZED_EXPIRED_TOKEN)
+            raise mglyph_errors.UnauthorizedError.HTTPException(err, headers={"WWW-Authenticate": "Bearer"})
     except (jwt.JWTError, ValidationError):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Could not validate credentials",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+        err = mglyph_errors.UnauthorizedError("Could not validate credentials", mglyph_errors.ErrorCode.UNAUTHORIZED_INVALID_TOKEN)
+        raise mglyph_errors.UnauthorizedError.HTTPException(err, headers={"WWW-Authenticate": "Bearer"})
     return token_data.user_id

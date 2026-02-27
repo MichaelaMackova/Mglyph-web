@@ -5,7 +5,7 @@ from uuid import UUID
 from sqlmodel import select
 from db.database import SessionDep
 from pydantic import ValidationError
-from errors import NotFoundError, BadRequestError
+from errors import NotFoundError, BadRequestError, ErrorCode
 
 from api.auth.dependencies import CurrentAdminUserIdDep, CurrentUserIdDep
 from api.challenges.services import ChallengeServiceDep, EvaluationRoundServiceDep
@@ -29,8 +29,8 @@ router = APIRouter(
 async def create_challenge(challenge: ChallengeCreateDTO, current_user_id: CurrentAdminUserIdDep, challenge_service: ChallengeServiceDep) -> ChallengePublicDTO:
     try:
         new_challenge = await challenge_service.create_challenge(challenge, UUID(current_user_id))
-    except ValidationError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    except BadRequestError as e:
+        raise BadRequestError.HTTPException(e)
     return ChallengePublicDTO.from_model(new_challenge)
     
 
@@ -102,7 +102,8 @@ async def delete_challenge(challenge_id: UUID, current_user_id: CurrentAdminUser
 def get_test_rounds(challenge_id: UUID, session: SessionDep):
     challenge_db = session.get(ChallengeModel, challenge_id)
     if not challenge_db:
-        raise HTTPException(status_code=404, detail="Challenge not found")
+        err = NotFoundError("Challenge", ErrorCode.NOT_FOUND_ID)
+        raise NotFoundError.HTTPException(err)
     
     print("Challenge rounds:", challenge_db.evaluation_rounds)
 

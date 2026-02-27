@@ -35,7 +35,7 @@ class AuthService:
         )
         # Check if the token is valid and the user is authenticated
         if id_info['iss'] not in ['accounts.google.com', 'https://accounts.google.com']:
-            raise ValueError('Wrong issuer.')
+            raise mglyph_errors.UnauthorizedError("Invalid token issuer", mglyph_errors.ErrorCode.UNAUTHORIZED_INVALID_TOKEN)
         return id_info
 
 

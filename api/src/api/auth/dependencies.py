@@ -2,6 +2,7 @@ from typing import Annotated
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from uuid import UUID
+import errors as mglyph_errors
 from db.database import SessionDep
 from db.models.userModel import UserModel, UserRole
 
@@ -9,11 +10,14 @@ from db.models.userModel import UserModel, UserRole
 from api.auth.utils import JWT_ACCESS_SECRET_KEY, JWT_REFRESH_SECRET_KEY, validate_jwt_token
 
 
-bearer_scheme = HTTPBearer()
+bearer_scheme = HTTPBearer(auto_error=False)
 
 def get_jwt_token(
-    credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme)
+    credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme)
 ) -> str:
+    if credentials is None or credentials.scheme.lower() != "bearer":
+        err = mglyph_errors.UnauthorizedError("Missing authorization token or invalid scheme", mglyph_errors.ErrorCode.UNAUTHORIZED_MISSING_TOKEN)
+        raise mglyph_errors.UnauthorizedError.HTTPException(err, headers={"WWW-Authenticate": "Bearer"})
     return credentials.credentials
 
 def validate_access_token(token: str = Depends(get_jwt_token)) -> str:
@@ -29,9 +33,11 @@ CurrentUserIdDep = Annotated[str, Depends(validate_access_token)]
 async def validate_user_is_admin(user_id: CurrentUserIdDep, session: SessionDep) -> str:
     db_user = await session.get(UserModel, user_id)
     if not db_user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Current user not found")
+        err = mglyph_errors.NotFoundError("Logged in user", mglyph_errors.ErrorCode.NOT_FOUND_LOGGED_IN_USER)
+        raise mglyph_errors.NotFoundError.HTTPException(err)
     if db_user.role != UserRole.admin:
-        raise HTTPException(status_code=403, detail="Current user does not have admin privileges")
+        err = mglyph_errors.ForbiddenError("Admin privileges required", mglyph_errors.ErrorCode.FORBIDDEN_NOT_ADMIN)
+        raise mglyph_errors.ForbiddenError.HTTPException(err)
     return user_id
 
 
