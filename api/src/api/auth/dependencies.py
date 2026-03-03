@@ -33,8 +33,8 @@ CurrentUserIdDep = Annotated[str, Depends(validate_access_token)]
 async def validate_user_is_admin(user_id: CurrentUserIdDep, session: SessionDep) -> str:
     db_user = await session.get(UserModel, user_id)
     if not db_user:
-        err = mglyph_errors.NotFoundError("Logged in user", mglyph_errors.ErrorCode.NOT_FOUND_LOGGED_IN_USER)
-        raise mglyph_errors.NotFoundError.HTTPException(err)
+        err = mglyph_errors.UnauthorizedError("Logged in user", mglyph_errors.ErrorCode.UNAUTHORIZED_USER_NOT_FOUND)
+        raise mglyph_errors.UnauthorizedError.HTTPException(err)
     if db_user.role != UserRole.admin:
         err = mglyph_errors.ForbiddenError("Admin privileges required", mglyph_errors.ErrorCode.FORBIDDEN_NOT_ADMIN)
         raise mglyph_errors.ForbiddenError.HTTPException(err)

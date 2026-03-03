@@ -10,9 +10,8 @@ class ErrorCode(IntEnum):
     GENERIC_ERROR = 1000 # Default generic error code for unspecified errors
     # NOT FOUND errors (100-199)
     NOT_FOUND_BASE = 100 # Base code for not found errors
-    NOT_FOUND_LOGGED_IN_USER = 101 # Specific code for not found error related to logged-in user
-    NOT_FOUND_ID = 102 # Specific code for not found error related to a specific ID (e.g., user ID, challenge ID)
-    NOT_FOUND_SEARCH_RESULT = 103 # Specific code for not found error related to search results
+    NOT_FOUND_ID = 101 # Specific code for not found error related to a specific ID (e.g., user ID, challenge ID)
+    NOT_FOUND_SEARCH_RESULT = 102 # Specific code for not found error related to search results
     # BAD REQUEST errors (200-399)
     BAD_REQUEST_BASE = 200 # Base code for bad request errors
     BAD_REQUEST_CREATE_USER_USERNAME_TAKEN = 201 # Specific code for bad request error when trying to create a user with a username that is already taken
@@ -27,6 +26,7 @@ class ErrorCode(IntEnum):
     UNAUTHORIZED_INVALID_TOKEN = 401 # Specific code for unauthorized access due to invalid token
     UNAUTHORIZED_EXPIRED_TOKEN = 402 # Specific code for unauthorized access due to expired token
     UNAUTHORIZED_MISSING_TOKEN = 403 # Specific code for unauthorized access due to missing token
+    UNAUTHORIZED_USER_NOT_FOUND = 404 # Specific code for unauthorized access due to user not found (e.g., when validating a refresh token and the user ID in the token does not correspond to an existing user)
     # FORBIDDEN errors (500-599)
     FORBIDDEN_BASE = 500 # Base code for forbidden errors
     FORBIDDEN_NOT_ADMIN = 501 # Specific code for forbidden access due to lack of admin privileges

@@ -24,8 +24,8 @@ async def google_auth(credential: CredentialDTO, user_repo: UserRepositoryDep, a
         raise mglyph_errors.UnauthorizedError.HTTPException(e)
     db_user = await user_repo.get_user_by_google_sub(id_info['sub'])
     if not db_user:
-        err = mglyph_errors.NotFoundError("Google user", mglyph_errors.ErrorCode.NOT_FOUND_LOGGED_IN_USER)
-        raise mglyph_errors.NotFoundError.HTTPException(err)
+        err = mglyph_errors.UnauthorizedError("Google user does not have an account.", mglyph_errors.ErrorCode.UNAUTHORIZED_USER_NOT_FOUND)
+        raise mglyph_errors.UnauthorizedError.HTTPException(err)
     user_info = UserPublicSimpleDTO.from_model(db_user)
     return LoggedInUserDTO.init_with_new_tokens(user_info)
     
@@ -51,7 +51,7 @@ async def google_auth_create_user(google_user: GoogleUserCreateDTO, auth_service
 async def refresh_token(user_id: Annotated[str, Depends(validate_refresh_token)], user_repo: UserRepositoryDep) -> LoggedInUserDTO:
     db_user = await user_repo.get_user_by_id(UUID(user_id))
     if not db_user:
-        err = mglyph_errors.NotFoundError("Logged in user", mglyph_errors.ErrorCode.NOT_FOUND_LOGGED_IN_USER)
-        raise mglyph_errors.NotFoundError.HTTPException(err)
+        err = mglyph_errors.UnauthorizedError("Logged in user not found.", mglyph_errors.ErrorCode.UNAUTHORIZED_USER_NOT_FOUND)
+        raise mglyph_errors.UnauthorizedError.HTTPException(err)
     user_info = UserPublicSimpleDTO.from_model(db_user)
     return LoggedInUserDTO.init_with_new_tokens(user_info)
