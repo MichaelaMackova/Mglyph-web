@@ -3,8 +3,40 @@ import { mglyphClient } from '@/clients/mglyph_client'
 import { jwtDecode, type JwtPayload } from 'jwt-decode'
 import { ref } from 'vue'
 
+class LoggedUser {
+  id: number
+  username: string
+  email: string
+  role: string
+  creation_time: Date
+
+  constructor(
+    id: number,
+    username: string,
+    email: string,
+    role: string = 'user',
+    creation_time: Date,
+  ) {
+    this.id = id
+    this.username = username
+    this.email = email
+    this.role = role
+    this.creation_time = creation_time
+  }
+
+  public static fromUserInfo(userInfo: any) {
+    return new LoggedUser(
+      userInfo.id,
+      userInfo.username,
+      userInfo.email,
+      userInfo.role || 'user',
+      new Date(userInfo.creation_time),
+    )
+  }
+}
+
 const useAuthStore = defineStore('auth', () => {
-  const user = ref(null)
+  const user = ref<null | LoggedUser>(null)
   const accessToken = ref<string | null>(null)
   const refreshToken = ref<string | null>(null)
 
@@ -12,12 +44,26 @@ const useAuthStore = defineStore('auth', () => {
     return mglyphClient
       .post('/auth/google/', { credential: googleToken }, { authorizeEndpoint: false })
       .then((res) => {
-        // console.log('Successfully logged in', res.data)
         accessToken.value = res.data.access_token
         refreshToken.value = res.data.refresh_token
+        user.value = LoggedUser.fromUserInfo(res.data.user_info)
       })
-      .catch((err) => {
-        console.error('Error logging in', err)
+  }
+
+  function createGoogleAccount(googleToken: string, username: string) {
+    return mglyphClient
+      .post(
+        '/auth/google/create-user/',
+        {
+          username: username,
+          credential: { credential: googleToken },
+        },
+        { authorizeEndpoint: false },
+      )
+      .then((res) => {
+        accessToken.value = res.data.access_token
+        refreshToken.value = res.data.refresh_token
+        user.value = LoggedUser.fromUserInfo(res.data.user_info)
       })
   }
 
@@ -83,54 +129,11 @@ const useAuthStore = defineStore('auth', () => {
     accessToken,
     refreshToken,
     googleLogin,
+    createGoogleAccount,
     doTokenRefresh,
     isTokenValid,
     logout,
   }
 })
-
-// {
-//   state: () => ({
-//     user: null,
-//     refreshTokenTimeout: null,
-//   }),
-//   actions: {
-//     async login(username, password) {
-//       this.user = await fetchWrapper.post(
-//         `${baseUrl}/authenticate`,
-//         { username, password },
-//         { credentials: 'include' },
-//       )
-//       this.startRefreshTokenTimer()
-//     },
-//     logout() {
-//       fetchWrapper.post(`${baseUrl}/revoke-token`, {}, { credentials: 'include' })
-//       this.stopRefreshTokenTimer()
-//       this.user = null
-//       router.push('/login')
-//     },
-//     async refreshToken() {
-//       this.user = await fetchWrapper.post(
-//         `${baseUrl}/refresh-token`,
-//         {},
-//         { credentials: 'include' },
-//       )
-//       this.startRefreshTokenTimer()
-//     },
-//     startRefreshTokenTimer() {
-//       // parse json object from base64 encoded jwt token
-//       const jwtBase64 = this.user.jwtToken.split('.')[1]
-//       const jwtToken = JSON.parse(atob(jwtBase64))
-
-//       // set a timeout to refresh the token a minute before it expires
-//       const expires = new Date(jwtToken.exp * 1000)
-//       const timeout = expires.getTime() - Date.now() - 60 * 1000
-//       this.refreshTokenTimeout = setTimeout(this.refreshToken, timeout)
-//     },
-//     stopRefreshTokenTimer() {
-//       clearTimeout(this.refreshTokenTimeout)
-//     },
-//   },
-// })
 
 export { useAuthStore }
