@@ -18,6 +18,7 @@ const pinia = createPinia()
 app.use(pinia)
 
 const authStore = useAuthStore()
+authStore.initializeStoreFromLocalStorage()
 
 // Google Auth
 import vue3GoogleLogin from 'vue3-google-login'

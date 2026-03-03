@@ -40,6 +40,47 @@ const useAuthStore = defineStore('auth', () => {
   const accessToken = ref<string | null>(null)
   const refreshToken = ref<string | null>(null)
 
+  function initializeStoreFromLocalStorage() {
+    const storedAccessToken = localStorage.getItem('accessToken')
+    const storedRefreshToken = localStorage.getItem('refreshToken')
+    const storedUserInfo = localStorage.getItem('userInfo')
+
+    if (storedAccessToken) {
+      accessToken.value = storedAccessToken
+    }
+    if (storedRefreshToken) {
+      refreshToken.value = storedRefreshToken
+    }
+    if (storedUserInfo) {
+      try {
+        user.value = LoggedUser.fromUserInfo(JSON.parse(storedUserInfo))
+      } catch (e) {
+        console.error('Error parsing userInfo from localStorage:', e)
+        localStorage.removeItem('userInfo')
+      }
+    }
+  }
+
+  function saveStoreToLocalStorage() {
+    if (accessToken.value) {
+      localStorage.setItem('accessToken', accessToken.value)
+    } else {
+      localStorage.removeItem('accessToken')
+    }
+
+    if (refreshToken.value) {
+      localStorage.setItem('refreshToken', refreshToken.value)
+    } else {
+      localStorage.removeItem('refreshToken')
+    }
+
+    if (user.value) {
+      localStorage.setItem('userInfo', JSON.stringify(user.value))
+    } else {
+      localStorage.removeItem('userInfo')
+    }
+  }
+
   function googleLogin(googleToken: string) {
     return mglyphClient
       .post('/auth/google/', { credential: googleToken }, { authorizeEndpoint: false })
@@ -47,6 +88,7 @@ const useAuthStore = defineStore('auth', () => {
         accessToken.value = res.data.access_token
         refreshToken.value = res.data.refresh_token
         user.value = LoggedUser.fromUserInfo(res.data.user_info)
+        saveStoreToLocalStorage()
       })
   }
 
@@ -64,6 +106,7 @@ const useAuthStore = defineStore('auth', () => {
         accessToken.value = res.data.access_token
         refreshToken.value = res.data.refresh_token
         user.value = LoggedUser.fromUserInfo(res.data.user_info)
+        saveStoreToLocalStorage()
       })
   }
 
@@ -94,6 +137,7 @@ const useAuthStore = defineStore('auth', () => {
     accessToken.value = null
     refreshToken.value = null
     user.value = null
+    saveStoreToLocalStorage()
   }
 
   async function isTokenValid(
@@ -133,6 +177,7 @@ const useAuthStore = defineStore('auth', () => {
     doTokenRefresh,
     isTokenValid,
     logout,
+    initializeStoreFromLocalStorage,
   }
 })
 

@@ -52,6 +52,7 @@
   <div id="login-create-user-container" v-if="loginCreateUserVisible">
     <div id="login-create-user-prompt" ref="loginCreateUserPromptRef">
       <h2>Create Account</h2>
+      <p>It seems like you don't have an account yet. Please enter a username to create your account.</p>
       <input v-model="username" type="text" placeholder="Username" />
       <button @click="createGoogleAccount">Create Account</button>
     </div>
@@ -362,10 +363,12 @@ ul.nav {
 #login-prompt,
 #login-create-user-prompt {
   padding: 35px;
+  max-width: 50%;
 
   display: flex;
   flex-direction: column;
   align-items: center;
+  text-align: center;
 
   background-color: var(--md-sys-color-surface, #fff8f4);
   border-radius: 4px;
