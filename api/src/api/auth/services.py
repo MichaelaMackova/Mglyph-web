@@ -31,7 +31,7 @@ class AuthService:
         # Exchange the authorization code for an ID token
         token_request = requests.Request()
         id_info = id_token.verify_oauth2_token(
-            credential.credential, token_request, GOOGLE_CLIENT_ID
+            credential.credential, token_request, GOOGLE_CLIENT_ID, clock_skew_in_seconds=10
         )
         # Check if the token is valid and the user is authenticated
         if id_info['iss'] not in ['accounts.google.com', 'https://accounts.google.com']:
