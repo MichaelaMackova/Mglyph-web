@@ -28,7 +28,7 @@ import { ref } from 'vue'
 import type { CallbackTypes } from 'vue3-google-login'
 import { authStore } from '@/main'
 import { mglyphClient } from '@/clients/mglyph_client'
-import { ApiErrorCode } from '@/services/errors'
+import { ApiResponseCode } from '@/services/errors'
 
 const isUserLoggedIn = ref<boolean>(false)
 const createAccount = ref<boolean>(false)
@@ -112,7 +112,7 @@ function addClick() {
       errorOccurred.value = false
     })
     .catch((err) => {
-      if (err.response?.status === 401 || err.code === ApiErrorCode.TokenExpired) {
+      if (err.response?.status === 401 || err.code === ApiResponseCode.TokenExpired) {
         // Unauthorized, log out
         logout()
       } else {

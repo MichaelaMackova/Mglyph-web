@@ -1,4 +1,4 @@
-enum ApiErrorCode {
+enum ApiResponseCode {
   Unauthorized = 401,
   Forbidden = 403,
   NotFound = 404,
@@ -7,13 +7,13 @@ enum ApiErrorCode {
 }
 
 class ApiError extends Error {
-  public code: ApiErrorCode
+  public code: ApiResponseCode
 
-  constructor(code: ApiErrorCode, message?: string) {
+  constructor(code: ApiResponseCode, message?: string) {
     super(message)
     this.name = 'ApiError'
     this.code = code
   }
 }
 
-export { ApiError, ApiErrorCode }
+export { ApiError, ApiResponseCode }

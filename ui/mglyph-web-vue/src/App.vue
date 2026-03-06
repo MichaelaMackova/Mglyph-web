@@ -31,6 +31,6 @@ a:visited {
 }
 
 .main-padding {
-  padding: 0 20px;
+  padding: 0 30px;
 }
 </style>

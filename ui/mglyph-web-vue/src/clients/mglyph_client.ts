@@ -1,7 +1,7 @@
 import axios from 'axios'
 import { env } from '@/services/env'
 import { authStore } from '@/main'
-import { ApiError, ApiErrorCode } from '@/services/errors'
+import { ApiError, ApiResponseCode } from '@/services/errors'
 
 declare module 'axios' {
   export interface AxiosRequestConfig {
@@ -31,7 +31,7 @@ mglyphClient.interceptors.request.use(
         }
       } else {
         return Promise.reject(
-          new ApiError(ApiErrorCode.TokenExpired, 'Access token is invalid or expired'),
+          new ApiError(ApiResponseCode.TokenExpired, 'Access token is invalid or expired'),
         )
       }
     }
