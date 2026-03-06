@@ -5,20 +5,25 @@ from sqlalchemy.ext.asyncio.session import AsyncSession
 from sqlmodel import select
 from sqlalchemy.orm import selectinload, joinedload
 from uuid import UUID
+from db.repos.interface import RepositoryInterface
 
 from db.models.evaluationRoundModel import EvaluationRoundModel
 
 
-class EvaluationRoundRepository:
+class EvaluationRoundRepository(RepositoryInterface):
     def __init__(self, db_session: AsyncSession):
         self.db_session = db_session
 
-    class LoadOptions:
+    class LoadOptions(RepositoryInterface.LoadOptionsInterface):
         def __init__(self, load_challenge: bool = False, load_next_round: bool = False, load_previous_round: bool = False, load_mglyph_evaluation_links: bool = False):
             self.load_challenge = load_challenge
             self.load_next_round = load_next_round
             self.load_previous_round = load_previous_round
             self.load_mglyph_evaluation_links = load_mglyph_evaluation_links
+
+        @staticmethod
+        def all_options() -> "EvaluationRoundRepository.LoadOptions":
+            return EvaluationRoundRepository.LoadOptions(load_challenge=True, load_next_round=True, load_previous_round=True, load_mglyph_evaluation_links=True)
 
         def add_options_to_statement(self, statement):
             if self.load_challenge:

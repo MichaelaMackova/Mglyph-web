@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio.session import AsyncSession
 from sqlmodel import select
 from sqlalchemy.orm import selectinload, joinedload
 from uuid import UUID
+from db.repos.interface import RepositoryInterface
 
 from db.models.userModel import UserModel
 
@@ -12,11 +13,11 @@ from api.users.schemas import UserCreateDTO
 
 
 
-class UserRepository:
+class UserRepository(RepositoryInterface):
     def __init__(self, db_session: AsyncSession):
         self.db_session = db_session
 
-    class LoadOptions:
+    class LoadOptions(RepositoryInterface.LoadOptionsInterface):
         def __init__(
                 self, 
                 load_solver_challenges: bool = False,
@@ -32,6 +33,17 @@ class UserRepository:
             self.load_created_challenges = load_created_challenges
             self.load_reported_flags = load_reported_flags
             self.load_resolved_flags = load_resolved_flags
+
+        @staticmethod
+        def all_options() -> "UserRepository.LoadOptions":
+            return UserRepository.LoadOptions(
+                load_solver_challenges=True,
+                load_challenge_evaluator_links=True,
+                load_malleable_glyphs=True,
+                load_created_challenges=True,
+                load_reported_flags=True,
+                load_resolved_flags=True
+            )
 
         def add_options_to_statement(self, statement):
             if self.load_solver_challenges:
