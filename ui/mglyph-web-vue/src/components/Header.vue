@@ -1,6 +1,6 @@
 <template>
   <div class="header-container">
-    <header class="main-padding">
+    <header>
       <div class="title">
         <RouterLink :to="{ name: 'Home' }">The Malleable Glyph Challenge</RouterLink>
       </div>
@@ -9,7 +9,7 @@
         <li><RouterLink :to="{ name: 'Home' }">Home</RouterLink></li>
         <li><RouterLink :to="{ name: 'Clicker' }">Clicker</RouterLink></li>
         <li><RouterLink :to="{ name: 'Home' }">About</RouterLink></li>
-        <li><RouterLink :to="{ name: 'Home' }">Challenges</RouterLink></li>
+        <li><RouterLink :to="{ name: 'Challenges' }">Challenges</RouterLink></li>
       </ul>
 
       <div class="login-container">
@@ -24,6 +24,7 @@
       <!-- Logged out -->
       <ul v-show="!authStore.user">
         <li ref="loginButtonRef" @click="closeLoginMenu">Log in</li>
+        <hr />
         <li @click="toggleTheme">
           <span v-show="currentTheme === 'dark'"><i class="fa-solid fa-moon"></i> Dark</span>
           <span v-show="currentTheme === 'light'"><i class="fa-solid fa-sun"></i> Light</span>
@@ -32,11 +33,16 @@
       </ul>
       <!-- Logged in -->
       <ul v-show="authStore.user">
+        <li>My profile</li>
+        <li>My challenges</li>
+        <li>My glyphs</li>
+        <hr />
         <li @click="toggleTheme">
           <span v-show="currentTheme === 'dark'"><i class="fa-solid fa-moon"></i> Dark</span>
           <span v-show="currentTheme === 'light'"><i class="fa-solid fa-sun"></i> Light</span>
           Theme
         </li>
+        <hr />
         <li @click="logout">Log out</li>
       </ul>
     </div>
@@ -44,15 +50,18 @@
 
   <div id="login-prompt-container" v-if="loginPromptVisible">
     <div id="login-prompt" ref="loginPromptRef">
-      <h2>Please Login</h2>
-      <GoogleLogin :callback="googleLoginCallback" prompt />
+      <h2 v-if="!loginLoading">Please Login</h2>
+      <GoogleLogin v-if="!loginLoading" :callback="googleLoginCallback" prompt />
+      <i class="fa-solid fa-spinner fa-spin-pulse fa-5x" v-if="loginLoading"></i>
     </div>
   </div>
 
   <div id="login-create-user-container" v-if="loginCreateUserVisible">
     <div id="login-create-user-prompt" ref="loginCreateUserPromptRef">
       <h2>Create Account</h2>
-      <p>It seems like you don't have an account yet. Please enter a username to create your account.</p>
+      <p>
+        It seems like you don't have an account yet. Please enter a username to create your account.
+      </p>
       <input v-model="username" type="text" placeholder="Username" />
       <button @click="createGoogleAccount">Create Account</button>
     </div>
@@ -132,9 +141,11 @@ function toggleLoginMenu(event: PointerEvent) {
 const loginPromptVisible = ref<boolean>(false)
 const loginPromptEl = useTemplateRef('loginPromptRef')
 const loginButtonEl = useTemplateRef('loginButtonRef')
+const loginLoading = ref<boolean>(false)
 
 function toggleLoginPrompt(event: PointerEvent) {
   if (
+    !loginLoading.value &&
     loginPromptEl.value &&
     !loginPromptEl.value.contains(event.target as Node) &&
     loginPromptVisible.value
@@ -162,22 +173,17 @@ const username = ref<string>('')
 const googleLoginCallback: CallbackTypes.CredentialCallback = (response) => {
   // This callback will be triggered when the user selects or login to
   // his Google account from the popup
-  googleCredential = response.credential
+  loginLoading.value = true
   authStore
-    .googleLogin(googleCredential)
+    .googleLogin(response.credential)
     .then(() => {
-      createAccount.value = false
-      googleCredential = null
       closeLoginPrompt()
     })
     .catch((err) => {
-      if (err.response?.data?.err_code === 404) {
-        // TODO: Define this error code in the backend and frontend
-        // If the error is because the account doesn't exist, show the create account form
-        openCreateUserPrompt()
-      } else {
-        console.error('Error logging in', err)
-      }
+      console.error('Error logging in', err)
+    })
+    .finally(() => {
+      loginLoading.value = false
     })
 }
 
@@ -207,6 +213,7 @@ function logout() {
 /* ==================== END - LOGIN AUTH ==================== */
 
 /* ==================== CREATE USER TOGGLE ==================== */
+// TODO: odstranit celý create
 const loginCreateUserVisible = ref<boolean>(false)
 const loginCreateUserEl = useTemplateRef('loginCreateUserPromptRef')
 
@@ -249,11 +256,13 @@ onBeforeUnmount(() => {
 .header-container {
   position: sticky;
   top: 0;
+  z-index: 2;
 }
 
 header {
   width: 100%;
   height: 90px;
+  padding: 0 20px;
 
   border-radius: 0 0 8px 8px;
   background: var(--md-sys-color-primary, #f07167);
@@ -280,6 +289,13 @@ ul {
   padding: 0;
 
   display: flex;
+
+  hr {
+    border: none;
+    border-top: 1px dashed color-mix(in srgb, var(--md-sys-color-outline, #67635e) 50%, transparent);
+    width: 92%;
+    margin: 3px auto;
+  }
 }
 
 .title {
@@ -322,6 +338,7 @@ ul.nav {
   box-shadow: -1.5px 3px 5px 0
     color-mix(in srgb, var(--md-sys-color-outline, #67635e) 50%, transparent);
   color: var(--md-sys-color-on-surface-variant, #171511);
+  z-index: 2;
 
   ul {
     flex-direction: column;
@@ -357,7 +374,7 @@ ul.nav {
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 2;
+  z-index: 3;
 }
 
 #login-prompt,
