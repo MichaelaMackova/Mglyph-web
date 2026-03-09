@@ -43,6 +43,20 @@ class EvaluationRoundRepository(RepositoryInterface):
         evaluation_round_db = result.scalar_one_or_none()
         return evaluation_round_db
     
+    async def get_last_round_in_challenge(self, challenge_id: UUID, load_options: LoadOptions = LoadOptions()) -> EvaluationRoundModel | None:
+        select_exec = select(EvaluationRoundModel).where(EvaluationRoundModel.challenge_id == challenge_id).where(EvaluationRoundModel.next_round_id == None)
+        select_exec = load_options.add_options_to_statement(select_exec)
+        result = await self.db_session.execute(select_exec)
+        evaluation_round_db = result.scalar_one_or_none()
+        return evaluation_round_db
+    
+    async def get_evaluation_round_by_id(self, evaluation_round_id: UUID, load_options: LoadOptions = LoadOptions()) -> EvaluationRoundModel | None:
+        select_exec = select(EvaluationRoundModel).where(EvaluationRoundModel.id == evaluation_round_id)
+        select_exec = load_options.add_options_to_statement(select_exec)
+        result = await self.db_session.execute(select_exec)
+        evaluation_round_db = result.scalar_one_or_none()
+        return evaluation_round_db
+    
 
 def get_evaluation_round_repository(db_session: SessionDep):
     return EvaluationRoundRepository(db_session)
