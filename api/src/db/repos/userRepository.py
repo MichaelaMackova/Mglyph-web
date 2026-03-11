@@ -2,12 +2,12 @@ from typing import Annotated
 from fastapi import Depends
 from db.database import SessionDep
 from sqlalchemy.ext.asyncio.session import AsyncSession
-from sqlmodel import select
+from sqlmodel import select, func
 from sqlalchemy.orm import selectinload, joinedload
 from uuid import UUID
 from db.repos.interface import RepositoryInterface
 
-from db.models.userModel import UserModel
+from db.models.userModel import UserModel, UserRole
 
 from api.users.schemas import UserCreateDTO
 
@@ -99,6 +99,13 @@ class UserRepository(RepositoryInterface):
         result = await self.db_session.execute(select_exec)
         users_db = result.scalars().all()
         return users_db
+    
+
+    async def count_users_by_role(self, role: UserRole) -> int:
+        select_exec = select(func.count()).select_from(UserModel).where(UserModel.role == role)
+        result = await self.db_session.execute(select_exec)
+        count = result.scalar_one()
+        return count
     
 
 

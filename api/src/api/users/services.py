@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio.session import AsyncSession
 from db.database import SessionDep
 from uuid import UUID
 import errors as mglyph_errors
+from settings import AT_LEAST_ONE_ADMIN_USER, FIRST_USER_IS_ADMIN
 
 from db.models.userModel import UserModel, UserRole
 
@@ -52,6 +53,10 @@ class UserService:
             raise mglyph_errors.NotFoundError("User", mglyph_errors.ErrorCode.NOT_FOUND_ID)
         if user_db.role != UserRole.admin:
             raise mglyph_errors.BadRequestError("User already does not have admin role", mglyph_errors.ErrorCode.BAD_REQUEST_ALREADY_DONE)
+        if AT_LEAST_ONE_ADMIN_USER:
+            admin_count = await self.user_repository.count_users_by_role(UserRole.admin)
+            if admin_count <= 1:
+                raise mglyph_errors.BadRequestError("Cannot revoke admin role from the last admin user", mglyph_errors.ErrorCode.BAD_REQUEST_REVOKE_LAST_ADMIN)
         user_db.role = UserRole.user
         self.db_session.add(user_db)
         await self.db_session.commit()
@@ -79,6 +84,10 @@ class UserService:
         existing_user = await self.user_repository.get_user_by_username(user_db.username)
         if existing_user:
             raise mglyph_errors.BadRequestError("User with this username already exists", mglyph_errors.ErrorCode.BAD_REQUEST_CREATE_USER_USERNAME_TAKEN)
+        if FIRST_USER_IS_ADMIN:
+            admin_count = await self.user_repository.count_users_by_role(UserRole.admin)
+            if admin_count == 0:
+                user_db.role = UserRole.admin
         self.db_session.add(user_db)
         await self.db_session.commit()
         user_db = await self.user_repository.get_user_by_id(user_db.id)

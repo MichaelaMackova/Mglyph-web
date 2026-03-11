@@ -21,6 +21,7 @@ class ErrorCode(IntEnum):
     BAD_REQUEST_CREATE_CHALLENGE_NAME_TAKEN = 205 # Specific code for bad request error when trying to create a challenge with a name that is already taken
     BAD_REQUEST_ALREADY_DONE = 206 # Specific code for bad request error when trying to perform an action that has already been done (e.g., adding a solver to a challenge when they are already a solver)
     BAD_REQUEST_DELETE_CONFLICT = 207 # Specific code for bad request error when trying to delete a resource that cannot be deleted due to existing dependencies (e.g., deleting a challenge that has assigned malleable glyphs)
+    BAD_REQUEST_REVOKE_LAST_ADMIN = 208 # Specific code for bad request error when trying to revoke admin role from the last remaining admin user
     # UNAUTHORIZED errors (400-499)
     UNAUTHORIZED_BASE = 400 # Base code for unauthorized errors
     UNAUTHORIZED_INVALID_TOKEN = 401 # Specific code for unauthorized access due to invalid token
