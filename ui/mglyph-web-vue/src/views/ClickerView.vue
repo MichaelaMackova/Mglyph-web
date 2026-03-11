@@ -40,9 +40,7 @@ let googleCredential: string | null = null
 const googleLoginCallback: CallbackTypes.CredentialCallback = (response) => {
   // This callback will be triggered when the user selects or login to
   // his Google account from the popup
-  console.log('Handle the response', response)
   googleCredential = response.credential
-  console.log('Received Google credential, attempting to log in or create account')
 
   authStore
     .googleLogin(googleCredential)
@@ -52,11 +50,9 @@ const googleLoginCallback: CallbackTypes.CredentialCallback = (response) => {
       fetchInitialCount()
     })
     .catch((err) => {
-      console.log('Error logging in with Google, checking if account exists', err)
       if (err.response?.data?.err_code === 404) {
         // TODO: Define this error code in the backend and frontend
         // If the error is because the account doesn't exist, show the create account form
-        console.log('Account not found, showing create account form')
         createAccount.value = true
       } else {
         console.error('Error logging in', err)

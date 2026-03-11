@@ -1,4 +1,4 @@
-FROM node:24-alpine
+FROM node:24
 
 # make the 'code' folder the current working directory
 WORKDIR /code/mglyph-web-vue

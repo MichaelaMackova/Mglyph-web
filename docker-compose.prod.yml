@@ -7,7 +7,6 @@ name: mglyph-web
 services:
 
   api:
-    container_name: api
     depends_on:
       - db
     build: 
@@ -15,10 +14,8 @@ services:
       dockerfile: ./Prod.Dockerfile
     ports:
       - 8888:8888
-    read_only: false
 
   db:
-    container_name: db
     image: postgres:18-alpine
     environment:
       POSTGRES_USER_FILE: /run/secrets/postgres_user
@@ -28,20 +25,15 @@ services:
       - postgres_user
       - postgres_password
       - postgres_db
-    ports:
-      - 5432:5432
     volumes:
       - db_data_prod:/var/lib/postgresql/data
 
   ui:
-    container_name: ui
     build: 
       context: ./ui
       dockerfile: ./Prod.Dockerfile
     ports:
       - 8080:80
-      - 4173:4173
-    read_only: false
 
 volumes:
   db_data_prod:

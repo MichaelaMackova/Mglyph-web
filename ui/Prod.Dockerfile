@@ -1,5 +1,5 @@
 # Stage 1: Build the app
-FROM node:24-alpine AS builder
+FROM node:24 AS builder
 
 # make the 'code' folder the current working directory
 WORKDIR /code/mglyph-web-vue
