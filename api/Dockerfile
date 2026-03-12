@@ -18,8 +18,17 @@ RUN pip install --no-cache-dir --upgrade -r /code/requirements.txt
 COPY ./src /code/src
 EXPOSE 8888
 
-# Apply Alembic migrations
+
+# Copy wait-for-it script to wait for the database to be ready before starting the application
+COPY ./wait-for-it.sh /code/wait-for-it.sh
+RUN ["chmod", "+x", "/code/wait-for-it.sh"]
+
+# Copy script to apply Alembic migrations
 COPY ./upgrade_all_db_migrations.sh /code/upgrade_all_db_migrations.sh
-ENTRYPOINT ["./upgrade_all_db_migrations.sh"]
+RUN ["chmod", "+x", "/code/upgrade_all_db_migrations.sh"]
+
+
+# Wait for the database to be ready and apply Alembic migrations before starting the application, with a timeout of 30 seconds for the database to become available
+ENTRYPOINT ["./wait-for-it.sh", "-t", "30", "-s", "db:5432", "--", "./upgrade_all_db_migrations.sh"]
 
 CMD ["fastapi", "run", "src/main.py", "--host", "0.0.0.0", "--port", "8888", "--reload"]

@@ -23,6 +23,11 @@ FROM nginx:1.29-alpine
 # Copy build artifacts from builder stage
 COPY --from=builder /code/mglyph-web-vue/dist /usr/share/nginx/html
 
+# Set permissions for directories to 755 and files to 644
+RUN find "/usr/share/nginx/html" -type d -exec chmod 755 {} \;
+RUN find "/usr/share/nginx/html" -type f -exec chmod 644 {} \;
+
+
 # Remove default Nginx config
 RUN rm -rf /etc/nginx/conf.d/default.conf
 
