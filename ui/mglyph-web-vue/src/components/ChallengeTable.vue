@@ -1,17 +1,21 @@
 <template>
   <table>
-    <tr>
-      <th class="rank">#</th>
-      <th class="author">Author</th>
-      <th class="glyph">Glyph</th>
-      <th class="flags">Flags</th>
-    </tr>
-    <tr v-for="glyph in props.glyphs" :key="glyph.id">
-      <td>{{ glyph.rank }}</td>
-      <td>{{ glyph.author.username }}</td>
-      <td>TODO:</td>
-      <td>{{ glyph.flags.join(', ') }}</td>
-    </tr>
+    <thead>
+      <tr>
+        <th class="rank">#</th>
+        <th class="author">Author</th>
+        <th class="glyph">Glyph</th>
+        <th class="flags">Flags</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr v-for="glyph in props.glyphs" :key="glyph.id">
+        <td>{{ glyph.rank }}</td>
+        <td>{{ glyph.author.username }}</td>
+        <td>TODO:</td>
+        <td>{{ glyph.flags.join(', ') }}</td>
+      </tr>
+    </tbody>
   </table>
 </template>
 

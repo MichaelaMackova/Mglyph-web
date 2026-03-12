@@ -1,23 +1,34 @@
 <template>
   <div class="main-padding">
     <h1>Challenges</h1>
-    <p>Welcome to the challenges page!</p>
   </div>
 
-  <div
-    class="challenge-info-container main-padding"
-    v-for="challenge in responseData"
-    :key="challenge.id"
-  >
-    <ChallengeInfo
-      :title="challenge.title"
-      :start_time="challenge.start_time"
-      :end_time="challenge.end_time"
-      :state="challenge.state"
-    />
+  <div class="challenges-container">
+    <div v-if="isLoading || errorOccurred" class="main-padding">
+      <p v-if="isLoading">
+        Loading challenges... <i class="fa-solid fa-spinner fa-spin-pulse"></i>
+      </p>
+      <p v-else-if="errorOccurred">An error occurred while fetching challenges.</p>
+    </div>
+    <div v-else-if="responseData && responseData.length === 0" class="main-padding">
+      <p>No challenges available.</p>
+    </div>
+    <div
+      v-else
+      class="challenge-info-container main-padding"
+      v-for="challenge in responseData"
+      :key="challenge.id"
+    >
+      <ChallengeInfo
+        :title="challenge.title"
+        :start_time="challenge.start_time"
+        :end_time="challenge.end_time"
+        :state="challenge.state"
+      />
+    </div>
   </div>
 
-  <!-- TODO: paggination -->
+  <!-- TODO: pagination -->
 </template>
 
 <script setup lang="ts">
@@ -39,7 +50,6 @@ async function fetchChallenges() {
         limit: 100,
       },
     })
-    console.log('Fetched challenges:', response.data)
     if (!Array.isArray(response.data)) {
       throw new Error('Invalid response format: expected an array')
     }
@@ -55,7 +65,6 @@ async function fetchChallenges() {
           challenge.challenge_finished,
         ),
     )
-    console.log('Parsed challenges:', responseData.value)
     errorOccurred.value = false
   } catch (err) {
     console.error(err)
