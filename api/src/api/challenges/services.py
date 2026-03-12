@@ -15,7 +15,7 @@ from db.models.evaluationRoundModel import EvaluationRoundModel
 from db.repos.challengeRepository import ChallengeRepository, ChallengeRepositoryDep
 from db.repos.evaluationRoundRepository import EvaluationRoundRepository, EvaluationRoundRepositoryDep
 
-from api.challenges.schemas import ChallengePublicDTO, ChallengeCreateDTO, ChallengeUpdateDTO
+from api.challenges.schemas import ChallengeFilterParams, ChallengePublicDTO, ChallengeCreateDTO, ChallengeUpdateDTO
 
 
 class EvaluationRoundService:
@@ -67,10 +67,25 @@ class ChallengeService:
         return db_challenge
 
 
-    async def get_paginated_challenges(self, offset: int = 0, limit: int = 100) -> list[ChallengeModel]:
-        challenges_db = await self.challenge_repository.get_paginated_challenges(offset=offset, limit=limit)
+    async def get_paginated_challenges(self, filters: ChallengeFilterParams, offset: int = 0, limit: int = 100) -> list[ChallengeModel]:
+        filter_params = ChallengeRepository.FilterParams(
+            name_contains=filters.name_contains,
+            submissions_ended=filters.submissions_ended,
+            challenge_finished=filters.challenge_finished
+        )
+        challenges_db = await self.challenge_repository.get_paginated_challenges(filters=filter_params, offset=offset, limit=limit)
         return challenges_db
-    
+
+
+    async def get_challenges_where_user_is_participant(self, user_id: UUID, filters: ChallengeFilterParams, as_solver: bool | None = None, offset: int = 0, limit: int = 100) -> list[ChallengeModel]:
+        filter_params = ChallengeRepository.FilterParams(
+            name_contains=filters.name_contains,
+            submissions_ended=filters.submissions_ended,
+            challenge_finished=filters.challenge_finished
+        )
+        challenges_db = await self.challenge_repository.get_paginated_challenges_with_participating_user(user_id=user_id, filters=filter_params, as_solver=as_solver, offset=offset, limit=limit)
+        return challenges_db
+
 
     async def create_challenge(self, challenge: ChallengeCreateDTO, current_user_id: UUID) -> ChallengeModel:
         # TODO: check if challenge name already exists

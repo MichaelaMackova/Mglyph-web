@@ -14,7 +14,7 @@ from db.repos.malleableGlyphRepository import MalleableGlyphRepository, Malleabl
 from db.repos.evaluationRoundRepository import EvaluationRoundRepository, EvaluationRoundRepositoryDep
 from db.repos.challengeRepository import ChallengeRepository, ChallengeRepositoryDep
 # Schemas
-from api.mglyph.schemas import MGlyphCreate, MGlyphPublicDTO, MGlyphPublicSimpleDTO
+from api.mglyph.schemas import MGlyphCreate, MglyphFilterParams
 
 
 
@@ -67,8 +67,14 @@ class MalleableGlyphService:
         return db_mglyph
 
     
-    async def get_paginated_malleable_glyphs(self, offset: int = 0, limit: int = 100) -> list[MalleableGlyphModel]:
-        mglyphs_db = await self.malleable_glyph_repository.get_paginated_malleable_glyphs(offset=offset, limit=limit)
+    async def get_paginated_malleable_glyphs(self, filters: MglyphFilterParams, offset: int = 0, limit: int = 100) -> list[MalleableGlyphModel]:
+        filter_params = MalleableGlyphRepository.FilterParams(
+            short_name_contains=filters.short_name_contains,
+            long_name_contains=filters.long_name_contains,
+            creator_id=filters.creator_id,
+            is_submitted=filters.is_submitted
+        )
+        mglyphs_db = await self.malleable_glyph_repository.get_paginated_malleable_glyphs(filters=filter_params, offset=offset, limit=limit)
         return mglyphs_db
     
 

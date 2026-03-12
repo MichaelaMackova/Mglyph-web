@@ -1,9 +1,11 @@
-from typing import Annotated
+from typing import Annotated, Optional
+from pydantic import BaseModel
 from fastapi import Depends
 from db.database import SessionDep
 from sqlalchemy.ext.asyncio.session import AsyncSession
 from sqlmodel import select
 from sqlalchemy.orm import selectinload, joinedload
+from sqlalchemy import Select
 from uuid import UUID
 from db.repos.interface import RepositoryInterface
 
@@ -28,13 +30,40 @@ class MalleableGlyphRepository(RepositoryInterface):
         def all_options():
             return MalleableGlyphRepository.LoadOptions(load_creator=True, load_mglyph_evaluation_links=True, load_report_flags=True)
 
-        def add_options_to_statement(self, statement):
+        def add_options_to_statement(self, statement: Select) -> Select:
             if self.load_creator:
                 statement = statement.options(joinedload(MalleableGlyphModel.creator))
             if self.load_mglyph_evaluation_links:
                 statement = statement.options(selectinload(MalleableGlyphModel.mglyph_evaluation_links))
             if self.load_report_flags:
                 statement = statement.options(selectinload(MalleableGlyphModel.report_flags))
+            return statement
+
+    class FilterParams():
+        def __init__(
+                self, 
+                short_name_contains: Optional[str] = None, 
+                long_name_contains: Optional[str] = None, 
+                creator_id: Optional[UUID] = None, 
+                is_submitted: Optional[bool] = None
+            ):
+            self.short_name_contains = short_name_contains
+            self.long_name_contains = long_name_contains
+            self.creator_id = creator_id
+            self.is_submitted = is_submitted
+
+        def apply_filters_to_statement(self, statement: Select) -> Select:
+            if self.short_name_contains:
+                statement = statement.where(MalleableGlyphModel.short_name.ilike(f"%{self.short_name_contains}%"))
+            if self.long_name_contains:
+                statement = statement.where(MalleableGlyphModel.long_name.ilike(f"%{self.long_name_contains}%"))
+            if self.creator_id:
+                statement = statement.where(MalleableGlyphModel.creator_id == self.creator_id)
+            if self.is_submitted is not None:
+                if self.is_submitted:
+                    statement = statement.where(MalleableGlyphModel.submission_time.is_not(None))
+                else:
+                    statement = statement.where(MalleableGlyphModel.submission_time.is_(None))
             return statement
 
 
@@ -45,9 +74,10 @@ class MalleableGlyphRepository(RepositoryInterface):
         mglyph_db = result.scalar_one_or_none()
         return mglyph_db
 
-    async def get_paginated_malleable_glyphs(self, offset: int = 0, limit: int = 100, load_options: LoadOptions = LoadOptions()) -> list[MalleableGlyphModel]:
+    async def get_paginated_malleable_glyphs(self, filters: FilterParams = FilterParams(), offset: int = 0, limit: int = 100, load_options: LoadOptions = LoadOptions()) -> list[MalleableGlyphModel]:
         select_exec = select(MalleableGlyphModel).offset(offset).limit(limit)
         select_exec = load_options.add_options_to_statement(select_exec)
+        select_exec = filters.apply_filters_to_statement(select_exec)
         result = await self.db_session.execute(select_exec)
         mglyphs_db = result.scalars().all()
         return mglyphs_db

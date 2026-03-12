@@ -1,14 +1,11 @@
 from abc import ABC, abstractmethod
-from typing import TypeVar
-
-# Declare type variable
-T = TypeVar('T') 
+from sqlalchemy import Select
 
 
 class RepositoryInterface(ABC):
     class LoadOptionsInterface(ABC):
         @abstractmethod
-        def add_options_to_statement(self, statement: T) -> T:
+        def add_options_to_statement(self, statement: Select) -> Select:
             pass
 
         @staticmethod

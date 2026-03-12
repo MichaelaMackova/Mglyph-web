@@ -1,5 +1,5 @@
 from typing import Annotated
-from fastapi import APIRouter, Query, UploadFile, status
+from fastapi import APIRouter, Query, UploadFile, status, Depends
 from uuid import UUID
 from pathlib import Path
 import shutil
@@ -9,7 +9,7 @@ from errors import NotFoundError, BadRequestError, ErrorCode
 from api.auth.dependencies import CurrentAdminUserIdDep, CurrentUserIdDep
 from api.mglyph.services import MalleableGlyphServiceDep
 
-from api.mglyph.schemas import MGlyphPublicDTO, MGlyphPublicSimpleDTO, MGlyphCreateDTOAsForm, MGlyphCreate
+from api.mglyph.schemas import MGlyphPublicDTO, MGlyphPublicSimpleDTO, MGlyphCreateDTOAsForm, MGlyphCreate, MglyphFilterParamsAsQuery
 
 
 router = APIRouter(
@@ -51,10 +51,11 @@ async def create_mglyph(
 @router.get("")
 async def read_malleable_glyphs(
     mglyph_service: MalleableGlyphServiceDep,
+    filter_params: MglyphFilterParamsAsQuery,
     offset: int = 0,
     limit: Annotated[int, Query(le=100)] = 100
 ) -> list[MGlyphPublicSimpleDTO]:
-    mglyphs = await mglyph_service.get_paginated_malleable_glyphs(offset=offset, limit=limit)
+    mglyphs = await mglyph_service.get_paginated_malleable_glyphs(filters=filter_params, offset=offset, limit=limit)
     return [MGlyphPublicSimpleDTO.from_model(mglyph) for mglyph in mglyphs]
 
 

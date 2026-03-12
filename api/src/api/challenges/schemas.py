@@ -1,3 +1,5 @@
+from fastapi import Depends
+from typing import Optional, Annotated
 from pydantic import BaseModel
 from uuid import UUID
 from datetime import datetime
@@ -29,6 +31,14 @@ class EvaluationRoundPublicDTO(BaseModel):
             next_round_id=evaluationRoundModel.next_round_id
         )
 
+
+
+class ChallengeFilterParams(BaseModel):
+    name_contains: Optional[str] = None
+    submissions_ended: Optional[bool] = None
+    challenge_finished: Optional[bool] = None
+
+ChallengeFilterParamsAsQuery = Annotated[ChallengeFilterParams, Depends()]
 
 
 class ChallengeBase(BaseModel):

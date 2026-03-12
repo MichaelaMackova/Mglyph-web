@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, Optional
 from fastapi import APIRouter, Query, HTTPException, status, responses
 from uuid import UUID
 
@@ -12,7 +12,7 @@ from api.challenges.services import ChallengeServiceDep, EvaluationRoundServiceD
 
 
 from db.models.challengeModel import ChallengeModel
-from api.challenges.schemas import ChallengePublicDTO, ChallengePublicSimpleDTO, ChallengeCreateDTO
+from api.challenges.schemas import ChallengeFilterParamsAsQuery, ChallengePublicDTO, ChallengePublicSimpleDTO, ChallengeCreateDTO
 from db.models.userModel import UserModel
 from db.models.evaluationRoundModel import EvaluationRoundModel
 
@@ -38,12 +38,26 @@ async def create_challenge(challenge: ChallengeCreateDTO, current_user_id: Curre
 @router.get("")
 async def read_challenges(
     challenge_service: ChallengeServiceDep,
+    filter_params: ChallengeFilterParamsAsQuery,
     offset: int = 0,
     limit: Annotated[int, Query(le=100)] = 100
 ) -> list[ChallengePublicSimpleDTO]:
-    challenges = await challenge_service.get_paginated_challenges(offset=offset, limit=limit)
+    challenges = await challenge_service.get_paginated_challenges(filters=filter_params, offset=offset, limit=limit)
     return [ChallengePublicSimpleDTO.from_model(challenge) for challenge in challenges]
 
+
+
+@router.get("/user-is-participant")
+async def read_challenges_where_user_is_participant(
+    challenge_service: ChallengeServiceDep,
+    user_id: CurrentUserIdDep,
+    filter_params: ChallengeFilterParamsAsQuery,
+    as_solver: Optional[bool] = Query(default=None, description="If true, only return challenges where the user is a solver. If false, only return challenges where the user is evaluator. If null, return all challenges where the user is either a solver or evaluator."),
+    offset: int = 0,
+    limit: Annotated[int, Query(le=100)] = 100
+) -> list[ChallengePublicSimpleDTO]:
+    challenges = await challenge_service.get_challenges_where_user_is_participant(user_id=UUID(user_id), filters=filter_params, as_solver=as_solver, offset=offset, limit=limit)
+    return [ChallengePublicSimpleDTO.from_model(challenge) for challenge in challenges]
 
 
 @router.get("/{challenge_id}",

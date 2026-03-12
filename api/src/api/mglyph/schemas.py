@@ -1,4 +1,4 @@
-from fastapi import Form, UploadFile
+from fastapi import Form, UploadFile, Depends
 from typing import Optional, Annotated
 from pydantic import BaseModel, field_validator
 from uuid import UUID
@@ -8,6 +8,15 @@ from api.users.schemas import UserPublicSimpleDTO
 
 from db.models.malleableGlyphModel import MalleableGlyphModel
 
+
+
+class MglyphFilterParams(BaseModel):
+    short_name_contains: Optional[str] = None
+    long_name_contains: Optional[str] = None
+    creator_id: Optional[UUID] = None
+    is_submitted: Optional[bool] = None
+
+MglyphFilterParamsAsQuery = Annotated[MglyphFilterParams, Depends()]
 
 
 class MGlyphBase(BaseModel):
