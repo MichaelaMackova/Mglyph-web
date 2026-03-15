@@ -8,13 +8,14 @@ from pydantic import ValidationError
 from errors import NotFoundError, BadRequestError, ErrorCode
 
 from api.auth.dependencies import CurrentAdminUserIdDep, CurrentUserIdDep
-from api.challenges.services import ChallengeServiceDep, EvaluationRoundServiceDep
+from api.challenges.services import ChallengeServiceDep, EvaluationRoundServiceDep, ChallengeEvaluatorServiceDep
 
 
 from db.models.challengeModel import ChallengeModel
 from api.challenges.schemas import ChallengeFilterParamsAsQuery, ChallengePublicDTO, ChallengePublicSimpleDTO, ChallengeCreateDTO
 from db.models.userModel import UserModel
 from db.models.evaluationRoundModel import EvaluationRoundModel
+from db.models.challengeEvaluatorModel import ChallengeEvaluatorState
 
 router = APIRouter(
     prefix="/challenges",
@@ -93,6 +94,82 @@ async def add_self_as_solver(challenge_id: UUID, user_id: CurrentUserIdDep, chal
         raise BadRequestError.HTTPException(e)
     return ChallengePublicDTO.from_model(challenge_db)
 
+
+
+@router.post("/{challenge_id}/volunteer-evaluator")
+async def volunteer_self_as_evaluator(challenge_id: UUID, user_id: CurrentUserIdDep, challenge_service: ChallengeServiceDep) -> ChallengePublicDTO:
+    try:
+        challenge_db = await challenge_service.add_evaluator_to_challenge(challenge_id, UUID(user_id), is_volunteer=True)
+    except NotFoundError as e:
+        raise NotFoundError.HTTPException(e)
+    except BadRequestError as e:
+        raise BadRequestError.HTTPException(e)
+    return ChallengePublicDTO.from_model(challenge_db)
+
+
+@router.post("/{challenge_id}/invite-evaluator")
+async def invite_evaluator(challenge_id: UUID, evaluator_user_id: UUID, current_user_id: CurrentAdminUserIdDep, challenge_service: ChallengeServiceDep) -> ChallengePublicDTO:
+    try:
+        challenge_db = await challenge_service.add_evaluator_to_challenge(challenge_id, evaluator_user_id, is_volunteer=False)
+    except NotFoundError as e:
+        raise NotFoundError.HTTPException(e)
+    except BadRequestError as e:
+        raise BadRequestError.HTTPException(e)
+    return ChallengePublicDTO.from_model(challenge_db)
+
+
+
+@router.post("/{challenge_id}/confirm-volunteer-evaluator/{evaluator_user_id}")
+async def confirm_volunteer_evaluator(challenge_id: UUID, evaluator_user_id: UUID, current_user_id: CurrentAdminUserIdDep, challenge_evaluator_service: ChallengeEvaluatorServiceDep) -> None:
+    try:
+        await challenge_evaluator_service.change_state_of_challenge_evaluator(challenge_id, evaluator_user_id, ChallengeEvaluatorState.confirmed, confirm_old_state=ChallengeEvaluatorState.volunteer_pending)
+    except NotFoundError as e:
+        raise NotFoundError.HTTPException(e)
+    except BadRequestError as e:
+        # TODO: zkontrolovat error code a vrátit lepší odpověď (popřípadě nový error code) - if "state does not match" -> not a volunteer_pending -> jiný err code?
+        if e.err_code == ErrorCode.BAD_REQUEST_WRONG_STATE:
+            raise BadRequestError.HTTPException(BadRequestError("Challenge Evaluator is not in volunteer_pending state", ErrorCode.BAD_REQUEST_WRONG_STATE))
+        raise BadRequestError.HTTPException(e)
+
+
+@router.post("/{challenge_id}/reject-volunteer-evaluator/{evaluator_user_id}")
+async def reject_volunteer_evaluator(challenge_id: UUID, evaluator_user_id: UUID, current_user_id: CurrentAdminUserIdDep, challenge_evaluator_service: ChallengeEvaluatorServiceDep) -> None:
+    try:
+        await challenge_evaluator_service.change_state_of_challenge_evaluator(challenge_id, evaluator_user_id, ChallengeEvaluatorState.volunteer_rejected, confirm_old_state=ChallengeEvaluatorState.volunteer_pending)
+    except NotFoundError as e:
+        raise NotFoundError.HTTPException(e)
+    except BadRequestError as e:
+        # TODO: zkontrolovat error code a vrátit lepší odpověď (popřípadě nový error code) - if "state does not match" -> not a volunteer_pending -> jiný err code?
+        if e.err_code == ErrorCode.BAD_REQUEST_WRONG_STATE:
+            raise BadRequestError.HTTPException(BadRequestError("Challenge Evaluator is not in volunteer_pending state", ErrorCode.BAD_REQUEST_WRONG_STATE))
+        raise BadRequestError.HTTPException(e)
+
+
+@router.post("/{challenge_id}/confirm-evaluator-invite")
+async def confirm_evaluator_invite(challenge_id: UUID, current_user_id: CurrentUserIdDep, challenge_evaluator_service: ChallengeEvaluatorServiceDep) -> None:
+    try:
+        await challenge_evaluator_service.change_state_of_challenge_evaluator(challenge_id, UUID(current_user_id), ChallengeEvaluatorState.confirmed, confirm_old_state=ChallengeEvaluatorState.invited_pending)
+    except NotFoundError as e:
+        raise NotFoundError.HTTPException(e)
+    except BadRequestError as e:
+        # TODO: zkontrolovat error code a vrátit lepší odpověď (popřípadě nový error code) - if "state does not match" -> not a volunteer_pending -> jiný err code?
+        if e.err_code == ErrorCode.BAD_REQUEST_WRONG_STATE:
+            raise BadRequestError.HTTPException(BadRequestError("Challenge Evaluator is not in invited_pending state", ErrorCode.BAD_REQUEST_WRONG_STATE))
+        raise BadRequestError.HTTPException(e)
+
+
+@router.post("/{challenge_id}/reject-evaluator-invite")
+async def reject_evaluator_invite(challenge_id: UUID, current_user_id: CurrentUserIdDep, challenge_evaluator_service: ChallengeEvaluatorServiceDep) -> None:
+    try:
+        await challenge_evaluator_service.change_state_of_challenge_evaluator(challenge_id, UUID(current_user_id), ChallengeEvaluatorState.invited_rejected, confirm_old_state=ChallengeEvaluatorState.invited_pending)
+    except NotFoundError as e:
+        raise NotFoundError.HTTPException(e)
+    except BadRequestError as e:
+        # TODO: zkontrolovat error code a vrátit lepší odpověď (popřípadě nový error code) - if "state does not match" -> not a volunteer_pending -> jiný err code?
+        if e.err_code == ErrorCode.BAD_REQUEST_WRONG_STATE:
+            raise BadRequestError.HTTPException(BadRequestError("Challenge Evaluator is not in invited_pending state", ErrorCode.BAD_REQUEST_WRONG_STATE))
+        raise BadRequestError.HTTPException(e)
+    
 
 
 @router.delete("/{challenge_id}", 

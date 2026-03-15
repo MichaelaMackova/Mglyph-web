@@ -11,9 +11,11 @@ import errors as mglyph_errors
 from db.models.challengeModel import ChallengeModel
 from db.models.userModel import UserModel
 from db.models.evaluationRoundModel import EvaluationRoundModel
+from db.models.challengeEvaluatorModel import ChallengeEvaluatorModel, ChallengeEvaluatorState
 
 from db.repos.challengeRepository import ChallengeRepository, ChallengeRepositoryDep
 from db.repos.evaluationRoundRepository import EvaluationRoundRepository, EvaluationRoundRepositoryDep
+from db.repos.challengeEvaluatorRepository import ChallengeEvaluatorRepository, ChallengeEvaluatorRepositoryDep
 
 from api.challenges.schemas import ChallengeFilterParams, ChallengePublicDTO, ChallengeCreateDTO, ChallengeUpdateDTO
 
@@ -46,6 +48,49 @@ EvaluationRoundServiceDep = Annotated[EvaluationRoundService, Depends(get_evalua
 
 
 
+
+class ChallengeEvaluatorService:
+    def __init__(self, db_session: AsyncSession, challenge_evaluator_repository: ChallengeEvaluatorRepository):
+        self.db_session = db_session
+        self.challenge_evaluator_repository = challenge_evaluator_repository
+
+
+    async def change_state_of_challenge_evaluator(self, challenge_id: UUID, evaluator_user_id: UUID, new_state: ChallengeEvaluatorState, confirm_old_state: ChallengeEvaluatorState | None = None):
+        challenge_evaluator_db = await self.challenge_evaluator_repository.get_challenge_evaluator_by_challenge_id_and_evaluator_id(challenge_id, evaluator_user_id)
+        if not challenge_evaluator_db:
+            raise mglyph_errors.NotFoundError("Challenge Evaluator link", mglyph_errors.ErrorCode.NOT_FOUND_ID)
+        if confirm_old_state is not None and challenge_evaluator_db.state != confirm_old_state:
+            raise mglyph_errors.BadRequestError("Challenge Evaluator state does not match", mglyph_errors.ErrorCode.BAD_REQUEST_WRONG_STATE)
+        challenge_evaluator_db.state = new_state
+        self.db_session.add(challenge_evaluator_db)
+        await self.db_session.commit()
+        return challenge_evaluator_db
+
+
+    async def create_challenge_evaluator(self, challenge_id: UUID, evaluator_user_id: UUID, is_volunteer: bool) -> ChallengeEvaluatorModel:
+        new_challenge_evaluator = ChallengeEvaluatorModel(
+            id=None,
+            challenge_id=challenge_id,
+            evaluator_id=evaluator_user_id,
+            state=ChallengeEvaluatorState.volunteer_pending if is_volunteer else ChallengeEvaluatorState.invited_pending
+        )
+        self.db_session.add(new_challenge_evaluator)
+        await self.db_session.commit()
+        await self.db_session.refresh(new_challenge_evaluator)
+        return new_challenge_evaluator
+
+def get_challenge_evaluator_service(db_session: SessionDep, challenge_evaluator_repository: ChallengeEvaluatorRepositoryDep):
+    return ChallengeEvaluatorService(db_session, challenge_evaluator_repository)
+
+ChallengeEvaluatorServiceDep = Annotated[ChallengeEvaluatorService, Depends(get_challenge_evaluator_service)]
+
+
+
+
+
+
+
+
 # TODO: přidat kontroly:
 #           - challenge creation_time < glyph_submit_deadline < first evaluation round estimated_end_time
 #           - při přidávání solvera zkontrolovat, že nejsou uzavřené submissiony
@@ -53,11 +98,12 @@ EvaluationRoundServiceDep = Annotated[EvaluationRoundService, Depends(get_evalua
 #           - při updatu zkontrolovat, že se nemění submissions_ended nebo challenge_finished z True na False
 
 class ChallengeService:
-    def __init__(self, db_session: AsyncSession, challenge_repository: ChallengeRepository, evaluation_round_repository: EvaluationRoundRepository, evaluation_round_service: EvaluationRoundService):
+    def __init__(self, db_session: AsyncSession, challenge_repository: ChallengeRepository, evaluation_round_repository: EvaluationRoundRepository, evaluation_round_service: EvaluationRoundService, challenge_evaluator_service: ChallengeEvaluatorService):
         self.db_session = db_session
         self.challenge_repository = challenge_repository
         self.evaluation_round_repository = evaluation_round_repository
         self.evaluation_round_service = evaluation_round_service
+        self.challenge_evaluator_service = challenge_evaluator_service
 
 
     async def get_challenge_by_id(self, challenge_id: UUID) -> ChallengeModel:
@@ -145,9 +191,26 @@ class ChallengeService:
         challenge_db = await self.challenge_repository.get_challenge_by_id(challenge_db.id, load_options=ChallengeRepository.LoadOptions(load_creator=True, load_solvers=True, load_challenge_evaluator_links=True, load_evaluation_rounds=True))
         return challenge_db
 
+    
+    async def add_evaluator_to_challenge(self, challenge_id: UUID, evaluator_id: UUID, is_volunteer: bool) -> ChallengeModel:
+        challenge_db = await self.challenge_repository.get_challenge_by_id(challenge_id, load_options=ChallengeRepository.LoadOptions(load_challenge_evaluator_links=True))
+        if not challenge_db:
+            raise mglyph_errors.NotFoundError("Challenge", mglyph_errors.ErrorCode.NOT_FOUND_ID)
+        user_db = await self.db_session.get(UserModel, evaluator_id)
+        if not user_db:
+            raise mglyph_errors.NotFoundError("User", mglyph_errors.ErrorCode.NOT_FOUND_ID)
+        for link in challenge_db.challenge_evaluator_links:
+            if link.evaluator_id == evaluator_id:
+                # TODO: ? is volunteer_pending and not is_volunteer -> change state to confirmed
+                # TODO: ? if invited_pending and is_volunteer -> change state to confirmed
+                raise mglyph_errors.BadRequestError("User is already an evaluator of this challenge", mglyph_errors.ErrorCode.BAD_REQUEST_ALREADY_DONE)
+        await self.challenge_evaluator_service.create_challenge_evaluator(challenge_id, evaluator_id, is_volunteer)
+        challenge_db = await self.challenge_repository.get_challenge_by_id(challenge_db.id, load_options=ChallengeRepository.LoadOptions.all_options())
+        return challenge_db
 
 
-def get_challenge_service(db_session: SessionDep, challenge_repository: ChallengeRepositoryDep, evaluation_round_repository: EvaluationRoundRepositoryDep, evaluation_round_service: EvaluationRoundServiceDep):
-    return ChallengeService(db_session, challenge_repository, evaluation_round_repository, evaluation_round_service)
+
+def get_challenge_service(db_session: SessionDep, challenge_repository: ChallengeRepositoryDep, evaluation_round_repository: EvaluationRoundRepositoryDep, evaluation_round_service: EvaluationRoundServiceDep, challenge_evaluator_service: ChallengeEvaluatorServiceDep):
+    return ChallengeService(db_session, challenge_repository, evaluation_round_repository, evaluation_round_service, challenge_evaluator_service)
 
 ChallengeServiceDep = Annotated[ChallengeService, Depends(get_challenge_service)]
