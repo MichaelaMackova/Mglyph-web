@@ -5,6 +5,7 @@ from uuid import UUID
 from datetime import datetime
 
 from api.users.schemas import UserPublicSimpleDTO
+from api.mglyph.schemas import MGlyphEvaluationPublicDTO
 
 from db.models.challengeModel import ChallengeModel
 from db.models.evaluationRoundModel import EvaluationRoundModel
@@ -63,6 +64,12 @@ class ChallengePublicSimpleDTO(ChallengeBase):
             submissions_ended=challengeModel.submissions_ended,
             challenge_finished=challengeModel.challenge_finished
         )
+    
+
+class ChallengePublicMiniDetailDTO(ChallengePublicSimpleDTO):
+    mglyph_evaluations: list[MGlyphEvaluationPublicDTO]
+    # TODO: user info (is solver, is evaluator)
+
 
 class ChallengePublicDTO(ChallengeBase):
     id: UUID

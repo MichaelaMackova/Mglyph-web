@@ -7,6 +7,8 @@ from datetime import datetime
 from api.users.schemas import UserPublicSimpleDTO
 
 from db.models.malleableGlyphModel import MalleableGlyphModel
+from db.models.mglyphEvaluationModel import MGlyphEvaluationModel
+
 
 
 
@@ -103,3 +105,19 @@ class MGlyphPublicDTO(MGlyphBase):
 
 
 
+class MGlyphEvaluationPublicDTO(BaseModel):
+    id: UUID
+    rank: Optional[int] = None
+    score: Optional[float] = None
+    malleable_glyph: MGlyphPublicSimpleDTO
+    #evaluation_round: EvaluationRoundPublicDTO
+
+    @staticmethod
+    def from_model(mglyph_evaluation_model: MGlyphEvaluationModel) -> "MGlyphEvaluationPublicDTO":
+        return MGlyphEvaluationPublicDTO(
+            id=mglyph_evaluation_model.id,
+            rank=mglyph_evaluation_model.rank,
+            score=mglyph_evaluation_model.score,
+            malleable_glyph=MGlyphPublicSimpleDTO.from_model(mglyph_evaluation_model.malleable_glyph)
+            #evaluation_round=EvaluationRoundPublicDTO.from_model(mglyph_evaluation_model.evaluation_round)
+        )

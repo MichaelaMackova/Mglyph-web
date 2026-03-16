@@ -7,12 +7,13 @@ from db.database import SessionDep
 from pydantic import ValidationError
 from errors import NotFoundError, BadRequestError, ErrorCode
 
-from api.auth.dependencies import CurrentAdminUserIdDep, CurrentUserIdDep
+from api.auth.dependencies import CurrentAdminUserIdDep, CurrentUserIdDep, CurrentUserIdOrNoneDep
 from api.challenges.services import ChallengeServiceDep, EvaluationRoundServiceDep, ChallengeEvaluatorServiceDep
 
 
 from db.models.challengeModel import ChallengeModel
-from api.challenges.schemas import ChallengeFilterParamsAsQuery, ChallengePublicDTO, ChallengePublicSimpleDTO, ChallengeCreateDTO
+from api.challenges.schemas import ChallengeFilterParamsAsQuery, ChallengePublicDTO, ChallengePublicMiniDetailDTO, ChallengePublicSimpleDTO, ChallengeCreateDTO
+from api.mglyph.schemas import MGlyphEvaluationPublicDTO
 from db.models.userModel import UserModel
 from db.models.evaluationRoundModel import EvaluationRoundModel
 from db.models.challengeEvaluatorModel import ChallengeEvaluatorState
@@ -25,6 +26,7 @@ router = APIRouter(
 
 
 @router.post("", 
+             description="[Admin required] Create a new challenge",
              status_code=status.HTTP_201_CREATED, 
              response_description="Challenge Created Successfully")
 async def create_challenge(challenge: ChallengeCreateDTO, current_user_id: CurrentAdminUserIdDep, challenge_service: ChallengeServiceDep) -> ChallengePublicDTO:
@@ -36,24 +38,42 @@ async def create_challenge(challenge: ChallengeCreateDTO, current_user_id: Curre
     
 
 
-@router.get("")
+@router.get("", description="[Optional login - added user relation info] Get a list of challenges with optional filtering and pagination",)
 async def read_challenges(
+    current_user_id: CurrentUserIdOrNoneDep,
     challenge_service: ChallengeServiceDep,
     filter_params: ChallengeFilterParamsAsQuery,
+    glyph_count: Annotated[int, Query(le=5, ge=0, description="Include first glyph_count best ranked glyphs of the challenge in the response. Max value is 5. If not specified, no glyphs will be included.")] = 0,
     offset: int = 0,
     limit: Annotated[int, Query(le=100)] = 100
-) -> list[ChallengePublicSimpleDTO]:
-    challenges = await challenge_service.get_paginated_challenges(filters=filter_params, offset=offset, limit=limit)
-    return [ChallengePublicSimpleDTO.from_model(challenge) for challenge in challenges]
+) -> list[ChallengePublicMiniDetailDTO]:
+    challenges_with_glyphs = await challenge_service.get_paginated_challenges_with_glyphs(filters=filter_params, glyph_count=glyph_count, offset=offset, limit=limit)
+    challengePublicMiniDetailDTOs = [
+        ChallengePublicMiniDetailDTO(
+            id=challenge.id,
+            name=challenge.name,
+            glyph_submit_deadline=challenge.glyph_submit_deadline,
+            submissions_ended=challenge.submissions_ended,
+            challenge_finished=challenge.challenge_finished,
+            mglyph_evaluations=[
+                MGlyphEvaluationPublicDTO.from_model(mglyph_evaluation) for mglyph_evaluation in mglyph_evaluation_list
+            ]
+        )
+        for challenge, mglyph_evaluation_list in challenges_with_glyphs
+    ]
+    return challengePublicMiniDetailDTOs
+    # TODO: if user is logged in, add info about whether the user is a solver or evaluator
+    
 
 
 
-@router.get("/user-is-participant")
+@router.get("/user-is-participant", description="[Login required] Get a list of challenges where the logged in user is a participant (solver or evaluator) with optional filtering and pagination")
 async def read_challenges_where_user_is_participant(
     challenge_service: ChallengeServiceDep,
     user_id: CurrentUserIdDep,
     filter_params: ChallengeFilterParamsAsQuery,
     as_solver: Optional[bool] = Query(default=None, description="If true, only return challenges where the user is a solver. If false, only return challenges where the user is evaluator. If null, return all challenges where the user is either a solver or evaluator."),
+    glyph_count: Annotated[int, Query(le=5, ge=0, description="Include first glyph_count best ranked glyphs of the challenge in the response. Max value is 5. If not specified, no glyphs will be included.")] = 0,
     offset: int = 0,
     limit: Annotated[int, Query(le=100)] = 100
 ) -> list[ChallengePublicSimpleDTO]:

@@ -12,13 +12,19 @@ from api.auth.utils import JWT_ACCESS_SECRET_KEY, JWT_REFRESH_SECRET_KEY, valida
 
 bearer_scheme = HTTPBearer(auto_error=False)
 
-def get_jwt_token(
-    credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme)
-) -> str:
+
+def get_jwt_token_or_none(credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme)) -> str | None:
     if credentials is None or credentials.scheme.lower() != "bearer":
-        err = mglyph_errors.UnauthorizedError("Missing authorization token or invalid scheme", mglyph_errors.ErrorCode.UNAUTHORIZED_MISSING_TOKEN)
-        raise mglyph_errors.UnauthorizedError.HTTPException(err, headers={"WWW-Authenticate": "Bearer"})
+        return None
     return credentials.credentials
+
+def get_jwt_token(
+    credentials: str | None = Depends(get_jwt_token_or_none)
+) -> str:
+    if credentials is None:
+            err = mglyph_errors.UnauthorizedError("Missing authorization token or invalid scheme", mglyph_errors.ErrorCode.UNAUTHORIZED_MISSING_TOKEN)
+            raise mglyph_errors.UnauthorizedError.HTTPException(err, headers={"WWW-Authenticate": "Bearer"})
+    return credentials
 
 def validate_access_token(token: str = Depends(get_jwt_token)) -> str:
     return validate_jwt_token(token, JWT_ACCESS_SECRET_KEY)
@@ -28,6 +34,17 @@ def validate_refresh_token(token: str = Depends(get_jwt_token)) -> str:
 
 
 CurrentUserIdDep = Annotated[str, Depends(validate_access_token)]
+
+
+
+def validate_access_token_or_none(token: str | None = Depends(get_jwt_token_or_none)) -> str | None:
+    if token is None:
+        return None
+    else:
+        return validate_access_token(token)
+
+CurrentUserIdOrNoneDep = Annotated[str | None, Depends(validate_access_token_or_none)]
+
 
 
 async def validate_user_is_admin(user_id: CurrentUserIdDep, session: SessionDep) -> str:

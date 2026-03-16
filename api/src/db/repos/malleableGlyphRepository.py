@@ -82,18 +82,6 @@ class MalleableGlyphRepository(RepositoryInterface):
         mglyphs_db = result.scalars().all()
         return mglyphs_db
 
-    async def get_paginated_malleable_glyphs_in_challenge_round(self, evaluation_round_id: UUID, offset: int = 0, limit: int = 100, load_options: LoadOptions = LoadOptions()) -> list[MalleableGlyphModel]:
-        select_exec = select(MalleableGlyphModel).distinct()\
-            .join(MGlyphEvaluationModel, MGlyphEvaluationModel.malleable_glyph_id == MalleableGlyphModel.id)\
-            .join(EvaluationRoundModel, EvaluationRoundModel.id == MGlyphEvaluationModel.evaluation_round_id)\
-            .where(EvaluationRoundModel.id == evaluation_round_id)
-        select_exec = select_exec.offset(offset).limit(limit)
-        select_exec = load_options.add_options_to_statement(select_exec)
-        result = await self.db_session.execute(select_exec)
-        mglyphs_db = result.scalars().all()
-        return mglyphs_db
-        pass
-
     async def get_paginated_malleable_glyphs_in_challenge(self, challenge_id: UUID, offset: int = 0, limit: int = 100, load_options: LoadOptions = LoadOptions()) -> list[MalleableGlyphModel]:
         select_exec = select(MalleableGlyphModel).distinct()\
             .join(MGlyphEvaluationModel, MGlyphEvaluationModel.malleable_glyph_id == MalleableGlyphModel.id)\
