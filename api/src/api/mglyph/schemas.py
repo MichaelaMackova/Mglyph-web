@@ -77,6 +77,22 @@ class MGlyphPublicSimpleDTO(MGlyphBase):
         )
 
 
+class MGlyphPublicSimpleWithCreatorDTO(MGlyphBase):
+    id: UUID
+    zip_file_path: str # TODO: show only zip_file name or a presigned URL for download instead of the full path
+    creator: UserPublicSimpleDTO
+
+    @staticmethod
+    def from_model(mglyph_model: MalleableGlyphModel) -> "MGlyphPublicSimpleWithCreatorDTO":
+        return MGlyphPublicSimpleWithCreatorDTO(
+            id=mglyph_model.id,
+            short_name=mglyph_model.short_name,
+            long_name=mglyph_model.long_name,
+            zip_file_path=mglyph_model.zip_file_path, # TODO: show only zip_file name or a presigned URL for download instead of the full path
+            creator=UserPublicSimpleDTO.from_model(mglyph_model.creator)
+        )
+
+
 class MGlyphPublicDTO(MGlyphBase):
     id: UUID
     last_updated_time: datetime
@@ -109,7 +125,7 @@ class MGlyphEvaluationPublicDTO(BaseModel):
     id: UUID
     rank: Optional[int] = None
     score: Optional[float] = None
-    malleable_glyph: MGlyphPublicSimpleDTO
+    malleable_glyph: MGlyphPublicSimpleWithCreatorDTO
     #evaluation_round: EvaluationRoundPublicDTO
 
     @staticmethod
@@ -118,6 +134,6 @@ class MGlyphEvaluationPublicDTO(BaseModel):
             id=mglyph_evaluation_model.id,
             rank=mglyph_evaluation_model.rank,
             score=mglyph_evaluation_model.score,
-            malleable_glyph=MGlyphPublicSimpleDTO.from_model(mglyph_evaluation_model.malleable_glyph)
+            malleable_glyph=MGlyphPublicSimpleWithCreatorDTO.from_model(mglyph_evaluation_model.malleable_glyph)
             #evaluation_round=EvaluationRoundPublicDTO.from_model(mglyph_evaluation_model.evaluation_round)
         )

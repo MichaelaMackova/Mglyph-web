@@ -16,14 +16,15 @@
     <div
       v-else
       class="challenge-info-container main-padding"
-      v-for="challenge in responseData"
-      :key="challenge.id"
+      v-for="challenge_info in responseData"
+      :key="challenge_info.challenge.id"
     >
       <ChallengeInfo
-        :title="challenge.title"
-        :start_time="challenge.start_time"
-        :end_time="challenge.end_time"
-        :state="challenge.state"
+        :title="challenge_info.challenge.title"
+        :start_time="challenge_info.challenge.start_time"
+        :end_time="challenge_info.challenge.end_time"
+        :state="challenge_info.challenge.state"
+        :challengeGlyphs="challenge_info.glyphs"
       />
     </div>
   </div>
@@ -35,17 +36,18 @@
 import ChallengeInfo from '@/components/ChallengeInfo.vue'
 import { mglyphClient } from '@/clients/mglyph_client'
 import { ref } from 'vue'
-import { ChallengeStateEnum, ChallengeSimple } from '@/services/types'
+import { ChallengeStateEnum, ChallengeSimple, ChallengeGlyph, User } from '@/services/types'
 
 const isLoading = ref<boolean>(true)
 const errorOccurred = ref<boolean>(false)
-const responseData = ref<ChallengeSimple[] | null>(null)
+const responseData = ref<{ challenge: ChallengeSimple; glyphs: ChallengeGlyph[] }[] | null>(null)
 
 async function fetchChallenges() {
   try {
     const response = await mglyphClient.get('/challenges', {
       authorizeEndpoint: false,
       params: {
+        glyph_count: 3,
         offset: 0,
         limit: 100,
       },
@@ -53,18 +55,25 @@ async function fetchChallenges() {
     if (!Array.isArray(response.data)) {
       throw new Error('Invalid response format: expected an array')
     }
-    responseData.value = response.data.map(
-      (challenge: any) =>
-        new ChallengeSimple(
-          challenge.id,
-          challenge.name,
-          new Date(2021, 0, 1), // TODO: Replace with actual start time from response
-          new Date(challenge.glyph_submit_deadline), // TODO: Replace with actual end time from response
-          //challenge.submissions_ended,
-          true,
-          challenge.challenge_finished,
-        ),
-    )
+    responseData.value = response.data.map((challenge: any) => {
+      var ch = new ChallengeSimple(
+        challenge.id,
+        challenge.name,
+        new Date(2021, 0, 1), // TODO: Replace with actual start time from response
+        new Date(challenge.glyph_submit_deadline), // TODO: Replace with actual end time from response
+        challenge.submissions_ended,
+        challenge.challenge_finished,
+      )
+      var glyphs = challenge.mglyph_evaluations.map((glyph: any) => {
+        return new ChallengeGlyph(
+          glyph.malleable_glyph.id,
+          glyph.rank,
+          new User(glyph.malleable_glyph.creator.id, glyph.malleable_glyph.creator.username),
+          new Array<string>(), // TODO: Replace with actual flags from response
+        )
+      })
+      return { challenge: ch, glyphs: glyphs }
+    })
     errorOccurred.value = false
   } catch (err) {
     console.error(err)
@@ -77,6 +86,10 @@ fetchChallenges()
 </script>
 
 <style scoped lang="css">
+.challenges-container {
+  padding-bottom: 20px;
+}
+
 .challenge-info-container {
   padding-top: 20px;
   padding-bottom: 20px;

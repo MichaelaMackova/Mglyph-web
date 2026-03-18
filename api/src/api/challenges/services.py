@@ -137,7 +137,7 @@ class ChallengeService:
             if glyph_count > 0:
                 last_round = await self.evaluation_round_repository.get_last_round_in_challenge(challenge.id)
                 if last_round:
-                    mglyphs = await self.mglyph_evaluation_repository.get_paginated_mglyph_evaluations_in_challenge_round(last_round.id, offset=0, limit=glyph_count, order_by=MGlyphEvaluationRepository.OrderByOption.RANK_ASC, load_options=MGlyphEvaluationRepository.LoadOptions(load_malleable_glyph=True))
+                    mglyphs = await self.mglyph_evaluation_repository.get_paginated_mglyph_evaluations_in_challenge_round(last_round.id, offset=0, limit=glyph_count, order_by=MGlyphEvaluationRepository.OrderByOption.RANK_ASC, load_options=MGlyphEvaluationRepository.LoadOptions(load_malleable_glyph=True, load_malleable_glyph_creator=True))
             challenges_with_glyphs.append((challenge, mglyphs))
         return challenges_with_glyphs
 

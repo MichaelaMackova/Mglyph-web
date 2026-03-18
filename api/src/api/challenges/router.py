@@ -47,6 +47,7 @@ async def read_challenges(
     offset: int = 0,
     limit: Annotated[int, Query(le=100)] = 100
 ) -> list[ChallengePublicMiniDetailDTO]:
+    #TODO: získat glyfy i z jiných kol než jen z aktuálního?
     challenges_with_glyphs = await challenge_service.get_paginated_challenges_with_glyphs(filters=filter_params, glyph_count=glyph_count, offset=offset, limit=limit)
     challengePublicMiniDetailDTOs = [
         ChallengePublicMiniDetailDTO(

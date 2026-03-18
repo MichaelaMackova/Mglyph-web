@@ -19,18 +19,22 @@ class MGlyphEvaluationRepository(RepositoryInterface):
         self.db_session = db_session
 
     class LoadOptions(RepositoryInterface.LoadOptionsInterface):
-        def __init__(self, load_malleable_glyph: bool = False, load_evaluation_round: bool = False, load_mglyph_evaluator_links: bool = False):
+        def __init__(self, load_malleable_glyph: bool = False, load_evaluation_round: bool = False, load_mglyph_evaluator_links: bool = False, load_malleable_glyph_creator: bool = False):
             self.load_malleable_glyph = load_malleable_glyph
             self.load_evaluation_round = load_evaluation_round
             self.load_mglyph_evaluator_links = load_mglyph_evaluator_links
+            self.load_malleable_glyph_creator = load_malleable_glyph_creator
 
         @staticmethod
         def all_options():
-            return MGlyphEvaluationRepository.LoadOptions(load_malleable_glyph=True, load_evaluation_round=True, load_mglyph_evaluator_links=True)
+            return MGlyphEvaluationRepository.LoadOptions(load_malleable_glyph=True, load_evaluation_round=True, load_mglyph_evaluator_links=True, load_malleable_glyph_creator=True)
 
         def add_options_to_statement(self, statement: Select) -> Select:
             if self.load_malleable_glyph:
-                statement = statement.options(joinedload(MGlyphEvaluationModel.malleable_glyph))
+                load_expr = joinedload(MGlyphEvaluationModel.malleable_glyph)
+                if self.load_malleable_glyph_creator:
+                    load_expr = load_expr.joinedload(MalleableGlyphModel.creator)
+                statement = statement.options(load_expr)
             if self.load_evaluation_round:
                 statement = statement.options(joinedload(MGlyphEvaluationModel.evaluation_round))
             if self.load_mglyph_evaluator_links:

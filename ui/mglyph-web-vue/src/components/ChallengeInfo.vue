@@ -11,8 +11,11 @@
           props.end_time.toLocaleString([], { dateStyle: 'long', timeStyle: undefined })
         }}</span>
       </div>
-      <div v-show="props.state !== ChallengeStateEnum.open" class="results-container">
-        <ChallengeTable :glyphs="challengeGlyphs" />
+      <div
+        v-show="props.state !== ChallengeStateEnum.open && props.challengeGlyphs.length > 0"
+        class="results-container"
+      >
+        <ChallengeTable :glyphs="props.challengeGlyphs" />
       </div>
     </div>
     <ChallengeState :state="props.state" />
@@ -30,6 +33,7 @@ interface Props {
   state: ChallengeStateEnum
   start_time: Date
   end_time: Date
+  challengeGlyphs?: ChallengeGlyph[]
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -43,22 +47,8 @@ const props = withDefaults(defineProps<Props>(), {
     date.setMonth(date.getMonth() + 1)
     return date
   },
+  challengeGlyphs: () => [],
 })
-
-const challengeGlyphs = ref<ChallengeGlyph[]>([
-  new ChallengeGlyph(
-    'UUID-UUID-UUID-UUID-UUID',
-    1,
-    { id: 'UUID-UUID-UUID-UUID-1234', username: 'JohnHan' },
-    ['flag1', 'flag2'],
-  ),
-  new ChallengeGlyph(
-    'UUID-UUID-UUID-UUID-UUID2',
-    2,
-    { id: 'UUID-UUID-UUID-UUID-0000', username: 'JaneDoe' },
-    ['flag3'],
-  ),
-])
 </script>
 
 <style lang="css">
