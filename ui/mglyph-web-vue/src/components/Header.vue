@@ -14,8 +14,9 @@
 
       <div class="login-container">
         <div class="login" ref="loginIconRef">
-          <i v-show="authStore.user" class="fa-solid fa-circle-user fa-4x"></i>
+          <i v-show="authStore.user && !authStore.user.picture_url" class="fa-solid fa-circle-user fa-4x"></i>
           <i v-show="!authStore.user" class="fa-regular fa-circle-user fa-4x"></i>
+          <img v-if="authStore.user && authStore.user.picture_url" :src="authStore.user.picture_url" alt="Profile Picture">
         </div>
       </div>
     </header>
@@ -322,10 +323,30 @@ ul.nav {
   display: flex;
   flex-direction: row-reverse;
 
-  i,
-  .login {
-    height: min-content;
+  i {
     width: min-content;
+    height: min-content;
+  }
+
+  img {
+      width: 4em;
+      object-fit: cover;
+  }
+
+  .login {
+      height: 4em;
+      width: 4em;
+      border: 3px solid var(--md-sys-color-on-primary, #ffffff);
+      border-radius: 50%;
+      overflow: hidden;
+
+      & > * {
+        /* centering */
+        position: relative;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+      }
   }
 }
 

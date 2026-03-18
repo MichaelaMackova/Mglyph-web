@@ -19,11 +19,13 @@ class LoggedInUserDTO(BaseModel):
     access_token: str
     refresh_token: str
     user_info: UserPublicSimpleDTO
+    picture_url: str | None = None
 
     @staticmethod
-    def init_with_new_tokens(user_info: UserPublicSimpleDTO) -> "LoggedInUserDTO":
+    def init_with_new_tokens(user_info: UserPublicSimpleDTO, picture_url: str | None = None) -> "LoggedInUserDTO":
         return LoggedInUserDTO(
             access_token=create_access_token(user_id=str(user_info.id)),
             refresh_token=create_refresh_token(user_id=str(user_info.id)),
-            user_info=user_info
+            user_info=user_info,
+            picture_url=picture_url
         )

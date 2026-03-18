@@ -32,7 +32,10 @@ async def google_auth(credential: CredentialDTO, user_repo: UserRepositoryDep, a
         )
         db_user = await user_service.create_user(user_create)
     user_info = UserPublicSimpleDTO.from_model(db_user)
-    return LoggedInUserDTO.init_with_new_tokens(user_info)
+    profile_picture_url = id_info.get('picture')
+    if profile_picture_url is None:
+        profile_picture_url = "https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png"  # Default picture URL
+    return LoggedInUserDTO.init_with_new_tokens(user_info, picture_url=profile_picture_url)
     
 
 # NOTE: User creation is automatic when a user logs in with Google for the first time. Possible user creation:

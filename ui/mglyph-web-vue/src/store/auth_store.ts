@@ -9,6 +9,7 @@ class LoggedUser {
   email: string
   role: string
   creation_time: Date
+  picture_url: string | null
 
   constructor(
     id: number,
@@ -16,12 +17,14 @@ class LoggedUser {
     email: string,
     role: string = 'user',
     creation_time: Date,
+    picture_url: string | null = null,
   ) {
     this.id = id
     this.username = username
     this.email = email
     this.role = role
     this.creation_time = creation_time
+    this.picture_url = picture_url
   }
 
   public static fromUserInfo(userInfo: any) {
@@ -31,6 +34,7 @@ class LoggedUser {
       userInfo.email,
       userInfo.role || 'user',
       new Date(userInfo.creation_time),
+      userInfo.picture_url || null
     )
   }
 }
@@ -88,6 +92,7 @@ const useAuthStore = defineStore('auth', () => {
         accessToken.value = res.data.access_token
         refreshToken.value = res.data.refresh_token
         user.value = LoggedUser.fromUserInfo(res.data.user_info)
+        user.value.picture_url = res.data.picture_url || null
         saveStoreToLocalStorage()
       })
   }
@@ -106,6 +111,7 @@ const useAuthStore = defineStore('auth', () => {
         accessToken.value = res.data.access_token
         refreshToken.value = res.data.refresh_token
         user.value = LoggedUser.fromUserInfo(res.data.user_info)
+        user.value.picture_url = res.data.picture_url || null
         saveStoreToLocalStorage()
       })
   }
