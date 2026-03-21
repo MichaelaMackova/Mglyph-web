@@ -2,20 +2,14 @@ from typing import Annotated, Optional
 from fastapi import APIRouter, Query, HTTPException, status, responses
 from uuid import UUID
 
-from sqlmodel import select
-from db.database import SessionDep
-from pydantic import ValidationError
 from errors import NotFoundError, BadRequestError, ErrorCode
 
 from api.auth.dependencies import CurrentAdminUserIdDep, CurrentUserIdDep, CurrentUserIdOrNoneDep
-from api.challenges.services import ChallengeServiceDep, EvaluationRoundServiceDep, ChallengeEvaluatorServiceDep
+from api.challenges.services import ChallengeServiceDep, ChallengeEvaluatorServiceDep
 
 
-from db.models.challengeModel import ChallengeModel
-from api.challenges.schemas import ChallengeFilterParamsAsQuery, ChallengePublicDTO, ChallengePublicMiniDetailDTO, ChallengePublicSimpleDTO, ChallengeCreateDTO
+from api.challenges.schemas import ChallengeFilterParamsAsQuery, ChallengePublicDTO, ChallengePublicMiniDetailDTO, ChallengePublicSimpleDTO, ChallengeCreateDTO, ChallengeUserRelationshipDTO
 from api.mglyph.schemas import MGlyphEvaluationPublicDTO
-from db.models.userModel import UserModel
-from db.models.evaluationRoundModel import EvaluationRoundModel
 from db.models.challengeEvaluatorModel import ChallengeEvaluatorState
 
 router = APIRouter(
@@ -48,24 +42,24 @@ async def read_challenges(
     limit: Annotated[int, Query(le=100)] = 100
 ) -> list[ChallengePublicMiniDetailDTO]:
     #TODO: získat glyfy i z jiných kol než jen z aktuálního?
-    challenges_with_glyphs = await challenge_service.get_paginated_challenges_with_glyphs(filters=filter_params, glyph_count=glyph_count, offset=offset, limit=limit)
-    challengePublicMiniDetailDTOs = [
+    challenges_with_glyphs_and_user_relationship = await challenge_service.get_paginated_challenges_with_glyphs_and_user_relationship(filters=filter_params, current_user_id=UUID(current_user_id) if current_user_id else None, glyph_count=glyph_count, offset=offset, limit=limit)
+    return [
         ChallengePublicMiniDetailDTO(
-            id=challenge.id,
-            name=challenge.name,
-            glyph_submit_deadline=challenge.glyph_submit_deadline,
-            submissions_ended=challenge.submissions_ended,
-            challenge_finished=challenge.challenge_finished,
-            mglyph_evaluations=[
-                MGlyphEvaluationPublicDTO.from_model(mglyph_evaluation) for mglyph_evaluation in mglyph_evaluation_list
-            ]
+            id=item["challenge"].id,
+            name=item["challenge"].name,
+            glyph_submit_deadline=item["challenge"].glyph_submit_deadline,
+            submissions_ended=item["challenge"].submissions_ended,
+            challenge_finished=item["challenge"].challenge_finished,
+            mglyph_evaluations=[MGlyphEvaluationPublicDTO.from_model(mglyph_evaluation) for mglyph_evaluation in item["glyphs"]],
+            user_relationship=ChallengeUserRelationshipDTO.from_relationship_flags(
+                is_solver=item["user_relationship"]["is_solver"],
+                has_submitted_mglyph=item["user_relationship"]["has_submitted_mglyph"],
+                is_evaluator=item["user_relationship"]["is_evaluator"],
+                waiting_for_evaluation=item["user_relationship"]["waiting_for_evaluation"]
+            ) if item["user_relationship"] else None
         )
-        for challenge, mglyph_evaluation_list in challenges_with_glyphs
+        for item in challenges_with_glyphs_and_user_relationship
     ]
-    return challengePublicMiniDetailDTOs
-    # TODO: if user is logged in, add info about whether the user is a solver or evaluator
-    
-
 
 
 @router.get("/user-is-participant", description="[Login required] Get a list of challenges where the logged in user is a participant (solver or evaluator) with optional filtering and pagination")
@@ -208,45 +202,3 @@ async def delete_challenge(challenge_id: UUID, current_user_id: CurrentAdminUser
     except BadRequestError as e:
         raise BadRequestError.HTTPException(e)
 
-
-#TODO: odstranit
-@router.get("/{challenge_id}/test-rounds")
-def get_test_rounds(challenge_id: UUID, session: SessionDep):
-    challenge_db = session.get(ChallengeModel, challenge_id)
-    if not challenge_db:
-        err = NotFoundError("Challenge", ErrorCode.NOT_FOUND_ID)
-        raise NotFoundError.HTTPException(err)
-    
-    print("Challenge rounds:", challenge_db.evaluation_rounds)
-
-    round_one = EvaluationRoundModel(sequence_number=1, estimated_end_time="2027-12-31T23:59:59", challenge_id=challenge_id)
-    session.add(round_one)
-    session.commit()
-    session.refresh(round_one)
-
-    print("Challenge rounds after adding round one:", challenge_db.evaluation_rounds)
-    print("Round one - next round:", round_one.next_round)
-    print("Round one - previous round:", round_one.previous_round)
-
-
-    round_two = EvaluationRoundModel(sequence_number=2, estimated_end_time="2028-12-31T23:59:59", challenge_id=challenge_id)
-    session.add(round_two)
-    round_one.next_round = round_two
-    session.add(round_one)
-    session.commit()
-    session.refresh(round_one)
-    session.refresh(round_two)
-
-    print("Challenge rounds after adding round two:", challenge_db.evaluation_rounds)
-    print("Round one - next round:", round_one.next_round)
-    print("Round one - previous round:", round_one.previous_round)
-    print("Round two - next round:", round_two.next_round)
-    print("Round two - previous round:", round_two.previous_round)
-
-    # delete rounds
-    session.delete(round_one)
-    session.delete(round_two)
-    session.commit()
-
-
-    return challenge_db.evaluation_rounds

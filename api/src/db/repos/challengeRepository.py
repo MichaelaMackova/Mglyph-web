@@ -2,14 +2,19 @@ from typing import Annotated
 from fastapi import Depends
 from db.database import SessionDep
 from sqlalchemy.ext.asyncio.session import AsyncSession
-from sqlmodel import select, or_
+from sqlmodel import select, or_, and_, case
 from sqlalchemy.orm import selectinload, joinedload
 from uuid import UUID
 from db.repos.interface import RepositoryInterface
 
 from db.models.challengeModel import ChallengeModel
 from db.models.challengeSolverModel import ChallengeSolverModel
-from db.models.challengeEvaluatorModel import ChallengeEvaluatorModel
+from db.models.challengeEvaluatorModel import ChallengeEvaluatorModel, ChallengeEvaluatorState
+from db.models.mglyphEvaluatorModel import MGlyphEvaluatorModel
+from db.models.answerModel import AnswerModel
+from db.models.evaluationRoundModel import EvaluationRoundModel
+from db.models.mglyphEvaluationModel import MGlyphEvaluationModel
+from db.models.malleableGlyphModel import MalleableGlyphModel
 
 
 class ChallengeRepository(RepositoryInterface):
@@ -72,7 +77,109 @@ class ChallengeRepository(RepositoryInterface):
         result = await self.db_session.execute(select_exec)
         challenges_db = result.scalars().all()
         return challenges_db
-    
+
+    async def get_paginated_challenges_with_user_relationship(self, user_id: UUID | None = None, filters: FilterParams = FilterParams(), offset: int = 0, limit: int = 100, load_options: LoadOptions = LoadOptions()) -> list[tuple[ChallengeModel, bool, bool]]:
+        mglyph_evaluator_without_answer_exists_subq = select(MGlyphEvaluatorModel.id)\
+            .join(ChallengeEvaluatorModel, and_(
+                MGlyphEvaluatorModel.challenge_evaluator_id == ChallengeEvaluatorModel.id,
+                ChallengeEvaluatorModel.challenge_id == ChallengeModel.id,
+                ChallengeEvaluatorModel.evaluator_id == user_id,
+            ))\
+            .outerjoin(AnswerModel, AnswerModel.mglyph_evaluator_id == MGlyphEvaluatorModel.id)\
+            .where(AnswerModel.id.is_(None)).exists()
+
+        submitted_mglyph_exists_subq = select(MGlyphEvaluationModel.malleable_glyph_id)\
+            .join(EvaluationRoundModel, and_(MGlyphEvaluationModel.evaluation_round_id == EvaluationRoundModel.id, EvaluationRoundModel.challenge_id == ChallengeModel.id, EvaluationRoundModel.sequence_number == 1))\
+            .join(MalleableGlyphModel, and_(MGlyphEvaluationModel.malleable_glyph_id == MalleableGlyphModel.id, MalleableGlyphModel.submission_time.is_not(None), MalleableGlyphModel.creator_id == user_id))\
+            .exists()
+        
+        select_exec = select(
+                        ChallengeModel,
+                        case(
+                            (user_id is None, False),
+                            (ChallengeSolverModel.solver_id == user_id, True),
+                            else_=False).label("is_solver"),
+                        case(
+                            (submitted_mglyph_exists_subq, True),
+                            else_=False).label("has_submitted_mglyph"),
+                        case(
+                            (user_id is None, False),
+                            (ChallengeEvaluatorModel.evaluator_id == user_id, True),
+                            else_=False).label("is_evaluator"),
+                        case(
+                            (mglyph_evaluator_without_answer_exists_subq, True),
+                            else_=False).label("waiting_for_evaluation")
+                        )\
+            .outerjoin(ChallengeSolverModel, and_(ChallengeSolverModel.challenge_id == ChallengeModel.id, ChallengeSolverModel.solver_id == user_id))\
+            .outerjoin(ChallengeEvaluatorModel, and_(ChallengeEvaluatorModel.challenge_id == ChallengeModel.id, ChallengeEvaluatorModel.evaluator_id == user_id, ChallengeEvaluatorModel.state == ChallengeEvaluatorState.confirmed))
+        
+        select_exec = filters.apply_filters_to_statement(select_exec)
+        select_exec = select_exec.offset(offset).limit(limit)
+        select_exec = load_options.add_options_to_statement(select_exec)
+        result = await self.db_session.execute(select_exec)
+        return result.all()
+
+
+    async def get_user_relationship_for_challenges(self, user_id: UUID | None = None, challenge_ids: list[UUID] | None = None) -> dict[UUID, dict[str, bool]]:
+        """
+        Returns:
+            dict:
+                - key: challenge_id
+                - value: dict with keys:
+                    is_solver: bool
+                    has_submitted_mglyph: bool
+                    is_evaluator: bool
+                    waiting_for_evaluation: bool
+        """
+        mglyph_evaluator_without_answer_exists_subq = select(MGlyphEvaluatorModel.id)\
+            .join(ChallengeEvaluatorModel, and_(
+                MGlyphEvaluatorModel.challenge_evaluator_id == ChallengeEvaluatorModel.id,
+                ChallengeEvaluatorModel.challenge_id == ChallengeModel.id,
+                ChallengeEvaluatorModel.evaluator_id == user_id,
+            ))\
+            .outerjoin(AnswerModel, AnswerModel.mglyph_evaluator_id == MGlyphEvaluatorModel.id)\
+            .where(AnswerModel.id.is_(None)).exists()
+
+        submitted_mglyph_exists_subq = select(MGlyphEvaluationModel.malleable_glyph_id)\
+            .join(EvaluationRoundModel, and_(MGlyphEvaluationModel.evaluation_round_id == EvaluationRoundModel.id, EvaluationRoundModel.challenge_id == ChallengeModel.id, EvaluationRoundModel.sequence_number == 1))\
+            .join(MalleableGlyphModel, and_(MGlyphEvaluationModel.malleable_glyph_id == MalleableGlyphModel.id, MalleableGlyphModel.submission_time.is_not(None), MalleableGlyphModel.creator_id == user_id))\
+            .exists()
+        
+        select_exec = select(
+                        ChallengeModel.id,
+                        case(
+                            (user_id is None, False),
+                            (ChallengeSolverModel.solver_id == user_id, True),
+                            else_=False).label("is_solver"),
+                        case(
+                            (submitted_mglyph_exists_subq, True),
+                            else_=False).label("has_submitted_mglyph"),
+                        case(
+                            (user_id is None, False),
+                            (ChallengeEvaluatorModel.evaluator_id == user_id, True),
+                            else_=False).label("is_evaluator"),
+                        case(
+                            (mglyph_evaluator_without_answer_exists_subq, True),
+                            else_=False).label("waiting_for_evaluation")
+                    )\
+            .outerjoin(ChallengeSolverModel, and_(ChallengeSolverModel.challenge_id == ChallengeModel.id, ChallengeSolverModel.solver_id == user_id))\
+            .outerjoin(ChallengeEvaluatorModel, and_(ChallengeEvaluatorModel.challenge_id == ChallengeModel.id, ChallengeEvaluatorModel.evaluator_id == user_id, ChallengeEvaluatorModel.state == ChallengeEvaluatorState.confirmed))\
+            .where(ChallengeModel.id.in_(challenge_ids))
+        
+        result = await self.db_session.execute(select_exec)
+        user_relationships = result.all()
+
+        user_relationships_per_challenge = {}
+        for challenge_id, is_solver, has_submitted_mglyph, is_evaluator, waiting_for_evaluation in user_relationships:
+            user_relationships_per_challenge[challenge_id] = {
+                "is_solver": is_solver,
+                "has_submitted_mglyph": has_submitted_mglyph,
+                "is_evaluator": is_evaluator,
+                "waiting_for_evaluation": waiting_for_evaluation
+            }
+        return user_relationships_per_challenge
+
+
     async def get_paginated_challenges_with_participating_user(self, user_id: UUID, as_solver: bool | None = None, filters: FilterParams = FilterParams(), offset: int = 0, limit: int = 100, load_options: LoadOptions = LoadOptions()) -> list[ChallengeModel]:
         """
         If as_solver is True, returns paginated challenges where user is a solver. If as_solver is False, returns paginated challenges where user is an evaluator. If as_solver is None, returns paginated challenges where user is either a solver or an evaluator.

@@ -3,6 +3,7 @@ from typing import Optional, Annotated
 from pydantic import BaseModel
 from uuid import UUID
 from datetime import datetime
+from enum import Enum
 
 from api.users.schemas import UserPublicSimpleDTO
 from api.mglyph.schemas import MGlyphEvaluationPublicDTO
@@ -66,9 +67,47 @@ class ChallengePublicSimpleDTO(ChallengeBase):
         )
     
 
+class ChallengeUserSolverRelationshipType(Enum):
+    NONE = "none"
+    REGISTERED = "registered"
+    MGLYPH_SUBMITTED = "mglyph_submitted"
+
+class ChallengeUserEvaluatorRelationshipType(Enum):
+    NONE = "none"
+    REGISTERED = "registered"
+    EVALUATION_AWAITING = "evaluation_awaiting"
+    EVALUATION_FINISHED = "evaluation_finished"
+
+class ChallengeUserRelationshipDTO(BaseModel):
+    solver_relationship: ChallengeUserSolverRelationshipType
+    evaluator_relationship: ChallengeUserEvaluatorRelationshipType
+
+    @staticmethod
+    def from_relationship_flags(is_solver: bool, has_submitted_mglyph: bool, is_evaluator: bool, waiting_for_evaluation: bool) -> "ChallengeUserRelationshipDTO":
+        if is_solver:
+            if has_submitted_mglyph:
+                solver_relationship = ChallengeUserSolverRelationshipType.MGLYPH_SUBMITTED
+            else:
+                solver_relationship = ChallengeUserSolverRelationshipType.REGISTERED
+        else:
+            solver_relationship = ChallengeUserSolverRelationshipType.NONE
+
+        if is_evaluator:
+            if waiting_for_evaluation:
+                evaluator_relationship = ChallengeUserEvaluatorRelationshipType.EVALUATION_AWAITING
+            else:
+                evaluator_relationship = ChallengeUserEvaluatorRelationshipType.EVALUATION_FINISHED
+        else:
+            evaluator_relationship = ChallengeUserEvaluatorRelationshipType.NONE
+
+        return ChallengeUserRelationshipDTO(
+            solver_relationship=solver_relationship,
+            evaluator_relationship=evaluator_relationship
+        )
+
 class ChallengePublicMiniDetailDTO(ChallengePublicSimpleDTO):
     mglyph_evaluations: list[MGlyphEvaluationPublicDTO]
-    # TODO: user info (is solver, is evaluator)
+    user_relationship: ChallengeUserRelationshipDTO | None
 
 
 class ChallengePublicDTO(ChallengeBase):

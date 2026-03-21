@@ -12,3 +12,4 @@ start-docker-app.ps1
 docker_config
 
 extras/*
+api/src/resetTestData.sql
