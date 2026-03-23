@@ -34,7 +34,7 @@ class LoggedUser {
       userInfo.email,
       userInfo.role || 'user',
       new Date(userInfo.creation_time),
-      userInfo.picture_url || null
+      userInfo.picture_url || null,
     )
   }
 }
@@ -44,7 +44,7 @@ const useAuthStore = defineStore('auth', () => {
   const accessToken = ref<string | null>(null)
   const refreshToken = ref<string | null>(null)
 
-  function initializeStoreFromLocalStorage() {
+  async function initializeStoreFromLocalStorage() {
     const storedAccessToken = localStorage.getItem('accessToken')
     const storedRefreshToken = localStorage.getItem('refreshToken')
     const storedUserInfo = localStorage.getItem('userInfo')
@@ -63,6 +63,12 @@ const useAuthStore = defineStore('auth', () => {
         localStorage.removeItem('userInfo')
       }
     }
+
+    await isTokenValid(true, true).then((isValid) => {
+      if (!isValid) {
+        logout()
+      }
+    })
   }
 
   function saveStoreToLocalStorage() {
@@ -136,6 +142,7 @@ const useAuthStore = defineStore('auth', () => {
       .then((res) => {
         accessToken.value = res.data.access_token
         refreshToken.value = res.data.refresh_token
+        saveStoreToLocalStorage()
       })
   }
 

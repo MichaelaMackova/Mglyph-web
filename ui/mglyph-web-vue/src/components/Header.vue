@@ -14,9 +14,16 @@
 
       <div class="login-container">
         <div class="login" ref="loginIconRef">
-          <i v-show="authStore.user && !authStore.user.picture_url" class="fa-solid fa-circle-user fa-4x"></i>
+          <i
+            v-show="authStore.user && !authStore.user.picture_url"
+            class="fa-solid fa-circle-user fa-4x"
+          ></i>
           <i v-show="!authStore.user" class="fa-regular fa-circle-user fa-4x"></i>
-          <img v-if="authStore.user && authStore.user.picture_url" :src="authStore.user.picture_url" alt="Profile Picture">
+          <img
+            v-if="authStore.user && authStore.user.picture_url"
+            :src="authStore.user.picture_url"
+            alt="Profile Picture"
+          />
         </div>
       </div>
     </header>
@@ -179,6 +186,7 @@ const googleLoginCallback: CallbackTypes.CredentialCallback = (response) => {
     .googleLogin(response.credential)
     .then(() => {
       closeLoginPrompt()
+      window.location.reload()
     })
     .catch((err) => {
       console.error('Error logging in', err)
@@ -210,6 +218,7 @@ function logout() {
   // TODO: Clear the session on the backend
   googleCredential = null
   authStore.logout()
+  window.location.reload()
 }
 /* ==================== END - LOGIN AUTH ==================== */
 
@@ -329,24 +338,24 @@ ul.nav {
   }
 
   img {
-      width: 4em;
-      object-fit: cover;
+    width: 4em;
+    object-fit: cover;
   }
 
   .login {
-      height: 4em;
-      width: 4em;
-      border: 3px solid var(--md-sys-color-on-primary, #ffffff);
-      border-radius: 50%;
-      overflow: hidden;
+    height: 4em;
+    width: 4em;
+    border: 3px solid var(--md-sys-color-on-primary, #ffffff);
+    border-radius: 50%;
+    overflow: hidden;
 
-      & > * {
-        /* centering */
-        position: relative;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-      }
+    & > * {
+      /* centering */
+      position: relative;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
   }
 }
 

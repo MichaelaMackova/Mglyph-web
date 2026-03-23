@@ -18,14 +18,15 @@ const pinia = createPinia()
 app.use(pinia)
 
 const authStore = useAuthStore()
-authStore.initializeStoreFromLocalStorage()
+await authStore.initializeStoreFromLocalStorage()
 
 // Google Auth
 import vue3GoogleLogin from 'vue3-google-login'
 import { env } from './services/env'
 app.use(vue3GoogleLogin, {
   clientId: env.get('GOOGLE_CLIENT_ID').required(true).asString(),
-  scopes: 'email profile https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email openid',
+  scopes:
+    'email profile https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email openid',
 })
 
 app.use(router)
