@@ -25,6 +25,8 @@
         :end_time="challenge_info.challenge.end_time"
         :state="challenge_info.challenge.state"
         :challengeGlyphs="challenge_info.glyphs"
+        :user_solver_relationship="challenge_info.user_relationship?.user_solver_relationship"
+        :user_evaluator_relationship="challenge_info.user_relationship?.user_evaluator_relationship"
       />
     </div>
   </div>
@@ -37,15 +39,30 @@ import ChallengeInfo from '@/components/ChallengeInfo.vue'
 import { mglyphClient } from '@/clients/mglyph_client'
 import { ref } from 'vue'
 import { ChallengeStateEnum, ChallengeSimple, ChallengeGlyph, User } from '@/services/types'
+import { authStore } from '@/main'
 
 const isLoading = ref<boolean>(true)
 const errorOccurred = ref<boolean>(false)
-const responseData = ref<{ challenge: ChallengeSimple; glyphs: ChallengeGlyph[] }[] | null>(null)
+const responseData = ref<
+  | {
+      challenge: ChallengeSimple
+      glyphs: ChallengeGlyph[]
+      user_relationship: {
+        user_solver_relationship?: 'none' | 'registered' | 'mglyph_submitted'
+        user_evaluator_relationship?:
+          | 'none'
+          | 'registered'
+          | 'evaluation_awaiting'
+          | 'evaluation_finished'
+      } | null
+    }[]
+  | null
+>(null)
 
 async function fetchChallenges() {
   try {
     const response = await mglyphClient.get('/challenges', {
-      authorizeEndpoint: false,
+      authorizeEndpoint: authStore.user ? true : false,
       params: {
         glyph_count: 3,
         offset: 0,
@@ -72,9 +89,15 @@ async function fetchChallenges() {
           new Array<string>(), // TODO: Replace with actual flags from response
         )
       })
-      return { challenge: ch, glyphs: glyphs }
+      return {
+        challenge: ch,
+        glyphs: glyphs,
+        user_relationship: {
+          user_solver_relationship: challenge.user_relationship?.solver_relationship,
+          user_evaluator_relationship: challenge.user_relationship?.evaluator_relationship,
+        },
+      }
     })
-    errorOccurred.value = false
   } catch (err) {
     console.error(err)
     errorOccurred.value = true

@@ -18,7 +18,23 @@
         <ChallengeTable :glyphs="props.challengeGlyphs" />
       </div>
     </div>
-    <ChallengeState :state="props.state" />
+
+    <div class="state-and-user-info">
+      <!-- <i v-show="props.user_evaluator_relationship && props.user_evaluator_relationship !== 'none'" class="fa-solid fa-scale-unbalanced"></i> -->
+      <i
+        v-show="props.user_evaluator_relationship && props.user_evaluator_relationship !== 'none'"
+        class="fa-solid fa-gavel fa-1.8x"
+      ></i>
+      <i
+        v-show="props.user_solver_relationship && props.user_solver_relationship !== 'none'"
+        class="fa-solid fa-palette"
+      ></i>
+      <!-- <i
+        v-show="props.user_solver_relationship && props.user_solver_relationship !== 'none'"
+        class="fa-solid fa-shapes"
+      ></i> -->
+      <ChallengeState :state="props.state" />
+    </div>
   </div>
 </template>
 
@@ -26,6 +42,7 @@
 import ChallengeState from '@/components/ChallengeState.vue'
 import ChallengeTable from '@/components/ChallengeTable.vue'
 import { ChallengeStateEnum, ChallengeGlyph } from '@/services/types'
+import { console } from 'inspector'
 import { ref } from 'vue'
 
 interface Props {
@@ -33,6 +50,12 @@ interface Props {
   state: ChallengeStateEnum
   start_time: Date
   end_time: Date
+  user_solver_relationship?: 'none' | 'registered' | 'mglyph_submitted'
+  user_evaluator_relationship?:
+    | 'none'
+    | 'registered'
+    | 'evaluation_awaiting'
+    | 'evaluation_finished'
   challengeGlyphs?: ChallengeGlyph[]
 }
 
@@ -51,15 +74,21 @@ const props = withDefaults(defineProps<Props>(), {
 })
 </script>
 
-<style lang="css">
-.challenge-state {
+<style lang="css" scoped>
+.state-and-user-info {
   position: absolute;
   right: 0;
   top: 0;
-}
-</style>
 
-<style lang="css" scoped>
+  display: flex;
+  gap: 8px;
+  align-items: center;
+
+  i {
+    font-size: 130%;
+  }
+}
+
 .challenge-info {
   position: relative;
   width: 100%;
