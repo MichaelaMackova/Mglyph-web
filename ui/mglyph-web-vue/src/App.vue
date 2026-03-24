@@ -2,10 +2,12 @@
   <Header></Header>
 
   <RouterView />
+  <PopupContainer />
 </template>
 
 <script setup lang="ts">
 import Header from '@/components/Header.vue'
+import PopupContainer from '@/components/PopupContainer.vue'
 </script>
 
 <style lang="css">
