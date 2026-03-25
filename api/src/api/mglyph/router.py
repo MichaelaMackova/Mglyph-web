@@ -5,6 +5,7 @@ from pathlib import Path
 import shutil
 from pydantic import BaseModel, Json
 from errors import NotFoundError, BadRequestError, ErrorCode
+from db.pagination import PagedResponse
 
 from api.auth.dependencies import CurrentAdminUserIdDep, CurrentUserIdDep
 from api.mglyph.services import MalleableGlyphServiceDep
@@ -52,11 +53,12 @@ async def create_mglyph(
 async def read_malleable_glyphs(
     mglyph_service: MalleableGlyphServiceDep,
     filter_params: MglyphFilterParamsAsQuery,
-    offset: int = 0,
-    limit: Annotated[int, Query(le=100)] = 100
-) -> list[MGlyphPublicSimpleDTO]:
-    mglyphs = await mglyph_service.get_paginated_malleable_glyphs(filters=filter_params, offset=offset, limit=limit)
-    return [MGlyphPublicSimpleDTO.from_model(mglyph) for mglyph in mglyphs]
+    page: Annotated[int, Query(ge=1)] = 1,
+    size: Annotated[int, Query(ge=1, le=100)] = 20
+) -> PagedResponse[MGlyphPublicSimpleDTO]:
+    paginated_mglyphs = await mglyph_service.get_paginated_malleable_glyphs(filters=filter_params, page=page, size=size)
+    paginated_mglyphs.items = [MGlyphPublicSimpleDTO.from_model(mglyph) for mglyph in paginated_mglyphs.items]
+    return paginated_mglyphs
 
 
 

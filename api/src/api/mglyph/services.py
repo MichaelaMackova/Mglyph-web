@@ -6,6 +6,7 @@ from db.database import SessionDep
 from uuid import UUID
 from datetime import datetime
 import errors as mglyph_errors
+from db.pagination import PagedResponse
 # Models
 from db.models.malleableGlyphModel import MalleableGlyphModel
 from db.models.mglyphEvaluationModel import MGlyphEvaluationModel
@@ -15,6 +16,7 @@ from db.repos.evaluationRoundRepository import EvaluationRoundRepository, Evalua
 from db.repos.challengeRepository import ChallengeRepository, ChallengeRepositoryDep
 # Schemas
 from api.mglyph.schemas import MGlyphCreate, MglyphFilterParams
+
 
 
 
@@ -67,15 +69,15 @@ class MalleableGlyphService:
         return db_mglyph
 
     
-    async def get_paginated_malleable_glyphs(self, filters: MglyphFilterParams, offset: int = 0, limit: int = 100) -> list[MalleableGlyphModel]:
+    async def get_paginated_malleable_glyphs(self, filters: MglyphFilterParams, page: int = 1, size: int = 20) -> PagedResponse[MalleableGlyphModel]:
         filter_params = MalleableGlyphRepository.FilterParams(
             short_name_contains=filters.short_name_contains,
             long_name_contains=filters.long_name_contains,
             creator_id=filters.creator_id,
             is_submitted=filters.is_submitted
         )
-        mglyphs_db = await self.malleable_glyph_repository.get_paginated_malleable_glyphs(filters=filter_params, offset=offset, limit=limit)
-        return mglyphs_db
+        paginated_mglyphs_db = await self.malleable_glyph_repository.get_paginated_malleable_glyphs(filters=filter_params, page=page, size=size)
+        return paginated_mglyphs_db
     
 
     async def create_malleable_glyph(self, mglyph_create_dto: MGlyphCreate, current_user_id: UUID) -> MalleableGlyphModel:

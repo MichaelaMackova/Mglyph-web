@@ -7,6 +7,7 @@ from db.database import SessionDep
 from uuid import UUID
 from datetime import datetime, timedelta, timezone
 import errors as mglyph_errors
+from db.pagination import PagedResponse
 
 from db.models.challengeModel import ChallengeModel
 from db.models.userModel import UserModel
@@ -125,16 +126,21 @@ class ChallengeService:
     
 
     
-    async def get_paginated_challenges_with_glyphs_and_user_relationship(self, filters: ChallengeFilterParams, current_user_id: UUID | None = None, glyph_count: int = 0, offset: int = 0, limit: int = 100):
+    async def get_paginated_challenges_with_glyphs_and_user_relationship(self, filters: ChallengeFilterParams, current_user_id: UUID | None = None, glyph_count: int = 0, page: int = 1, size: int = 20) -> PagedResponse[dict]:
         """
         Returns:
-            list: A list of dicts containing challenge, glyphs and user relationship information for each challenge in the paginated result.
-                Each dict has the following format:
-                {
-                    "challenge": ChallengeModel,
-                    "glyphs": list[MGlyphEvaluationModel],
-                    "user_relationship": dict | None
-                }
+            tuple: Tuple containing the following elements:
+                list: A list of dicts containing challenge, glyphs and user relationship information for each challenge in the paginated result.
+                    Each dict has the following format:
+                    {
+                        "challenge": ChallengeModel,
+                        "glyphs": list[MGlyphEvaluationModel],
+                        "user_relationship": dict | None
+                    }
+                int: total number of challenges matching the filters (without pagination)
+                int: total number of pages
+                int: current page number
+                int: page size
         """
         
         filter_params = ChallengeRepository.FilterParams(
@@ -142,30 +148,42 @@ class ChallengeService:
             submissions_ended=filters.submissions_ended,
             challenge_finished=filters.challenge_finished
         )
-        challenges_db = await self.challenge_repository.get_paginated_challenges(filters=filter_params, offset=offset, limit=limit)
-        challenge_ids = [challenge.id for challenge in challenges_db]
+        paginated_challenges_db = await self.challenge_repository.get_paginated_challenges(filters=filter_params, page=page, size=size)
+        challenge_ids = [challenge.id for challenge in paginated_challenges_db.items]
         glyphs_per_challenge = await self.mglyph_evaluation_repository.get_mglyph_evaluations_in_challenges(challenge_ids, only_submitted=True, order_by=MGlyphEvaluationRepository.OrderByOption.RANK_ASC, limit_per_challenge=glyph_count, load_options=MGlyphEvaluationRepository.LoadOptions(load_malleable_glyph=True, load_malleable_glyph_creator=True))
         user_relationships_per_challenge = await self.challenge_repository.get_user_relationship_for_challenges(user_id=current_user_id, challenge_ids=challenge_ids)
-        return [
+        paginated_challenges_db.items = [
             {
                 "challenge": challenge,
                 "glyphs": glyphs_per_challenge[challenge.id] if challenge.id in glyphs_per_challenge else [],
                 "user_relationship": user_relationships_per_challenge[challenge.id] if challenge.id in user_relationships_per_challenge else None
             }
-            for challenge in challenges_db
+            for challenge in paginated_challenges_db.items
         ]
+        return paginated_challenges_db
         
 
 
-    async def get_challenges_where_user_is_participant(self, user_id: UUID, filters: ChallengeFilterParams, as_solver: bool | None = None, offset: int = 0, limit: int = 100) -> list[ChallengeModel]:
+    async def get_challenges_where_user_is_participant_with_glyphs_and_user_relationship(self, user_id: UUID, filters: ChallengeFilterParams, as_solver: bool | None = None, glyph_count: int = 0, page: int = 1, size: int = 20) -> PagedResponse[dict]:
         filter_params = ChallengeRepository.FilterParams(
             name_contains=filters.name_contains,
             submissions_ended=filters.submissions_ended,
             challenge_finished=filters.challenge_finished
         )
-        challenges_db = await self.challenge_repository.get_paginated_challenges_with_participating_user(user_id=user_id, filters=filter_params, as_solver=as_solver, offset=offset, limit=limit)
-        return challenges_db
-
+        paginated_challenges_db = await self.challenge_repository.get_paginated_challenges_with_participating_user(user_id=user_id, filters=filter_params, as_solver=as_solver, page=page, size=size)
+        challenge_ids = [challenge.id for challenge in paginated_challenges_db.items]
+        glyphs_per_challenge = await self.mglyph_evaluation_repository.get_mglyph_evaluations_in_challenges(challenge_ids, only_submitted=True, order_by=MGlyphEvaluationRepository.OrderByOption.RANK_ASC, limit_per_challenge=glyph_count, load_options=MGlyphEvaluationRepository.LoadOptions(load_malleable_glyph=True, load_malleable_glyph_creator=True))
+        user_relationships_per_challenge = await self.challenge_repository.get_user_relationship_for_challenges(user_id=user_id, challenge_ids=challenge_ids)
+        paginated_challenges_db.items = [
+            {
+                "challenge": challenge,
+                "glyphs": glyphs_per_challenge[challenge.id] if challenge.id in glyphs_per_challenge else [],
+                "user_relationship": user_relationships_per_challenge[challenge.id] if challenge.id in user_relationships_per_challenge else None
+            }
+            for challenge in paginated_challenges_db.items
+        ]
+        return paginated_challenges_db
+    
 
     async def create_challenge(self, challenge: ChallengeCreateDTO, current_user_id: UUID) -> ChallengeModel:
         # TODO: check if challenge name already exists

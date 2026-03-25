@@ -9,6 +9,7 @@ from api.auth.dependencies import CurrentAdminUserIdDep, CurrentUserIdDep
 from api.users.services import UserServiceDep
 
 from api.users.schemas import UserPublicSimpleDTO, UserPublicDTO
+from db.pagination import PagedResponse
 
 
 
@@ -22,11 +23,12 @@ router = APIRouter(
 @router.get("")
 async def read_users(
     user_service: UserServiceDep,
-    offset: int = 0,
-    limit: Annotated[int, Query(le=100)] = 100
-) -> list[UserPublicSimpleDTO]:
-    users = await user_service.get_paginated_users(offset=offset, limit=limit)
-    return [UserPublicSimpleDTO.from_model(user) for user in users]
+    page: Annotated[int, Query(ge=1)] = 1,
+    size: Annotated[int, Query(ge=1, le=100)] = 20
+) -> PagedResponse[UserPublicSimpleDTO]:
+    paginated_users = await user_service.get_paginated_users(page=page, size=size)
+    paginated_users.items = [UserPublicSimpleDTO.from_model(user) for user in paginated_users.items]
+    return paginated_users
 
 
 @router.get("/{user_id}",

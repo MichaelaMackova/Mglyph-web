@@ -8,6 +8,7 @@ from sqlalchemy.orm import selectinload, joinedload
 from sqlalchemy import Select
 from uuid import UUID
 from db.repos.interface import RepositoryInterface
+from db.pagination import paginate, PaginationParams, PagedResponse
 
 from db.models.malleableGlyphModel import MalleableGlyphModel
 from db.models.mglyphEvaluationModel import MGlyphEvaluationModel
@@ -74,26 +75,23 @@ class MalleableGlyphRepository(RepositoryInterface):
         mglyph_db = result.scalar_one_or_none()
         return mglyph_db
 
-    async def get_paginated_malleable_glyphs(self, filters: FilterParams = FilterParams(), offset: int = 0, limit: int = 100, load_options: LoadOptions = LoadOptions()) -> list[MalleableGlyphModel]:
-        select_exec = select(MalleableGlyphModel).offset(offset).limit(limit)
+    async def get_paginated_malleable_glyphs(self, filters: FilterParams = FilterParams(), page: int = 1, size: int = 20, load_options: LoadOptions = LoadOptions()) -> PagedResponse[MalleableGlyphModel]:
+        select_exec = select(MalleableGlyphModel)
         select_exec = load_options.add_options_to_statement(select_exec)
         select_exec = filters.apply_filters_to_statement(select_exec)
-        result = await self.db_session.execute(select_exec)
-        mglyphs_db = result.scalars().all()
-        return mglyphs_db
+        paginated_mglyphs_db = await paginate(self.db_session, select_exec, MalleableGlyphModel, PaginationParams(page=page, size=size), as_scalar=True)
+        return paginated_mglyphs_db
 
-    async def get_paginated_malleable_glyphs_in_challenge(self, challenge_id: UUID, offset: int = 0, limit: int = 100, load_options: LoadOptions = LoadOptions()) -> list[MalleableGlyphModel]:
+    async def get_paginated_malleable_glyphs_in_challenge(self, challenge_id: UUID, page: int = 1, size: int = 20, load_options: LoadOptions = LoadOptions()) -> PagedResponse[MalleableGlyphModel]:
         select_exec = select(MalleableGlyphModel).distinct()\
             .join(MGlyphEvaluationModel, MGlyphEvaluationModel.malleable_glyph_id == MalleableGlyphModel.id)\
             .join(EvaluationRoundModel, EvaluationRoundModel.id == MGlyphEvaluationModel.evaluation_round_id)\
             .join(ChallengeModel, ChallengeModel.id == EvaluationRoundModel.challenge_id)\
             .where(ChallengeModel.id == challenge_id)
-        select_exec = select_exec.offset(offset).limit(limit)
         select_exec = load_options.add_options_to_statement(select_exec)
-        result = await self.db_session.execute(select_exec)
-        mglyphs_db = result.scalars().all()
-        return mglyphs_db
-    
+        paginated_mglyphs_db = await paginate(self.db_session, select_exec, MalleableGlyphModel, PaginationParams(page=page, size=size), as_scalar=True)
+        return paginated_mglyphs_db
+
     async def does_user_have_mglyph_in_challenge(self, user_id: UUID, challenge_id: UUID) -> bool:
         select_exec = select(MalleableGlyphModel)\
             .join(MGlyphEvaluationModel, MGlyphEvaluationModel.malleable_glyph_id == MalleableGlyphModel.id)\

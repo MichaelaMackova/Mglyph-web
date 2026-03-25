@@ -6,6 +6,7 @@ from sqlmodel import select, func
 from sqlalchemy.orm import selectinload, joinedload
 from uuid import UUID
 from db.repos.interface import RepositoryInterface
+from db.pagination import paginate, PaginationParams, PagedResponse
 
 from db.models.userModel import UserModel, UserRole
 
@@ -93,13 +94,11 @@ class UserRepository(RepositoryInterface):
         return user_db
 
 
-    async def get_paginated_users(self, offset: int = 0, limit: int = 100, load_options: LoadOptions = LoadOptions()) -> list[UserModel]:
-        select_exec = select(UserModel).offset(offset).limit(limit)
+    async def get_paginated_users(self, page: int = 1, size: int = 20, load_options: LoadOptions = LoadOptions()) -> PagedResponse[UserModel]:
+        select_exec = select(UserModel)
         select_exec = load_options.add_options_to_statement(select_exec)
-        result = await self.db_session.execute(select_exec)
-        users_db = result.scalars().all()
-        return users_db
-    
+        return await paginate(self.db_session, select_exec, UserModel, PaginationParams(page=page, size=size), as_scalar=True)
+
 
     async def count_users_by_role(self, role: UserRole) -> int:
         select_exec = select(func.count()).select_from(UserModel).where(UserModel.role == role)

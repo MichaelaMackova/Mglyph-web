@@ -6,6 +6,7 @@ from sqlmodel import select, or_, and_, case
 from sqlalchemy.orm import selectinload, joinedload
 from uuid import UUID
 from db.repos.interface import RepositoryInterface
+from db.pagination import paginate, PaginationParams, PagedResponse
 
 from db.models.challengeModel import ChallengeModel
 from db.models.challengeSolverModel import ChallengeSolverModel
@@ -70,55 +71,13 @@ class ChallengeRepository(RepositoryInterface):
         challenge_db = result.scalar_one_or_none()
         return challenge_db
 
-    async def get_paginated_challenges(self, filters: FilterParams = FilterParams(), offset: int = 0, limit: int = 100, load_options: LoadOptions = LoadOptions()) -> list[ChallengeModel]:
-        select_exec = select(ChallengeModel).offset(offset).limit(limit)
+    async def get_paginated_challenges(self, filters: FilterParams = FilterParams(), page: int = 1, size: int = 20, load_options: LoadOptions = LoadOptions()) -> PagedResponse[ChallengeModel]:
+        select_exec = select(ChallengeModel)
         select_exec = filters.apply_filters_to_statement(select_exec)
         select_exec = load_options.add_options_to_statement(select_exec)
-        result = await self.db_session.execute(select_exec)
-        challenges_db = result.scalars().all()
-        return challenges_db
-
-    async def get_paginated_challenges_with_user_relationship(self, user_id: UUID | None = None, filters: FilterParams = FilterParams(), offset: int = 0, limit: int = 100, load_options: LoadOptions = LoadOptions()) -> list[tuple[ChallengeModel, bool, bool]]:
-        mglyph_evaluator_without_answer_exists_subq = select(MGlyphEvaluatorModel.id)\
-            .join(ChallengeEvaluatorModel, and_(
-                MGlyphEvaluatorModel.challenge_evaluator_id == ChallengeEvaluatorModel.id,
-                ChallengeEvaluatorModel.challenge_id == ChallengeModel.id,
-                ChallengeEvaluatorModel.evaluator_id == user_id,
-            ))\
-            .outerjoin(AnswerModel, AnswerModel.mglyph_evaluator_id == MGlyphEvaluatorModel.id)\
-            .where(AnswerModel.id.is_(None)).exists()
-
-        submitted_mglyph_exists_subq = select(MGlyphEvaluationModel.malleable_glyph_id)\
-            .join(EvaluationRoundModel, and_(MGlyphEvaluationModel.evaluation_round_id == EvaluationRoundModel.id, EvaluationRoundModel.challenge_id == ChallengeModel.id, EvaluationRoundModel.sequence_number == 1))\
-            .join(MalleableGlyphModel, and_(MGlyphEvaluationModel.malleable_glyph_id == MalleableGlyphModel.id, MalleableGlyphModel.submission_time.is_not(None), MalleableGlyphModel.creator_id == user_id))\
-            .exists()
-        
-        select_exec = select(
-                        ChallengeModel,
-                        case(
-                            (user_id is None, False),
-                            (ChallengeSolverModel.solver_id == user_id, True),
-                            else_=False).label("is_solver"),
-                        case(
-                            (submitted_mglyph_exists_subq, True),
-                            else_=False).label("has_submitted_mglyph"),
-                        case(
-                            (user_id is None, False),
-                            (ChallengeEvaluatorModel.evaluator_id == user_id, True),
-                            else_=False).label("is_evaluator"),
-                        case(
-                            (mglyph_evaluator_without_answer_exists_subq, True),
-                            else_=False).label("waiting_for_evaluation")
-                        )\
-            .outerjoin(ChallengeSolverModel, and_(ChallengeSolverModel.challenge_id == ChallengeModel.id, ChallengeSolverModel.solver_id == user_id))\
-            .outerjoin(ChallengeEvaluatorModel, and_(ChallengeEvaluatorModel.challenge_id == ChallengeModel.id, ChallengeEvaluatorModel.evaluator_id == user_id, ChallengeEvaluatorModel.state == ChallengeEvaluatorState.confirmed))
-        
-        select_exec = filters.apply_filters_to_statement(select_exec)
-        select_exec = select_exec.offset(offset).limit(limit)
-        select_exec = load_options.add_options_to_statement(select_exec)
-        result = await self.db_session.execute(select_exec)
-        return result.all()
-
+        pagination_params = PaginationParams(page=page, size=size)
+        result = await paginate(self.db_session, select_exec, ChallengeModel, pagination_params)
+        return result
 
     async def get_user_relationship_for_challenges(self, user_id: UUID | None = None, challenge_ids: list[UUID] | None = None) -> dict[UUID, dict[str, bool]]:
         """
@@ -180,7 +139,7 @@ class ChallengeRepository(RepositoryInterface):
         return user_relationships_per_challenge
 
 
-    async def get_paginated_challenges_with_participating_user(self, user_id: UUID, as_solver: bool | None = None, filters: FilterParams = FilterParams(), offset: int = 0, limit: int = 100, load_options: LoadOptions = LoadOptions()) -> list[ChallengeModel]:
+    async def get_paginated_challenges_with_participating_user(self, user_id: UUID, as_solver: bool | None = None, filters: FilterParams = FilterParams(), page: int = 1, size: int = 20, load_options: LoadOptions = LoadOptions()) -> PagedResponse[ChallengeModel]:
         """
         If as_solver is True, returns paginated challenges where user is a solver. If as_solver is False, returns paginated challenges where user is an evaluator. If as_solver is None, returns paginated challenges where user is either a solver or an evaluator.
         """
@@ -198,12 +157,12 @@ class ChallengeRepository(RepositoryInterface):
             select_exec = select_exec.where(ChallengeSolverModel.solver_id == user_id)
         else:
             select_exec = select_exec.where(ChallengeEvaluatorModel.evaluator_id == user_id)
-        select_exec = select_exec.offset(offset).limit(limit)
         select_exec = filters.apply_filters_to_statement(select_exec)
         select_exec = load_options.add_options_to_statement(select_exec)
-        result = await self.db_session.execute(select_exec)
-        challenges_db = result.scalars().all()
-        return challenges_db
+
+        pagination_params = PaginationParams(page=page, size=size)
+        paginated_challenges_db = await paginate(self.db_session, select_exec, ChallengeModel, pagination_params)
+        return paginated_challenges_db
     
 
 def get_challenge_repository(db_session: SessionDep):

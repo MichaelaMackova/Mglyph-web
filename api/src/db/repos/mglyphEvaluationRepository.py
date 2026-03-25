@@ -9,6 +9,7 @@ from sqlalchemy import Select
 from uuid import UUID
 from enum import Enum
 from db.repos.interface import RepositoryInterface
+from db.pagination import paginate, PaginationParams, PagedResponse
 
 from db.models.mglyphEvaluationModel import MGlyphEvaluationModel
 from db.models.malleableGlyphModel import MalleableGlyphModel
@@ -48,7 +49,7 @@ class MGlyphEvaluationRepository(RepositoryInterface):
         RANK_DESC = 'rank_desc'
 
 
-    async def get_paginated_mglyph_evaluations_in_challenge_round(self, evaluation_round_id: UUID, only_submitted: bool = True, order_by: OrderByOption = OrderByOption.RANK_ASC, offset: int = 0, limit: int = 100, load_options: LoadOptions = LoadOptions()) -> list[MGlyphEvaluationModel]:
+    async def get_paginated_mglyph_evaluations_in_challenge_round(self, evaluation_round_id: UUID, only_submitted: bool = True, order_by: OrderByOption = OrderByOption.RANK_ASC, page: int = 1, size: int = 20, load_options: LoadOptions = LoadOptions()) -> PagedResponse[MGlyphEvaluationModel]:
         select_exec = select(MGlyphEvaluationModel).where(MGlyphEvaluationModel.evaluation_round_id == evaluation_round_id)
         if only_submitted:
             select_exec = select_exec.join(MalleableGlyphModel).where(MalleableGlyphModel.submission_time.is_not(None))
@@ -57,9 +58,7 @@ class MGlyphEvaluationRepository(RepositoryInterface):
         elif order_by == MGlyphEvaluationRepository.OrderByOption.RANK_DESC:
             select_exec = select_exec.order_by(MGlyphEvaluationModel.rank.desc())
         select_exec = load_options.add_options_to_statement(select_exec)
-        select_exec = select_exec.offset(offset).limit(limit)
-        result = await self.db_session.execute(select_exec)
-        return result.scalars().all()
+        return await paginate(self.db_session, select_exec, MGlyphEvaluationModel, PaginationParams(page=page, size=size), as_scalar=True)
 
 
     async def get_mglyph_evaluations_in_challenges(
