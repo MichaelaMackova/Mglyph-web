@@ -3,9 +3,10 @@ import { fileURLToPath, URL } from 'node:url'
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import vueDevTools from 'vite-plugin-vue-devtools'
+import vuetify from 'vite-plugin-vuetify'
 
-import dotenv from 'dotenv';
-dotenv.config();
+import dotenv from 'dotenv'
+dotenv.config()
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -13,7 +14,7 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     assetsDir: 'static',
-    sourcemap: true,  // Enable for debugging
+    sourcemap: true, // Enable for debugging
     minify: 'esbuild', // Minify with esbuild
     // minify: 'terser', // Minify with Terser
     // terserOptions: {
@@ -31,7 +32,8 @@ export default defineConfig({
   },
   plugins: [
     vue(),
-    vueDevTools()
+    vueDevTools(),
+    vuetify({ autoImport: true }),
     // crossOriginIsolation
   ],
   resolve: {
