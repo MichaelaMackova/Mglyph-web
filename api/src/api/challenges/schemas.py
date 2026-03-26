@@ -1,6 +1,6 @@
-from fastapi import Depends
+from fastapi import Depends, Query
 from typing import Optional, Annotated
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from uuid import UUID
 from datetime import datetime
 from enum import Enum
@@ -34,11 +34,37 @@ class EvaluationRoundPublicDTO(BaseModel):
         )
 
 
+class ChallengeState(str, Enum):
+    open = "open"
+    evaluation = "evaluation"
+    finished = "finished"
+
+    @staticmethod
+    def from_model_params(challenge_finished: bool, submissions_ended: bool) -> "ChallengeState":
+        if challenge_finished:
+            return ChallengeState.finished
+        elif submissions_ended:
+            return ChallengeState.evaluation
+        else:
+            return ChallengeState.open
+        
+    def to_model_params(self) -> tuple[bool, bool]:
+        """
+        Converts the ChallengeState back to the corresponding model parameters.
+
+        Returns:
+            tuple: A tuple of (challenge_finished, submissions_ended) corresponding to the ChallengeState.
+        """
+        if self == ChallengeState.finished:
+            return (True, True)
+        elif self == ChallengeState.evaluation:
+            return (False, True)
+        else:
+            return (False, False)
 
 class ChallengeFilterParams(BaseModel):
-    name_contains: Optional[str] = None
-    submissions_ended: Optional[bool] = None
-    challenge_finished: Optional[bool] = None
+    name_contains: Optional[str] = Field(Query(default=None, description="Filter challenges whose name contains the specified string (case-insensitive)."))
+    state: Optional[set[ChallengeState]] = Field(Query(default=None, description="Filter challenges by their state. Can specify multiple states. If not specified, challenges of all states will be returned."))
 
 ChallengeFilterParamsAsQuery = Annotated[ChallengeFilterParams, Depends()]
 
@@ -53,8 +79,7 @@ class ChallengeCreateDTO(ChallengeBase):
 
 class ChallengePublicSimpleDTO(ChallengeBase):
     id: UUID
-    submissions_ended: bool
-    challenge_finished: bool
+    state: ChallengeState
 
     @staticmethod
     def from_model(challengeModel: ChallengeModel) -> "ChallengePublicSimpleDTO":
@@ -62,8 +87,7 @@ class ChallengePublicSimpleDTO(ChallengeBase):
             id=challengeModel.id,
             name=challengeModel.name,
             glyph_submit_deadline=challengeModel.glyph_submit_deadline,
-            submissions_ended=challengeModel.submissions_ended,
-            challenge_finished=challengeModel.challenge_finished
+            state=ChallengeState.from_model_params(challengeModel.challenge_finished, challengeModel.submissions_ended)
         )
     
 

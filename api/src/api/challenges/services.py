@@ -145,8 +145,7 @@ class ChallengeService:
         
         filter_params = ChallengeRepository.FilterParams(
             name_contains=filters.name_contains,
-            submissions_ended=filters.submissions_ended,
-            challenge_finished=filters.challenge_finished
+            state=[state.to_model_params() for state in filters.state] if filters.state else None
         )
         paginated_challenges_db = await self.challenge_repository.get_paginated_challenges(filters=filter_params, page=page, size=size)
         challenge_ids = [challenge.id for challenge in paginated_challenges_db.items]
@@ -167,8 +166,7 @@ class ChallengeService:
     async def get_challenges_where_user_is_participant_with_glyphs_and_user_relationship(self, user_id: UUID, filters: ChallengeFilterParams, as_solver: bool | None = None, glyph_count: int = 0, page: int = 1, size: int = 20) -> PagedResponse[dict]:
         filter_params = ChallengeRepository.FilterParams(
             name_contains=filters.name_contains,
-            submissions_ended=filters.submissions_ended,
-            challenge_finished=filters.challenge_finished
+            state=[state.to_model_params() for state in filters.state] if filters.state else None
         )
         paginated_challenges_db = await self.challenge_repository.get_paginated_challenges_with_participating_user(user_id=user_id, filters=filter_params, as_solver=as_solver, page=page, size=size)
         challenge_ids = [challenge.id for challenge in paginated_challenges_db.items]

@@ -48,20 +48,26 @@ class ChallengeRepository(RepositoryInterface):
         def __init__(
                 self, 
                 name_contains: str | None = None,
-                submissions_ended: bool | None = None, 
-                challenge_finished: bool | None = None
+                state: list[tuple[bool, bool]] | None = None,
             ):
+            """
+            Args:
+                name_contains (str | None): Filter challenges whose name contains the specified string (case-insensitive).
+                state (list[tuple[bool, bool]] | None): List of tuples of (challenge_finished, submissions_ended).
+            """
             self.name_contains = name_contains
-            self.submissions_ended = submissions_ended
-            self.challenge_finished = challenge_finished
+            self.state = state
 
         def apply_filters_to_statement(self, statement):
             if self.name_contains:
                 statement = statement.where(ChallengeModel.name.ilike(f"%{self.name_contains}%"))
-            if self.submissions_ended is not None:
-                statement = statement.where(ChallengeModel.submissions_ended == self.submissions_ended)
-            if self.challenge_finished is not None:
-                statement = statement.where(ChallengeModel.challenge_finished == self.challenge_finished)
+            if self.state:
+                and_conditions = []
+                for challenge_finished, submissions_ended in self.state:
+                    and_conditions.append(and_(ChallengeModel.challenge_finished == challenge_finished, ChallengeModel.submissions_ended == submissions_ended))
+                if and_conditions:
+                    statement = statement.where(or_(*and_conditions))
+                
             return statement
 
     async def get_challenge_by_id(self, challenge_id: UUID, load_options: LoadOptions = LoadOptions()) -> ChallengeModel | None:

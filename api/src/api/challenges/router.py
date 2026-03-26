@@ -8,7 +8,7 @@ from api.auth.dependencies import CurrentAdminUserIdDep, CurrentUserIdDep, Curre
 from api.challenges.services import ChallengeServiceDep, ChallengeEvaluatorServiceDep
 
 
-from api.challenges.schemas import ChallengeFilterParamsAsQuery, ChallengePublicDTO, ChallengePublicMiniDetailDTO, ChallengePublicSimpleDTO, ChallengeCreateDTO, ChallengeUserRelationshipDTO
+from api.challenges.schemas import ChallengeFilterParamsAsQuery, ChallengePublicDTO, ChallengePublicMiniDetailDTO, ChallengePublicSimpleDTO, ChallengeCreateDTO, ChallengeUserRelationshipDTO, ChallengeState
 from api.mglyph.schemas import MGlyphEvaluationPublicDTO
 from db.models.challengeEvaluatorModel import ChallengeEvaluatorState
 from db.pagination import PagedResponse
@@ -45,21 +45,20 @@ async def read_challenges(
     #TODO: získat glyfy i z jiných kol než jen z aktuálního?
     challenges_with_glyphs_and_user_relationship = await challenge_service.get_paginated_challenges_with_glyphs_and_user_relationship(filters=filter_params, current_user_id=UUID(current_user_id) if current_user_id else None, glyph_count=glyph_count, page=page, size=size)
     challenges_with_glyphs_and_user_relationship.items = [
-            ChallengePublicMiniDetailDTO(
-                id=item["challenge"].id,
-                name=item["challenge"].name,
-                glyph_submit_deadline=item["challenge"].glyph_submit_deadline,
-                submissions_ended=item["challenge"].submissions_ended,
-                challenge_finished=item["challenge"].challenge_finished,
-                mglyph_evaluations=[MGlyphEvaluationPublicDTO.from_model(mglyph_evaluation) for mglyph_evaluation in item["glyphs"]],
-                user_relationship=ChallengeUserRelationshipDTO.from_relationship_flags(
-                    is_solver=item["user_relationship"]["is_solver"],
-                    has_submitted_mglyph=item["user_relationship"]["has_submitted_mglyph"],
-                    is_evaluator=item["user_relationship"]["is_evaluator"],
-                    waiting_for_evaluation=item["user_relationship"]["waiting_for_evaluation"]
-                ) if item["user_relationship"] else None
-            )
-            for item in challenges_with_glyphs_and_user_relationship.items
+        ChallengePublicMiniDetailDTO(
+            id=item["challenge"].id,
+            name=item["challenge"].name,
+            glyph_submit_deadline=item["challenge"].glyph_submit_deadline,
+            state=ChallengeState.from_model_params(item["challenge"].challenge_finished, item["challenge"].submissions_ended),
+            mglyph_evaluations=[MGlyphEvaluationPublicDTO.from_model(mglyph_evaluation) for mglyph_evaluation in item["glyphs"]],
+            user_relationship=ChallengeUserRelationshipDTO.from_relationship_flags(
+                is_solver=item["user_relationship"]["is_solver"],
+                has_submitted_mglyph=item["user_relationship"]["has_submitted_mglyph"],
+                is_evaluator=item["user_relationship"]["is_evaluator"],
+                waiting_for_evaluation=item["user_relationship"]["waiting_for_evaluation"]
+            ) if item["user_relationship"] else None
+        )
+        for item in challenges_with_glyphs_and_user_relationship.items
     ]
     return challenges_with_glyphs_and_user_relationship
 
@@ -75,12 +74,11 @@ async def read_challenges_where_user_is_participant(
 ) -> PagedResponse[ChallengePublicMiniDetailDTO]:
     challenges_with_glyphs_and_user_relationship = await challenge_service.get_challenges_where_user_is_participant_with_glyphs_and_user_relationship(user_id=UUID(user_id), filters=filter_params, as_solver=as_solver, glyph_count=glyph_count, page=page, size=size)
     challenges_with_glyphs_and_user_relationship.items = [
-            ChallengePublicMiniDetailDTO(
-                id=item["challenge"].id,
-                name=item["challenge"].name,
-                glyph_submit_deadline=item["challenge"].glyph_submit_deadline,
-                submissions_ended=item["challenge"].submissions_ended,
-            challenge_finished=item["challenge"].challenge_finished,
+        ChallengePublicMiniDetailDTO(
+            id=item["challenge"].id,
+            name=item["challenge"].name,
+            glyph_submit_deadline=item["challenge"].glyph_submit_deadline,
+            state=ChallengeState.from_model_params(item["challenge"].challenge_finished, item["challenge"].submissions_ended),
             mglyph_evaluations=[MGlyphEvaluationPublicDTO.from_model(mglyph_evaluation) for mglyph_evaluation in item["glyphs"]],
             user_relationship=ChallengeUserRelationshipDTO.from_relationship_flags(
                 is_solver=item["user_relationship"]["is_solver"],
