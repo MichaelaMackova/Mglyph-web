@@ -20,19 +20,12 @@
     </div>
 
     <div class="state-and-user-info">
-      <!-- <i v-show="props.user_evaluator_relationship && props.user_evaluator_relationship !== 'none'" class="fa-solid fa-scale-unbalanced"></i> -->
-      <i
+      <SolverIcon
+        v-show="props.user_solver_relationship && props.user_solver_relationship !== 'none'"
+      />
+      <EvaluatorIcon
         v-show="props.user_evaluator_relationship && props.user_evaluator_relationship !== 'none'"
-        class="fa-solid fa-gavel fa-1.8x"
-      ></i>
-      <i
-        v-show="props.user_solver_relationship && props.user_solver_relationship !== 'none'"
-        class="fa-solid fa-palette"
-      ></i>
-      <!-- <i
-        v-show="props.user_solver_relationship && props.user_solver_relationship !== 'none'"
-        class="fa-solid fa-shapes"
-      ></i> -->
+      />
       <ChallengeState :state="props.state" />
     </div>
   </div>
@@ -41,6 +34,8 @@
 <script setup lang="ts">
 import ChallengeState from '@/components/ChallengeState.vue'
 import ChallengeTable from '@/components/ChallengeTable.vue'
+import SolverIcon from '@/components/SolverIcon.vue'
+import EvaluatorIcon from '@/components/EvaluatorIcon.vue'
 import { ChallengeStateEnum, ChallengeGlyph } from '@/services/types'
 import { console } from 'inspector'
 import { ref } from 'vue'
