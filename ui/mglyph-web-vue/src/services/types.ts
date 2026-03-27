@@ -18,16 +18,15 @@ class ChallengeSimple {
     title: string,
     start_time: Date,
     end_time: Date,
-    submissions_ended: boolean,
-    challenge_finished: boolean,
+    state: string
   ) {
     this.id = id
     this.title = title
     this.start_time = start_time
     this.end_time = end_time
-    if (challenge_finished) {
+    if (state === 'finished') {
       this.state = ChallengeStateEnum.finished
-    } else if (submissions_ended) {
+    } else if (state === 'evaluation') {
       this.state = ChallengeStateEnum.progress
     } else {
       this.state = ChallengeStateEnum.open

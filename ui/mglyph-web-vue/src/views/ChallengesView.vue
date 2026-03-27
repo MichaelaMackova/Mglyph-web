@@ -99,8 +99,7 @@ async function fetchChallenges(page: number) {
           challenge.name,
           new Date(2021, 0, 1), // TODO: Replace with actual start time from response
           new Date(challenge.glyph_submit_deadline), // TODO: Replace with actual end time from response
-          challenge.submissions_ended,
-          challenge.challenge_finished,
+          challenge.state
         )
         var glyphs = challenge.mglyph_evaluations.map((glyph: any) => {
           return new ChallengeGlyph(
