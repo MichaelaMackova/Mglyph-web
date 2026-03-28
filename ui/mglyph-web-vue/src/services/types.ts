@@ -26,7 +26,7 @@ class ChallengeSimple {
     this.end_time = end_time
     if (state === 'finished') {
       this.state = ChallengeStateEnum.finished
-    } else if (state === 'evaluation') {
+    } else if (state === 'evaluating') {
       this.state = ChallengeStateEnum.progress
     } else {
       this.state = ChallengeStateEnum.open

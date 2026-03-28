@@ -3,6 +3,10 @@
     <h1>Challenges</h1>
   </div>
 
+  <div class="filters main-padding">
+    <FilterList :options="filters" />
+  </div>
+
   <div class="challenges-container">
     <div v-if="isLoading || errorOccurred" class="main-padding">
       <p v-if="isLoading">
@@ -32,11 +36,7 @@
 
     <v-pagination
       v-model="currentPage"
-      @update:model-value="
-        (newPage) => {
-          pushNewRoute(newPage)
-        }
-      "
+      @update:model-value="pushNewRoute"
       :length="responseData?.total_pages || 1"
       :total-visible="5"
       next-icon="fa-solid fa-caret-right"
@@ -47,6 +47,7 @@
 
 <script setup lang="ts">
 import ChallengeInfo from '@/components/ChallengeInfo.vue'
+import FilterList from '@/components/FilterList.vue'
 import { mglyphClient } from '@/clients/mglyph_client'
 import { ref, watch } from 'vue'
 import { ChallengeStateEnum, ChallengeSimple, ChallengeGlyph, User } from '@/services/types'
@@ -75,18 +76,34 @@ const responseData = ref<{
   page_size: number
 } | null>(null)
 const currentPage = ref<number>(1)
+const filters = ref<FilterList.FilterOption[]>([
+  { label: 'All', selected: true, onClick: () => onClickFilter(0) },
+  { label: 'Open', selected: false, onClick: () => onClickFilter(1) },
+  { label: 'Evaluating', selected: false, onClick: () => onClickFilter(2) },
+  { label: 'Finished', selected: false, onClick: () => onClickFilter(3) },
+])
 
 async function fetchChallenges(page: number) {
-  isLoading.value = true
+  // isLoading.value = true
   errorOccurred.value = false
   // responseData.value = null
   try {
+    let stateFilterArray = []
+    if (!filters.value[0].selected) {
+      for (let index = 1; index < filters.value.length; index++) {
+        const element = filters.value[index]
+        if (element.selected) {
+          stateFilterArray.push(element.label.toLowerCase())
+        }
+      }
+    }
     const response = await mglyphClient.get('/challenges', {
       authorizeEndpoint: authStore.user ? true : false,
       params: {
         glyph_count: 3,
         page: page,
         size: 3,
+        state: stateFilterArray,
       },
     })
     if (!Array.isArray(response.data.items)) {
@@ -99,7 +116,7 @@ async function fetchChallenges(page: number) {
           challenge.name,
           new Date(2021, 0, 1), // TODO: Replace with actual start time from response
           new Date(challenge.glyph_submit_deadline), // TODO: Replace with actual end time from response
-          challenge.state
+          challenge.state,
         )
         var glyphs = challenge.mglyph_evaluations.map((glyph: any) => {
           return new ChallengeGlyph(
@@ -131,8 +148,36 @@ async function fetchChallenges(page: number) {
   }
 }
 
+function onClickFilter(option_index: number) {
+  if (option_index === 0) {
+    filters.value[0].selected = true
+    for (let index = 1; index < filters.value.length; index++) {
+      filters.value[index].selected = false
+    }
+  } else {
+    if (filters.value[option_index].selected) {
+      filters.value[option_index].selected = false
+      let anyOtherSelected = false
+      for (let index = 1; index < filters.value.length; index++) {
+        if (filters.value[index].selected) {
+          anyOtherSelected = true
+          break
+        }
+      }
+      if (!anyOtherSelected) {
+        filters.value[0].selected = true
+      }
+    } else {
+      filters.value[option_index].selected = true
+      filters.value[0].selected = false
+    }
+  }
+  pushNewRoute()
+}
+
 function pushNewRoute(page?: number) {
   let newQuery = { ...router.currentRoute.value.query }
+  // Page
   if (page) {
     if (page === 1) {
       delete newQuery.page
@@ -140,6 +185,24 @@ function pushNewRoute(page?: number) {
       newQuery.page = page.toString()
     }
   }
+
+  // Filtering
+  if (filters.value[0].selected) {
+    delete newQuery.state
+  } else {
+    const stateValues = filters.value
+      .filter((f): f is { label: string } => f.selected)
+      .map((f) => f.label.toLowerCase())
+    if (stateValues.length > 0) {
+      newQuery.state = stateValues.join(',')
+    } else {
+      delete newQuery.state
+    }
+  }
+
+  // if (JSON.stringify(newQuery) !== JSON.stringify(router.currentRoute.value.query)) {
+  //   router.push({ query: newQuery })
+  // }
   router.push({ query: newQuery })
 }
 
@@ -155,10 +218,32 @@ function initializePageFromQuery(query: LocationQuery) {
   }
 }
 
+function initializeFiltersFromQuery(query: LocationQuery) {
+  const stateParam = query.state
+  if (stateParam === undefined) {
+    filters.value.forEach((filter, index) => {
+      filter.selected = index === 0
+    })
+  } else if (typeof stateParam === 'string') {
+    const stateValues = stateParam.split(',')
+    let isSelected = false
+    filters.value.forEach((filter) => {
+      filter.selected = stateValues.includes(filter.label.toLowerCase())
+      if (filter.selected) {
+        isSelected = true
+      }
+    })
+    if (!isSelected) {
+      filters.value[0].selected = true
+    }
+  }
+}
+
 watch(
   () => router.currentRoute.value.query,
   (newQuery) => {
     initializePageFromQuery(newQuery)
+    initializeFiltersFromQuery(newQuery)
     fetchChallenges(currentPage.value)
   },
   { immediate: true },
@@ -181,5 +266,9 @@ watch(
     background-color: var(--md-sys-color-surface-variant, #fef1e5);
     color: var(--md-sys-color-on-surface-variant, #171511);
   }
+}
+
+.filters {
+  margin-bottom: 10px;
 }
 </style>

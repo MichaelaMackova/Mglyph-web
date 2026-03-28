@@ -36,7 +36,7 @@ class EvaluationRoundPublicDTO(BaseModel):
 
 class ChallengeState(str, Enum):
     open = "open"
-    evaluation = "evaluation"
+    evaluating = "evaluating"
     finished = "finished"
 
     @staticmethod
@@ -44,7 +44,7 @@ class ChallengeState(str, Enum):
         if challenge_finished:
             return ChallengeState.finished
         elif submissions_ended:
-            return ChallengeState.evaluation
+            return ChallengeState.evaluating
         else:
             return ChallengeState.open
         
@@ -57,7 +57,7 @@ class ChallengeState(str, Enum):
         """
         if self == ChallengeState.finished:
             return (True, True)
-        elif self == ChallengeState.evaluation:
+        elif self == ChallengeState.evaluating:
             return (False, True)
         else:
             return (False, False)

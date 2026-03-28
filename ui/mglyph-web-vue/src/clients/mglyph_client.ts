@@ -13,6 +13,9 @@ const mglyphClient = axios.create({
   // Allow CORS
   withCredentials: true,
   baseURL: env.get('API_URL').required(true).asUrlString(),
+  paramsSerializer: {
+    indexes: null, // Prevent brackets in query strings for arrays
+  },
   // headers: {
   //   'Content-Type': 'application/json',
   // }, TODO:
