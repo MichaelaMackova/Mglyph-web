@@ -1,9 +1,14 @@
 <template>
   <div class="main-padding">
-    <h1>Challenges</h1>
+    <h1>My Challenges</h1>
+  </div>
+
+  <div v-if="!authStore.user" class="main-padding">
+    <PopupNote message="Please login to view your challenges" type="error" :closable="false" />
   </div>
 
   <ChallengeViewTemplate
+    v-else
     :currentPage="currentPage"
     :totalPages="responseData?.total_pages || 1"
     :filters="filters"
@@ -21,24 +26,25 @@
 
 <script setup lang="ts">
 import ChallengeViewTemplate from '@/components/ChallengeViewTemplate.vue'
+import PopupNote from '@/components/PopupNote.vue'
+import { ChallengeMiniDetail, PaginatedData, FilterOption } from '@/services/types'
 import { mglyphClient } from '@/clients/mglyph_client'
-import { ref, watch } from 'vue'
-import { FilterOption, ChallengeMiniDetail, PaginatedData } from '@/services/types'
 import { authStore } from '@/main'
-import { useRouter, type LocationQuery } from 'vue-router'
 import { initializePageFromQuery, changePageInQuery } from '@/services/routing-utils'
+import { useRouter, type LocationQuery } from 'vue-router'
+import { ref, watch } from 'vue'
 const router = useRouter()
 
 const isLoading = ref<boolean>(true)
 const errorOccurred = ref<boolean>(false)
-const responseData = ref<PaginatedData<ChallengeMiniDetail> | null>(null)
 const currentPage = ref<number>(1)
 const filters = ref<FilterOption[]>([
-  { label: 'All', selected: true, onClick: () => onClickFilter(0) },
-  { label: 'Open', selected: false, onClick: () => onClickFilter(1) },
-  { label: 'Evaluating', selected: false, onClick: () => onClickFilter(2) },
-  { label: 'Finished', selected: false, onClick: () => onClickFilter(3) },
+  new FilterOption('All', true, () => onClickFilter(0)),
+  new FilterOption('Open', false, () => onClickFilter(1)),
+  new FilterOption('Evaluating', false, () => onClickFilter(2)),
+  new FilterOption('Finished', false, () => onClickFilter(3)),
 ])
+const responseData = ref<PaginatedData<ChallengeMiniDetail> | null>(null)
 
 async function fetchChallenges(page: number) {
   isLoading.value = true
@@ -54,8 +60,8 @@ async function fetchChallenges(page: number) {
         }
       }
     }
-    const response = await mglyphClient.get('/challenges', {
-      authorizeEndpoint: authStore.user ? true : false,
+    const response = await mglyphClient.get('/challenges/user-is-participant', {
+      authorizeEndpoint: true,
       params: {
         glyph_count: 3,
         page: page,

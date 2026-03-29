@@ -42,7 +42,7 @@
       <!-- Logged in -->
       <ul v-show="authStore.user">
         <li>My profile</li>
-        <li>My challenges</li>
+        <li><RouterLink :to="{ name: 'MyChallenges' }">My challenges</RouterLink></li>
         <li>My glyphs</li>
         <hr />
         <li @click="toggleTheme">
