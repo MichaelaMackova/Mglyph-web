@@ -2,7 +2,7 @@
   <div v-show="isVisible" class="popup-note" :class="props.type">
     <div class="popup-type">{{ props.type?.toUpperCase() }}</div>
     <div class="popup-message">{{ props.message }}</div>
-    <i class="fa-solid fa-xmark" @click="closePopup"></i>
+    <i v-if="props.closable" class="fa-solid fa-xmark" @click="closePopup"></i>
   </div>
 </template>
 
@@ -12,12 +12,14 @@ import { ref } from 'vue'
 interface Props {
   message: string
   type?: 'info' | 'warning' | 'error'
+  closable?: boolean
   closeCallback?: () => void
 }
 
 const props = withDefaults(defineProps<Props>(), {
   message: '',
   type: 'info',
+  closable: true,
   closeCallback: () => {},
 })
 
@@ -26,7 +28,7 @@ function closePopup() {
   props.closeCallback()
 }
 
-const isVisible = ref<bool>(true)
+const isVisible = ref<boolean>(true)
 </script>
 
 <style lang="css" scoped>
