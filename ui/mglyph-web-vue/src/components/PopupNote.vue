@@ -14,6 +14,7 @@ interface Props {
   type?: 'info' | 'warning' | 'error'
   closable?: boolean
   closeCallback?: () => void
+  width?: string
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -21,6 +22,7 @@ const props = withDefaults(defineProps<Props>(), {
   type: 'info',
   closable: true,
   closeCallback: () => {},
+  width: '300px',
 })
 
 function closePopup() {
@@ -38,7 +40,7 @@ const isVisible = ref<boolean>(true)
   color: white;
   pointer-events: auto;
   overflow: clip;
-  width: 300px;
+  width: v-bind('props.width');
 
   &.info {
     background-color: #2196f3;
