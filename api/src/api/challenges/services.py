@@ -118,12 +118,17 @@ class ChallengeService:
         self.challenge_evaluator_service = challenge_evaluator_service
 
 
-    async def get_challenge_by_id(self, challenge_id: UUID) -> ChallengeModel:
+    async def get_challenge_by_id_with_user_relationship(self, challenge_id: UUID, current_user_id: UUID | None = None) -> tuple[ChallengeModel, dict | None]:
         db_challenge = await self.challenge_repository.get_challenge_by_id(challenge_id, load_options=ChallengeRepository.LoadOptions(load_creator=True, load_solvers=True, load_challenge_evaluator_links=True, load_evaluation_rounds=True))
         if not db_challenge:
             raise mglyph_errors.NotFoundError("Challenge", mglyph_errors.ErrorCode.NOT_FOUND_ID)
-        return db_challenge
-    
+        
+        user_relationship = None
+        if current_user_id:
+            user_relationship = (await self.challenge_repository.get_user_relationship_for_challenges(user_id=current_user_id, challenge_ids=[challenge_id])).get(challenge_id, None)
+
+        return db_challenge, user_relationship
+
 
     
     async def get_paginated_challenges_with_glyphs_and_user_relationship(self, filters: ChallengeFilterParams, current_user_id: UUID | None = None, glyph_count: int = 0, page: int = 1, size: int = 20) -> PagedResponse[dict]:

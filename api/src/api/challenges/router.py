@@ -48,6 +48,7 @@ async def read_challenges(
         ChallengePublicMiniDetailDTO(
             id=item["challenge"].id,
             name=item["challenge"].name,
+            creation_time=item["challenge"].creation_time,
             glyph_submit_deadline=item["challenge"].glyph_submit_deadline,
             state=ChallengeState.from_model_params(item["challenge"].challenge_finished, item["challenge"].submissions_ended),
             mglyph_evaluations=[MGlyphEvaluationPublicDTO.from_model(mglyph_evaluation) for mglyph_evaluation in item["glyphs"]],
@@ -78,6 +79,7 @@ async def read_challenges_where_user_is_participant(
             id=item["challenge"].id,
             name=item["challenge"].name,
             glyph_submit_deadline=item["challenge"].glyph_submit_deadline,
+            creation_time=item["challenge"].creation_time,
             state=ChallengeState.from_model_params(item["challenge"].challenge_finished, item["challenge"].submissions_ended),
             mglyph_evaluations=[MGlyphEvaluationPublicDTO.from_model(mglyph_evaluation) for mglyph_evaluation in item["glyphs"]],
             user_relationship=ChallengeUserRelationshipDTO.from_relationship_flags(
@@ -96,13 +98,21 @@ async def read_challenges_where_user_is_participant(
             responses={
                 NotFoundError.http_code: NotFoundError.response_dict()
              })
-async def read_challenge(challenge_id: UUID, challenge_service: ChallengeServiceDep) -> ChallengePublicDTO:
+async def read_challenge(challenge_id: UUID, current_user_id: CurrentUserIdOrNoneDep, challenge_service: ChallengeServiceDep) -> ChallengePublicDTO:
     try:
-        challenge = await challenge_service.get_challenge_by_id(challenge_id)
+        challenge, user_relationship = await challenge_service.get_challenge_by_id_with_user_relationship(challenge_id, current_user_id)
     except NotFoundError as e:
         raise NotFoundError.HTTPException(e)
     
-    return ChallengePublicDTO.from_model(challenge)
+    return ChallengePublicDTO.from_model(
+        challengeModel=challenge,
+        user_relationship=ChallengeUserRelationshipDTO.from_relationship_flags(
+                is_solver=user_relationship["is_solver"],
+                has_submitted_mglyph=user_relationship["has_submitted_mglyph"],
+                is_evaluator=user_relationship["is_evaluator"],
+                waiting_for_evaluation=user_relationship["waiting_for_evaluation"]
+            ) if user_relationship else None
+        )
 
 
 @router.patch("/{challenge_id}")

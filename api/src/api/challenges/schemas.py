@@ -80,12 +80,14 @@ class ChallengeCreateDTO(ChallengeBase):
 class ChallengePublicSimpleDTO(ChallengeBase):
     id: UUID
     state: ChallengeState
+    creation_time: datetime
 
     @staticmethod
     def from_model(challengeModel: ChallengeModel) -> "ChallengePublicSimpleDTO":
         return ChallengePublicSimpleDTO(
             id=challengeModel.id,
             name=challengeModel.name,
+            creation_time=challengeModel.creation_time,
             glyph_submit_deadline=challengeModel.glyph_submit_deadline,
             state=ChallengeState.from_model_params(challengeModel.challenge_finished, challengeModel.submissions_ended)
         )
@@ -137,24 +139,24 @@ class ChallengePublicMiniDetailDTO(ChallengePublicSimpleDTO):
 class ChallengePublicDTO(ChallengeBase):
     id: UUID
     creation_time: datetime
-    submissions_ended: bool
-    challenge_finished: bool
+    state: ChallengeState
     creator: UserPublicSimpleDTO
     solvers: list[UserPublicSimpleDTO]
     rounds: list[EvaluationRoundPublicDTO]
+    user_relationship: ChallengeUserRelationshipDTO | None
 
     @staticmethod
-    def from_model(challengeModel: ChallengeModel) -> "ChallengePublicDTO":
+    def from_model(challengeModel: ChallengeModel, user_relationship: ChallengeUserRelationshipDTO | None = None) -> "ChallengePublicDTO":
         return ChallengePublicDTO(
             id=challengeModel.id,
             name=challengeModel.name,
             creation_time=challengeModel.creation_time,
             glyph_submit_deadline=challengeModel.glyph_submit_deadline,
-            submissions_ended=challengeModel.submissions_ended,
-            challenge_finished=challengeModel.challenge_finished,
+            state=ChallengeState.from_model_params(challengeModel.challenge_finished, challengeModel.submissions_ended),
             creator=UserPublicSimpleDTO.from_model(challengeModel.creator),
             solvers=[UserPublicSimpleDTO.from_model(solver) for solver in challengeModel.solvers],
-            rounds=[EvaluationRoundPublicDTO.from_model(round) for round in challengeModel.evaluation_rounds]
+            rounds=[EvaluationRoundPublicDTO.from_model(round) for round in challengeModel.evaluation_rounds],
+            user_relationship=user_relationship
         )
 
 class ChallengeUpdateDTO(BaseModel):
