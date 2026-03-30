@@ -30,6 +30,7 @@ import { createVuetify } from 'vuetify'
 // import * as components from 'vuetify/components'
 // import * as directives from 'vuetify/directives'
 import { VPagination } from 'vuetify/components/VPagination'
+import { VDataTableServer } from 'vuetify/components'
 
 const minimalTheme = {
   variables: {
@@ -46,12 +47,13 @@ const minimalTheme = {
     'dragged-opacity': 0.08,
     'theme-overlay-multiplier': 1.5,
   },
+  colors: false,
 }
 
 const vuetify = createVuetify({
   // components,
   // directives,
-  components: { VPagination },
+  components: { VPagination, VDataTableServer },
   theme: {
     defaultTheme: 'minimalTheme',
     themes: {

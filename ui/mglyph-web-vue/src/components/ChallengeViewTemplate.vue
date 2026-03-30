@@ -20,9 +20,10 @@
       :key="challenge_info.challenge.id"
     >
       <ChallengeInfo
+        :id="challenge_info.challenge.id"
         :title="challenge_info.challenge.title"
         :start_time="challenge_info.challenge.start_time"
-        :end_time="challenge_info.challenge.end_time"
+        :end_time="challenge_info.challenge.evaluation_deadline"
         :state="challenge_info.challenge.state"
         :challengeGlyphs="challenge_info.glyphs"
         :user_solver_relationship="challenge_info.user_relationship?.user_solver_relationship"

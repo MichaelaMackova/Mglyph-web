@@ -27,7 +27,7 @@ const props = defineProps<Props>()
 .challenge-state {
   padding: 5px 10px;
   border-radius: 5px;
-  width: fit-content;
+  width: max-content;
   height: fit-content;
   font-weight: bold;
 

@@ -6,25 +6,38 @@ enum ChallengeStateEnum {
   finished = 'Results Finished',
 }
 
+function getChallengeStateEnumFromString(state: string): ChallengeStateEnum {
+  if (state === 'finished') {
+    return ChallengeStateEnum.finished
+  } else if (state === 'evaluating') {
+    return ChallengeStateEnum.progress
+  } else {
+    return ChallengeStateEnum.open
+  }
+}
+
 class ChallengeSimple {
   id: UUID
   title: string
   start_time: Date
-  end_time: Date
+  submission_deadline: Date
+  evaluation_deadline: Date
   state: ChallengeStateEnum
 
-  constructor(id: UUID, title: string, start_time: Date, end_time: Date, state: string) {
+  constructor(
+    id: UUID,
+    title: string,
+    start_time: Date,
+    submission_deadline: Date,
+    evaluation_deadline: Date,
+    state: string,
+  ) {
     this.id = id
     this.title = title
     this.start_time = start_time
-    this.end_time = end_time
-    if (state === 'finished') {
-      this.state = ChallengeStateEnum.finished
-    } else if (state === 'evaluating') {
-      this.state = ChallengeStateEnum.progress
-    } else {
-      this.state = ChallengeStateEnum.open
-    }
+    this.submission_deadline = submission_deadline
+    this.evaluation_deadline = evaluation_deadline
+    this.state = getChallengeStateEnumFromString(state)
   }
 }
 
@@ -71,11 +84,37 @@ enum ChallengeUserSolverRelationshipType {
   mglyph_submitted = 'mglyph_submitted',
 }
 
+function getChallengeUserSolverRelationshipTypeFromString(
+  relationship: string,
+): ChallengeUserSolverRelationshipType {
+  if (relationship === 'registered') {
+    return ChallengeUserSolverRelationshipType.registered
+  } else if (relationship === 'mglyph_submitted') {
+    return ChallengeUserSolverRelationshipType.mglyph_submitted
+  } else {
+    return ChallengeUserSolverRelationshipType.none
+  }
+}
+
 enum ChallengeUserEvaluatorRelationshipType {
   none = 'none',
   registered = 'registered',
   evaluation_awaiting = 'evaluation_awaiting',
   evaluation_finished = 'evaluation_finished',
+}
+
+function getChallengeUserEvaluatorRelationshipTypeFromString(
+  relationship: string,
+): ChallengeUserEvaluatorRelationshipType {
+  if (relationship === 'evaluation_awaiting') {
+    return ChallengeUserEvaluatorRelationshipType.evaluation_awaiting
+  } else if (relationship === 'evaluation_finished') {
+    return ChallengeUserEvaluatorRelationshipType.evaluation_finished
+  } else if (relationship === 'registered') {
+    return ChallengeUserEvaluatorRelationshipType.registered
+  } else {
+    return ChallengeUserEvaluatorRelationshipType.none
+  }
 }
 
 class ChallengeMiniDetail {
@@ -103,8 +142,9 @@ class ChallengeMiniDetail {
     const challenge = new ChallengeSimple(
       apiResponse.id,
       apiResponse.name,
-      new Date(2021, 0, 1), // TODO: Replace with actual start time from response,
-      new Date(apiResponse.glyph_submit_deadline), // TODO: Replace with actual end time from response
+      new Date(apiResponse.creation_time),
+      new Date(apiResponse.glyph_submit_deadline),
+      new Date(2022, 0, 1), // TODO: Replace with actual evaluation deadline from response
       apiResponse.state,
     )
     const glyphs = apiResponse.mglyph_evaluations.map((glyph: any) => {
@@ -115,31 +155,54 @@ class ChallengeMiniDetail {
         new Array<string>(), // TODO: Replace with actual flags from response
       )
     })
-    let solver_relationship = ChallengeUserSolverRelationshipType.none
-    if (apiResponse.user_relationship?.solver_relationship) {
-      const apiSolverRelationship: string = apiResponse.user_relationship.solver_relationship
-      if (apiSolverRelationship === 'registered') {
-        solver_relationship = ChallengeUserSolverRelationshipType.registered
-      } else if (apiSolverRelationship === 'mglyph_submitted') {
-        solver_relationship = ChallengeUserSolverRelationshipType.mglyph_submitted
-      }
-    }
-    let evaluator_relationship = ChallengeUserEvaluatorRelationshipType.none
-    if (apiResponse.user_relationship?.evaluator_relationship) {
-      const apiEvaluatorRelationship: string = apiResponse.user_relationship.evaluator_relationship
-      if (apiEvaluatorRelationship === 'evaluation_awaiting') {
-        evaluator_relationship = ChallengeUserEvaluatorRelationshipType.evaluation_awaiting
-      } else if (apiEvaluatorRelationship === 'evaluation_finished') {
-        evaluator_relationship = ChallengeUserEvaluatorRelationshipType.evaluation_finished
-      } else if (apiEvaluatorRelationship === 'registered') {
-        evaluator_relationship = ChallengeUserEvaluatorRelationshipType.registered
-      }
-    }
     const user_relationship = {
-      user_solver_relationship: solver_relationship,
-      user_evaluator_relationship: evaluator_relationship,
+      user_solver_relationship: getChallengeUserSolverRelationshipTypeFromString(
+        apiResponse.user_relationship?.solver_relationship ?? 'none',
+      ),
+      user_evaluator_relationship: getChallengeUserEvaluatorRelationshipTypeFromString(
+        apiResponse.user_relationship?.evaluator_relationship ?? 'none',
+      ),
     }
     return new ChallengeMiniDetail(challenge, glyphs, user_relationship)
+  }
+}
+
+class ChallengeDetail {
+  challenge: ChallengeSimple
+  user_relationship: {
+    user_solver_relationship?: ChallengeUserSolverRelationshipType
+    user_evaluator_relationship?: ChallengeUserEvaluatorRelationshipType
+  } | null
+
+  constructor(
+    challenge: ChallengeSimple,
+    user_relationship: {
+      user_solver_relationship?: ChallengeUserSolverRelationshipType
+      user_evaluator_relationship?: ChallengeUserEvaluatorRelationshipType
+    } | null,
+  ) {
+    this.challenge = challenge
+    this.user_relationship = user_relationship
+  }
+
+  public static fromAPIResponse(apiResponse: any): ChallengeDetail {
+    const challenge = new ChallengeSimple(
+      apiResponse.id,
+      apiResponse.name,
+      new Date(apiResponse.creation_time),
+      new Date(apiResponse.glyph_submit_deadline),
+      new Date(2022, 0, 1), // TODO: Replace with actual evaluation deadline from response
+      apiResponse.state,
+    )
+    const user_relationship = {
+      user_solver_relationship: getChallengeUserSolverRelationshipTypeFromString(
+        apiResponse.user_relationship?.solver_relationship ?? 'none',
+      ),
+      user_evaluator_relationship: getChallengeUserEvaluatorRelationshipTypeFromString(
+        apiResponse.user_relationship?.evaluator_relationship ?? 'none',
+      ),
+    }
+    return new ChallengeDetail(challenge, user_relationship)
   }
 }
 
@@ -175,4 +238,5 @@ export {
   FilterOption,
   ChallengeUserSolverRelationshipType,
   ChallengeUserEvaluatorRelationshipType,
+  ChallengeDetail,
 }

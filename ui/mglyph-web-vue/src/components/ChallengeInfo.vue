@@ -1,6 +1,10 @@
 <template>
   <div class="challenge-info">
-    <h3>{{ props.title }}</h3>
+    <h3>
+      <RouterLink :to="{ name: 'ChallengeDetail', params: { id: props.id } }">{{
+        props.title
+      }}</RouterLink>
+    </h3>
     <div class="content">
       <div class="date">
         <span>{{
@@ -37,10 +41,10 @@ import ChallengeTable from '@/components/ChallengeTable.vue'
 import SolverIcon from '@/components/SolverIcon.vue'
 import EvaluatorIcon from '@/components/EvaluatorIcon.vue'
 import { ChallengeStateEnum, ChallengeGlyph } from '@/services/types'
-import { console } from 'inspector'
-import { ref } from 'vue'
+import type { UUID } from 'crypto'
 
 interface Props {
+  id: UUID
   title: string
   state: ChallengeStateEnum
   start_time: Date
@@ -55,6 +59,7 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
+  id: '00000000-0000-0000-0000-000000000000',
   title: 'Challenge Title',
   state: ChallengeStateEnum.open,
   start_time: () => {
@@ -90,6 +95,11 @@ const props = withDefaults(defineProps<Props>(), {
 
   h3 {
     margin: 0;
+  }
+
+  a {
+    text-decoration: none;
+    color: inherit;
   }
 }
 

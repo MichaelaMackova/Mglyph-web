@@ -3,6 +3,7 @@ import HomeView from '../views/HomeView.vue'
 import ClickerView from '@/views/ClickerView.vue'
 import ChallengesView from '@/views/ChallengesView.vue'
 import MyChallengesView from '@/views/MyChallengesView.vue'
+import ChallengeDetailView from '@/views/ChallengeDetailView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -21,6 +22,11 @@ const router = createRouter({
       path: '/challenges',
       name: 'Challenges',
       component: ChallengesView,
+    },
+    {
+      path: '/challenge/:id',
+      name: 'ChallengeDetail',
+      component: ChallengeDetailView,
     },
     {
       path: '/my-challenges',
