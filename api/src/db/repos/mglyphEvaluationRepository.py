@@ -54,9 +54,9 @@ class MGlyphEvaluationRepository(RepositoryInterface):
         if only_submitted:
             select_exec = select_exec.join(MalleableGlyphModel).where(MalleableGlyphModel.submission_time.is_not(None))
         if order_by == MGlyphEvaluationRepository.OrderByOption.RANK_ASC:
-            select_exec = select_exec.order_by(MGlyphEvaluationModel.rank.asc())
+            select_exec = select_exec.order_by(MGlyphEvaluationModel.rank.asc().nulls_last())
         elif order_by == MGlyphEvaluationRepository.OrderByOption.RANK_DESC:
-            select_exec = select_exec.order_by(MGlyphEvaluationModel.rank.desc())
+            select_exec = select_exec.order_by(MGlyphEvaluationModel.rank.desc().nulls_first())
         select_exec = load_options.add_options_to_statement(select_exec)
         return await paginate(self.db_session, select_exec, MGlyphEvaluationModel, PaginationParams(page=page, size=size), as_scalar=True)
 

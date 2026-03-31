@@ -120,6 +120,21 @@ def update_challenge(challenge_id: UUID):
     pass
 
 
+@router.get("/{challenge_id}/glyphs")
+async def get_glyphs_of_challenge(
+    challenge_id: UUID,
+    challenge_service: ChallengeServiceDep,
+    page: Annotated[int, Query(ge=1)] = 1,
+    size: Annotated[int, Query(ge=1, le=100)] = 20
+) -> PagedResponse[MGlyphEvaluationPublicDTO]:
+    paginated_glyph_evaluations = await challenge_service.get_paginated_challenge_glyphs(challenge_id, page=page, size=size)
+    paginated_glyph_evaluations.items = [
+        MGlyphEvaluationPublicDTO.from_model(mglyph_evaluation)
+        for mglyph_evaluation in paginated_glyph_evaluations.items
+    ]
+    return paginated_glyph_evaluations
+
+
 @router.post("/{challenge_id}/add-solver",
                 responses={
                     NotFoundError.http_code: NotFoundError.response_dict(),

@@ -217,6 +217,12 @@ class ChallengeService:
         await self.db_session.commit()
         challenge_db = await self.challenge_repository.get_challenge_by_id(challenge_id, load_options=ChallengeRepository.LoadOptions(load_creator=True, load_solvers=True, load_challenge_evaluator_links=True, load_evaluation_rounds=True))
         return challenge_db
+
+    async def get_paginated_challenge_glyphs(self, challenge_id: UUID, page: int = 1, size: int = 20) -> PagedResponse[MGlyphEvaluationModel]:
+        last_round = await self.evaluation_round_repository.get_last_round_in_challenge(challenge_id)
+        if not last_round:
+            raise mglyph_errors.NotFoundError("Challenge", mglyph_errors.ErrorCode.NOT_FOUND_ID)
+        return await self.mglyph_evaluation_repository.get_paginated_mglyph_evaluations_in_challenge_round(last_round.id, only_submitted=True, order_by=MGlyphEvaluationRepository.OrderByOption.RANK_ASC, page=page, size=size, load_options=MGlyphEvaluationRepository.LoadOptions(load_malleable_glyph=True, load_malleable_glyph_creator=True))
     
 
     async def delete_challenge(self, challenge_id: UUID):
