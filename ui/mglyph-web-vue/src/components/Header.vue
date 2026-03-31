@@ -160,7 +160,10 @@ function toggleLoginMenu(event: PointerEvent) {
       close = true
     }
   })
-  loginMenuVisible.value = !close
+  if (close) {
+    loginMenuVisible.value = false
+    return
+  }
 }
 /* ==================== END - LOGIN MENU TOGGLE ==================== */
 
