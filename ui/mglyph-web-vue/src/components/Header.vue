@@ -7,7 +7,6 @@
 
       <ul class="nav">
         <li><RouterLink :to="{ name: 'Home' }">Home</RouterLink></li>
-        <li><RouterLink :to="{ name: 'Clicker' }">Clicker</RouterLink></li>
         <li><RouterLink :to="{ name: 'Home' }">About</RouterLink></li>
         <li><RouterLink :to="{ name: 'Challenges' }">Challenges</RouterLink></li>
       </ul>
@@ -42,7 +41,11 @@
       <!-- Logged in -->
       <ul v-show="authStore.user">
         <li>My profile</li>
-        <li><RouterLink :to="{ name: 'MyChallenges' }">My challenges</RouterLink></li>
+        <li>
+          <RouterLink :to="{ name: 'MyChallenges' }"
+            ><span ref="myChallengesLinkRef">My challenges</span></RouterLink
+          >
+        </li>
         <li>My glyphs</li>
         <hr />
         <li @click="toggleTheme">
@@ -51,7 +54,7 @@
           Theme
         </li>
         <hr />
-        <li @click="logout">Log out</li>
+        <li ref="logoutButtonRef" @click="logout">Log out</li>
       </ul>
     </div>
   </div>
@@ -127,6 +130,12 @@ onMounted(() => {
 const loginMenuVisible = ref<boolean>(false)
 const loginMenuEl = useTemplateRef('loginMenuRef')
 const loginIconEl = useTemplateRef('loginIconRef')
+const loginButtonEl = useTemplateRef('loginButtonRef')
+const loginMenuOptionCloseExceptionsEls = ref([
+  loginButtonEl,
+  useTemplateRef('myChallengesLinkRef'),
+  useTemplateRef('logoutButtonRef'),
+])
 
 function closeLoginMenu() {
   loginMenuVisible.value = false
@@ -139,16 +148,25 @@ function toggleLoginMenu(event: PointerEvent) {
     loginMenuVisible.value
   ) {
     loginMenuVisible.value = false
+    return
   } else if (loginIconEl.value?.contains(event.target as Node)) {
     loginMenuVisible.value = true
+    return
   }
+
+  let close = false
+  loginMenuOptionCloseExceptionsEls.value.forEach((elementRef) => {
+    if (elementRef.value?.contains(event.target as Node)) {
+      close = true
+    }
+  })
+  loginMenuVisible.value = !close
 }
 /* ==================== END - LOGIN MENU TOGGLE ==================== */
 
 /* ==================== LOGIN PROMPT TOGGLE ==================== */
 const loginPromptVisible = ref<boolean>(false)
 const loginPromptEl = useTemplateRef('loginPromptRef')
-const loginButtonEl = useTemplateRef('loginButtonRef')
 const loginLoading = ref<boolean>(false)
 
 function toggleLoginPrompt(event: PointerEvent) {
