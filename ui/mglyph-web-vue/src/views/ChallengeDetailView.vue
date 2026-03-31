@@ -67,44 +67,47 @@
       <!-- NOTE: possible expansion: choose round (implement multiple rounds) -->
       <div class="glyph-table">
         <v-data-table-server
-          :filter-keys="['name']"
-          :items="[
-            {
-              rank: 1,
-              author: 'User 1',
-              img: 'https://via.placeholder.com/50',
-              flags: ['flag1', 'flag2'],
-            },
-            {
-              rank: 2,
-              author: 'User 2',
-              img: 'https://via.placeholder.com/50',
-              flags: ['flag3', 'flag4'],
-            },
-          ]"
+          :items="glyphsData || []"
           :items-length="10"
           :headers="[
             { title: '#', key: 'rank' },
             { title: 'Author', key: 'author' },
-            { title: 'Glyph', key: 'img' },
-            { title: 'Flags', key: 'flags' },
+            { title: 'Glyph', key: 'glyph', sortable: false },
+            { title: 'Flags', key: 'flags', sortable: false },
           ]"
-          :items-per-page="10"
+          :items-per-page="glyphsItemsPerPage"
           :loading="glyphsLoading"
           @update:options="
             ({ page, itemsPerPage, sortBy }) => {
-              console.log('Options updated - fetch glyphs:', { page, itemsPerPage, sortBy })
+              // TODO: SORTING
+              glyphsCurrentPage = 1
+              fetchPaginatedGlyphsData(page, itemsPerPage)
             }
           "
           sort-asc-icon="fa-solid fa-sort-up"
           sort-desc-icon="fa-solid fa-sort-down"
           sort-icon="fa-solid fa-sort"
         >
+          <template v-slot:item.author="{ item }">
+            {{ item.author.username }}
+          </template>
+
+          <template v-slot:item.glyph="{ item }"> TODO: </template>
+
+          <template v-slot:item.flags="{ item }">
+            {{ item.flags.join(', ') }}
+          </template>
+
           <template v-slot:bottom>
             <v-pagination
               :model-value="glyphsCurrentPage"
-              @update:model-value="() => {}"
-              :length="1"
+              @update:model-value="
+                (newPage) => {
+                  glyphsCurrentPage = newPage
+                  fetchPaginatedGlyphsData(newPage, glyphsItemsPerPage)
+                }
+              "
+              :length="glyphsTotalPages"
               :total-visible="5"
               next-icon="fa-solid fa-caret-right"
               prev-icon="fa-solid fa-caret-left"
@@ -128,14 +131,17 @@ import {
   ChallengeUserEvaluatorRelationshipType,
 } from '@/services/types'
 import { mglyphClient } from '@/clients/mglyph_client'
+import { authStore } from '@/main'
 import { useRouter, type LocationQuery } from 'vue-router'
 import { ref } from 'vue'
 const router = useRouter()
 
-const isLoading = ref(true)
-const errorOccurred = ref(false)
-const glyphsLoading = ref(true)
-const glyphsCurrentPage = ref(1)
+const isLoading = ref<boolean>(true)
+const errorOccurred = ref<boolean>(false)
+const glyphsLoading = ref<boolean>(true)
+const glyphsCurrentPage = ref<number>(1)
+const glyphsTotalPages = ref<number>(1)
+const glyphsItemsPerPage = 10
 const challengeData = ref<ChallengeDetail | null>(null)
 const glyphsData = ref<ChallengeGlyph[] | null>(null)
 
@@ -143,7 +149,7 @@ async function fetchChallengeData() {
   try {
     // Simulate an API call to fetch challenge data
     const response = await mglyphClient.get(`/challenges/${router.currentRoute.value.params.id}`, {
-      authorizeEndpoint: true,
+      authorizeEndpoint: authStore.user ? true : false,
     })
     challengeData.value = ChallengeDetail.fromAPIResponse(response.data)
   } catch (error) {
@@ -151,6 +157,31 @@ async function fetchChallengeData() {
     errorOccurred.value = true
   } finally {
     isLoading.value = false
+  }
+}
+
+async function fetchPaginatedGlyphsData(page: number, itemsPerPage: number) {
+  glyphsLoading.value = true
+  try {
+    const response = await mglyphClient.get(
+      `/challenges/${router.currentRoute.value.params.id}/glyphs`,
+      {
+        authorizeEndpoint: false,
+        params: {
+          page: page,
+          size: itemsPerPage,
+        },
+      },
+    )
+    glyphsData.value = response.data.items.map((glyph: any) => {
+      return ChallengeGlyph.fromAPIResponse(glyph)
+    })
+    glyphsTotalPages.value = response.data.total_pages
+    glyphsCurrentPage.value = response.data.page
+  } catch (error) {
+    console.error('Error fetching glyphs data:', error)
+    // TODO: Add popup error message
+  } finally {
     glyphsLoading.value = false
   }
 }

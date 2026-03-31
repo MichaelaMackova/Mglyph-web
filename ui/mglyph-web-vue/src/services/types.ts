@@ -64,6 +64,18 @@ class ChallengeGlyph {
     this.author = author
     this.flags = flags
   }
+
+  public static fromAPIResponse(apiResponse: any): ChallengeGlyph {
+    return new ChallengeGlyph(
+      apiResponse.malleable_glyph.id,
+      apiResponse.rank,
+      new User(
+        apiResponse.malleable_glyph.creator.id,
+        apiResponse.malleable_glyph.creator.username,
+      ),
+      new Array<string>(), // TODO: Replace with actual flags from response
+    )
+  }
 }
 
 class FilterOption {
@@ -148,12 +160,7 @@ class ChallengeMiniDetail {
       apiResponse.state,
     )
     const glyphs = apiResponse.mglyph_evaluations.map((glyph: any) => {
-      return new ChallengeGlyph(
-        glyph.malleable_glyph.id,
-        glyph.rank,
-        new User(glyph.malleable_glyph.creator.id, glyph.malleable_glyph.creator.username),
-        new Array<string>(), // TODO: Replace with actual flags from response
-      )
+      return ChallengeGlyph.fromAPIResponse(glyph)
     })
     const user_relationship = {
       user_solver_relationship: getChallengeUserSolverRelationshipTypeFromString(
