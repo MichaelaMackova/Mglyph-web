@@ -13,3 +13,4 @@ docker_config
 
 extras/*
 api/src/resetTestData.sql
+api/src/data/files/*

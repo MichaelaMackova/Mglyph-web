@@ -32,6 +32,9 @@ class ErrorCode(IntEnum):
     # FORBIDDEN errors (500-599)
     FORBIDDEN_BASE = 500 # Base code for forbidden errors
     FORBIDDEN_NOT_ADMIN = 501 # Specific code for forbidden access due to lack of admin privileges
+    # SERVER errors (600-699)
+    SERVER_ERROR_BASE = 600 # Base code for server errors
+    SERVER_ERROR_FILE_SAVE_FAILED = 601 # Specific code for server error when saving a file fails (e.g., due to file system issues, permission issues, etc.)
 
 
 
@@ -130,4 +133,16 @@ class ForbiddenError(MGlyphApiError):
     err_code : int = ErrorCode.FORBIDDEN_BASE
 
     def __init__(self, message: str = "Forbidden access.", error_code: int = ErrorCode.FORBIDDEN_BASE):
+        super().__init__(message, http_code=self.http_code, err_code=error_code)
+
+
+
+class ServerError(MGlyphApiError):
+    """Raised when an internal server error occurs."""
+
+    http_code : int = status.HTTP_500_INTERNAL_SERVER_ERROR
+    https_response_description : str = "Internal Server Error"
+    err_code : int = ErrorCode.SERVER_ERROR_BASE
+
+    def __init__(self, message: str = "An internal server error occurred.", error_code: int = ErrorCode.SERVER_ERROR_BASE):
         super().__init__(message, http_code=self.http_code, err_code=error_code)

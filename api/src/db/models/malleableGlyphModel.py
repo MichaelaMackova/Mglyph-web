@@ -7,6 +7,7 @@ from typing import Optional
 import db.models.userModel as userModel
 import db.models.mglyphEvaluationModel as mglyphEvaluationModel
 import db.models.mglyphReportFlagModel as mglyphReportFlagModel
+import db.models.fileModel as fileModel
 
 class MalleableGlyphModel(SQLModel, table=True):
     __tablename__ = "malleable_glyph"
@@ -17,7 +18,7 @@ class MalleableGlyphModel(SQLModel, table=True):
     # description: str = Field()
     last_updated_time: datetime = Field(default_factory=get_current_utc_time, sa_type=DateTime(timezone=True))
     submission_time: datetime | None = Field(default=None, sa_type=DateTime(timezone=True))
-    zip_file_path: str = Field()
+    zip_file_id: UUID = Field(foreign_key="file.id")
     code: str | None = Field(default=None)
     is_code_public: bool = Field(default=False)
 
@@ -27,3 +28,4 @@ class MalleableGlyphModel(SQLModel, table=True):
     creator: "userModel.UserModel" = Relationship(back_populates="malleable_glyphs", sa_relationship_kwargs=dict(lazy='raise_on_sql'))
     mglyph_evaluation_links: list["mglyphEvaluationModel.MGlyphEvaluationModel"] = Relationship(back_populates="malleable_glyph", sa_relationship_kwargs=dict(lazy='raise_on_sql'))
     report_flags: list["mglyphReportFlagModel.MGlyphReportFlagModel"] = Relationship(back_populates="mglyph", sa_relationship_kwargs=dict(lazy='raise_on_sql'))
+    zip_file: "fileModel.FileModel" = Relationship(back_populates="malleable_glyph", sa_relationship_kwargs=dict(lazy='raise_on_sql'))

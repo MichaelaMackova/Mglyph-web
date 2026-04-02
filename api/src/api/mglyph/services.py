@@ -14,8 +14,9 @@ from db.models.mglyphEvaluationModel import MGlyphEvaluationModel
 from db.repos.malleableGlyphRepository import MalleableGlyphRepository, MalleableGlyphRepositoryDep
 from db.repos.evaluationRoundRepository import EvaluationRoundRepository, EvaluationRoundRepositoryDep
 from db.repos.challengeRepository import ChallengeRepository, ChallengeRepositoryDep
+from api.file.services import FileService, FileServiceDep
 # Schemas
-from api.mglyph.schemas import MGlyphCreate, MglyphFilterParams
+from api.mglyph.schemas import MGlyphCreateDTO, MglyphFilterParams
 
 
 
@@ -53,13 +54,15 @@ class MalleableGlyphService:
             malleable_glyph_repository: MalleableGlyphRepository,
             evaluation_round_repository: EvaluationRoundRepository,
             challenge_repository: ChallengeRepository,
-            mglyph_evaluation_service: MGlyphEvaluationService
+            mglyph_evaluation_service: MGlyphEvaluationService,
+            file_service: FileService
             ):
         self.db_session = db_session
         self.malleable_glyph_repository = malleable_glyph_repository
         self.evaluation_round_repository = evaluation_round_repository
         self.challenge_repository = challenge_repository
         self.mglyph_evaluation_service = mglyph_evaluation_service
+        self.file_service = file_service
 
 
     async def get_malleable_glyph_by_id(self, mglyph_id: UUID) -> MalleableGlyphModel:
@@ -80,13 +83,12 @@ class MalleableGlyphService:
         return paginated_mglyphs_db
     
 
-    async def create_malleable_glyph(self, mglyph_create_dto: MGlyphCreate, current_user_id: UUID) -> MalleableGlyphModel:
+    async def create_malleable_glyph(self, mglyph_create_dto: MGlyphCreateDTO, current_user_id: UUID) -> MalleableGlyphModel:
         try: 
             mglyph_data = mglyph_create_dto.model_dump()
             mglyph_data["creator_id"] = current_user_id
             challenge_id = mglyph_data.pop("challenge_id")
-            db_mglyph = MalleableGlyphModel.model_validate(mglyph_data)
-            db_mglyph.id = None  # Ensure ID is None for new records
+            zip_file = mglyph_data.pop("zip_file")
         except ValidationError as e:
             raise mglyph_errors.BadRequestError(f"Invalid malleable glyph data: {e}")
         
@@ -105,11 +107,23 @@ class MalleableGlyphService:
         if await self.malleable_glyph_repository.does_user_have_mglyph_in_challenge(current_user_id, challenge_id):
             raise mglyph_errors.BadRequestError("User has already submitted a malleable glyph for this challenge")# TODO: , mglyph_errors.ErrorCode.BAD_REQUEST_INVALID_REFERENCE)
         
+
+        zip_file_db = await self.file_service.create_mglyph_file(zip_file, commit=False)
+        mglyph_data["zip_file_id"] = zip_file_db.id
+
+        try:
+            db_mglyph = MalleableGlyphModel.model_validate(mglyph_data)
+            db_mglyph.id = None  # Ensure ID is None for new records
+        except ValidationError as e:
+            # TODO: Remove file from storage if malleable glyph creation fails after file upload
+            raise mglyph_errors.BadRequestError(f"Invalid malleable glyph data after processing: {e}")
+        
         self.db_session.add(db_mglyph)
         await self.db_session.flush()  # Flush to get the ID of the new malleable glyph for evaluation linking
 
         # Add initial mglyph evaluation
         await self.mglyph_evaluation_service.create_evaluation_for_mglyph(db_mglyph.id, db_first_eval_round.id)
+        await self.db_session.commit()
         db_mglyph = await self.malleable_glyph_repository.get_malleable_glyph_by_id(db_mglyph.id, load_options=MalleableGlyphRepository.LoadOptions.all_options())
         return db_mglyph
     
@@ -122,12 +136,14 @@ def get_malleable_glyph_service(
         malleable_glyph_repository: MalleableGlyphRepositoryDep,
         evaluation_round_repository: EvaluationRoundRepositoryDep,
         challenge_repository: ChallengeRepositoryDep,
-        mglyph_evaluation_service: MGlyphEvaluationServiceDep):
+        mglyph_evaluation_service: MGlyphEvaluationServiceDep,
+        file_service: FileServiceDep):
     return MalleableGlyphService(
         db_session,
         malleable_glyph_repository,
         evaluation_round_repository,
         challenge_repository,
-        mglyph_evaluation_service)
+        mglyph_evaluation_service,
+        file_service)
 
 MalleableGlyphServiceDep = Annotated[MalleableGlyphService, Depends(get_malleable_glyph_service)]

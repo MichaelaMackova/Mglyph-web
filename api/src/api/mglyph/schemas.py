@@ -43,27 +43,10 @@ class MGlyphCreateDTO(MGlyphBase):
 MGlyphCreateDTOAsForm = Annotated[MGlyphCreateDTO, Form(media_type= "multipart/form-data")]
 
 
-class MGlyphCreate(MGlyphBase):
-    code: Optional[str] = None
-    is_code_public: bool
-    challenge_id: UUID
-    zip_file_path: str
-
-    @staticmethod
-    def from_dto(dto: MGlyphCreateDTO, zip_file_path: str) -> "MGlyphCreate":
-        return MGlyphCreate(
-            short_name=dto.short_name,
-            long_name=dto.long_name,
-            code=dto.code,
-            is_code_public=dto.is_code_public,
-            challenge_id=dto.challenge_id,
-            zip_file_path=zip_file_path
-        )
-
 
 class MGlyphPublicSimpleDTO(MGlyphBase):
     id: UUID
-    zip_file_path: str # TODO: show only zip_file name or a presigned URL for download instead of the full path
+    zip_file_id: UUID
     creator_id: UUID
 
     @staticmethod
@@ -72,14 +55,14 @@ class MGlyphPublicSimpleDTO(MGlyphBase):
             id=mglyph_model.id,
             short_name=mglyph_model.short_name,
             long_name=mglyph_model.long_name,
-            zip_file_path=mglyph_model.zip_file_path, # TODO: show only zip_file name or a presigned URL for download instead of the full path
+            zip_file_id=mglyph_model.zip_file_id,
             creator_id=mglyph_model.creator_id
         )
 
 
 class MGlyphPublicSimpleWithCreatorDTO(MGlyphBase):
     id: UUID
-    zip_file_path: str # TODO: show only zip_file name or a presigned URL for download instead of the full path
+    zip_file_id: UUID
     creator: UserPublicSimpleDTO
 
     @staticmethod
@@ -88,7 +71,7 @@ class MGlyphPublicSimpleWithCreatorDTO(MGlyphBase):
             id=mglyph_model.id,
             short_name=mglyph_model.short_name,
             long_name=mglyph_model.long_name,
-            zip_file_path=mglyph_model.zip_file_path, # TODO: show only zip_file name or a presigned URL for download instead of the full path
+            zip_file_id=mglyph_model.zip_file_id,
             creator=UserPublicSimpleDTO.from_model(mglyph_model.creator)
         )
 
@@ -97,7 +80,7 @@ class MGlyphPublicDTO(MGlyphBase):
     id: UUID
     last_updated_time: datetime
     submission_time: datetime | None
-    zip_file_path: str # TODO: show only zip_file name or a presigned URL for download instead of the full path
+    zip_file_id: UUID
     code: str | None
     is_code_public: bool
     creator: UserPublicSimpleDTO
@@ -113,7 +96,7 @@ class MGlyphPublicDTO(MGlyphBase):
             long_name=mglyph_model.long_name,
             last_updated_time=mglyph_model.last_updated_time,
             submission_time=mglyph_model.submission_time,
-            zip_file_path=mglyph_model.zip_file_path, # TODO: show only zip_file name or a presigned URL for download instead of the full path
+            zip_file_id=mglyph_model.zip_file_id,
             code=mglyph_model.code if mglyph_model.is_code_public else None,
             is_code_public=mglyph_model.is_code_public,
             creator=UserPublicSimpleDTO.from_model(mglyph_model.creator)

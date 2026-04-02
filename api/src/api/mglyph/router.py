@@ -3,14 +3,13 @@ from fastapi import APIRouter, Query, UploadFile, status, Depends
 from uuid import UUID
 from pathlib import Path
 import shutil
-from pydantic import BaseModel, Json
 from errors import NotFoundError, BadRequestError, ErrorCode
 from db.pagination import PagedResponse
 
 from api.auth.dependencies import CurrentAdminUserIdDep, CurrentUserIdDep
 from api.mglyph.services import MalleableGlyphServiceDep
 
-from api.mglyph.schemas import MGlyphPublicDTO, MGlyphPublicSimpleDTO, MGlyphCreateDTOAsForm, MGlyphCreate, MglyphFilterParamsAsQuery
+from api.mglyph.schemas import MGlyphPublicDTO, MGlyphPublicSimpleDTO, MGlyphCreateDTOAsForm, MglyphFilterParamsAsQuery
 
 
 router = APIRouter(
@@ -18,10 +17,6 @@ router = APIRouter(
     tags=["mglyph"],
 )
 
-
-class FormData(BaseModel):
-    username: str
-    password: str
 
 @router.post("", 
              status_code=status.HTTP_201_CREATED, 
@@ -31,20 +26,7 @@ async def create_mglyph(
     current_user_id: CurrentUserIdDep,
     mglyph_service: MalleableGlyphServiceDep,
     ) -> MGlyphPublicDTO:
-    # TODO: Save the uploaded file to a temporary location, do checks, and save to final location
-    destination = Path(f"/code/src/{mglyph_form.zip_file.filename}")
-    try:
-        with destination.open("wb") as buffer:
-            shutil.copyfileobj(mglyph_form.zip_file.file, buffer)
-    except Exception as e:
-        mglyph_form.zip_file.file.close()
-        exc = BadRequestError(str(e))
-        raise BadRequestError.HTTPException(exc)
-    finally:
-        mglyph_form.zip_file.file.close()
-
-    mglyph_data = MGlyphCreate.from_dto(mglyph_form, destination.as_posix())
-    mglyph = await mglyph_service.create_malleable_glyph(mglyph_data, UUID(current_user_id))
+    mglyph = await mglyph_service.create_malleable_glyph(mglyph_form, UUID(current_user_id))
     return MGlyphPublicDTO.from_model(mglyph)
 
 
