@@ -235,7 +235,7 @@ fetchChallengeData()
 /* == table styles == */
 
 .v-table {
-  &::v-deep th {
+  &::v-deep(th) {
     background-color: color-mix(in srgb, var(--md-sys-color-outline, #67635e) 25%, transparent);
     font-weight: bold;
   }
