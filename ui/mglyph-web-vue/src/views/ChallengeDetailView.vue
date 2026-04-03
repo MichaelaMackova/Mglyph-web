@@ -79,9 +79,8 @@
           :loading="glyphsLoading"
           @update:options="
             ({ page, itemsPerPage, sortBy }) => {
-              // TODO: SORTING
               glyphsCurrentPage = 1
-              fetchPaginatedGlyphsData(page, itemsPerPage)
+              fetchPaginatedGlyphsData(page, itemsPerPage, getOrderByParam(sortBy[0] || null))
             }
           "
           sort-asc-icon="fa-solid fa-sort-up"
@@ -145,6 +144,22 @@ const glyphsItemsPerPage = 10
 const challengeData = ref<ChallengeDetail | null>(null)
 const glyphsData = ref<ChallengeGlyph[] | null>(null)
 
+type OrderByParam = 'rank_asc' | 'rank_desc' | 'creator_asc' | 'creator_desc'
+
+function getOrderByParam(
+  sortBy: { key: string; order: 'asc' | 'desc' } | null,
+): OrderByParam | null {
+  if (!sortBy) return null
+  switch (sortBy.key) {
+    case 'rank':
+      return sortBy.order === 'asc' ? 'rank_asc' : 'rank_desc'
+    case 'author':
+      return sortBy.order === 'asc' ? 'creator_asc' : 'creator_desc'
+    default:
+      return null
+  }
+}
+
 async function fetchChallengeData() {
   try {
     // Simulate an API call to fetch challenge data
@@ -160,7 +175,11 @@ async function fetchChallengeData() {
   }
 }
 
-async function fetchPaginatedGlyphsData(page: number, itemsPerPage: number) {
+async function fetchPaginatedGlyphsData(
+  page: number,
+  itemsPerPage: number,
+  orderBy?: OrderByParam,
+) {
   glyphsLoading.value = true
   try {
     const response = await mglyphClient.get(
@@ -170,6 +189,7 @@ async function fetchPaginatedGlyphsData(page: number, itemsPerPage: number) {
         params: {
           page: page,
           size: itemsPerPage,
+          order_by: orderBy,
         },
       },
     )
