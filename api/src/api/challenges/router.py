@@ -11,6 +11,7 @@ from api.challenges.services import ChallengeServiceDep, ChallengeEvaluatorServi
 from api.challenges.schemas import ChallengeFilterParamsAsQuery, ChallengePublicDTO, ChallengePublicMiniDetailDTO, ChallengePublicSimpleDTO, ChallengeCreateDTO, ChallengeUserRelationshipDTO, ChallengeState
 from api.mglyph.schemas import MGlyphEvaluationPublicDTO
 from db.models.challengeEvaluatorModel import ChallengeEvaluatorState
+from db.repos.mglyphEvaluationRepository import MGlyphEvaluationRepository
 from db.pagination import PagedResponse
 
 router = APIRouter(
@@ -124,10 +125,11 @@ def update_challenge(challenge_id: UUID):
 async def get_glyphs_of_challenge(
     challenge_id: UUID,
     challenge_service: ChallengeServiceDep,
+    order_by: MGlyphEvaluationRepository.OrderByOption | None = None,
     page: Annotated[int, Query(ge=1)] = 1,
     size: Annotated[int, Query(ge=1, le=100)] = 20
 ) -> PagedResponse[MGlyphEvaluationPublicDTO]:
-    paginated_glyph_evaluations = await challenge_service.get_paginated_challenge_glyphs(challenge_id, page=page, size=size)
+    paginated_glyph_evaluations = await challenge_service.get_paginated_challenge_glyphs(challenge_id, order_by=order_by, page=page, size=size)
     paginated_glyph_evaluations.items = [
         MGlyphEvaluationPublicDTO.from_model(mglyph_evaluation)
         for mglyph_evaluation in paginated_glyph_evaluations.items
