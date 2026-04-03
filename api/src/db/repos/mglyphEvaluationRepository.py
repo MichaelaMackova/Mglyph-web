@@ -15,6 +15,7 @@ from db.models.mglyphEvaluationModel import MGlyphEvaluationModel
 from db.models.malleableGlyphModel import MalleableGlyphModel
 from db.models.evaluationRoundModel import EvaluationRoundModel
 from db.models.challengeModel import ChallengeModel
+from db.models.userModel import UserModel
 
 
 class MGlyphEvaluationRepository(RepositoryInterface):
@@ -45,18 +46,33 @@ class MGlyphEvaluationRepository(RepositoryInterface):
             return statement
         
     class OrderByOption(Enum):
-        RANK_ASC = 'rank'
+        RANK_ASC = 'rank_asc'
         RANK_DESC = 'rank_desc'
+        CREATOR_ASC = 'creator_asc'
+        CREATOR_DESC = 'creator_desc'
+
+        def add_order_by_to_statement(self, statement: Select, aliased_model: type[MGlyphEvaluationModel] = MGlyphEvaluationModel) -> Select:
+            if self == MGlyphEvaluationRepository.OrderByOption.RANK_ASC:
+                return statement.order_by(aliased_model.rank.asc().nulls_last())
+            elif self == MGlyphEvaluationRepository.OrderByOption.RANK_DESC:
+                return statement.order_by(aliased_model.rank.desc().nulls_first())
+            elif self == MGlyphEvaluationRepository.OrderByOption.CREATOR_ASC or self == MGlyphEvaluationRepository.OrderByOption.CREATOR_DESC:
+                MGlyphModelAliased = aliased(MalleableGlyphModel)
+                UserModelAliased = aliased(UserModel)
+                statement = statement.join(MGlyphModelAliased, aliased_model.malleable_glyph_id == MGlyphModelAliased.id).join(UserModelAliased, MGlyphModelAliased.creator_id == UserModelAliased.id)
+                if self == MGlyphEvaluationRepository.OrderByOption.CREATOR_ASC:
+                    return statement.order_by(UserModelAliased.username.asc())
+                if self == MGlyphEvaluationRepository.OrderByOption.CREATOR_DESC:
+                    return statement.order_by(UserModelAliased.username.desc())
+            else:
+                return statement
 
 
     async def get_paginated_mglyph_evaluations_in_challenge_round(self, evaluation_round_id: UUID, only_submitted: bool = True, order_by: OrderByOption = OrderByOption.RANK_ASC, page: int = 1, size: int = 20, load_options: LoadOptions = LoadOptions()) -> PagedResponse[MGlyphEvaluationModel]:
         select_exec = select(MGlyphEvaluationModel).where(MGlyphEvaluationModel.evaluation_round_id == evaluation_round_id)
         if only_submitted:
             select_exec = select_exec.join(MalleableGlyphModel).where(MalleableGlyphModel.submission_time.is_not(None))
-        if order_by == MGlyphEvaluationRepository.OrderByOption.RANK_ASC:
-            select_exec = select_exec.order_by(MGlyphEvaluationModel.rank.asc().nulls_last())
-        elif order_by == MGlyphEvaluationRepository.OrderByOption.RANK_DESC:
-            select_exec = select_exec.order_by(MGlyphEvaluationModel.rank.desc().nulls_first())
+        select_exec = order_by.add_order_by_to_statement(select_exec)
         select_exec = load_options.add_options_to_statement(select_exec)
         return await paginate(self.db_session, select_exec, MGlyphEvaluationModel, PaginationParams(page=page, size=size), as_scalar=True)
 
@@ -69,16 +85,12 @@ class MGlyphEvaluationRepository(RepositoryInterface):
             limit_per_challenge: int = 5, 
             load_options: LoadOptions = LoadOptions()
     ) -> dict[UUID, list[MGlyphEvaluationModel]]:
-        order_exec = None
-        if order_by == MGlyphEvaluationRepository.OrderByOption.RANK_ASC:
-            order_exec = MGlyphEvaluationModel.rank.asc().nulls_last()
-        elif order_by == MGlyphEvaluationRepository.OrderByOption.RANK_DESC:
-            order_exec = MGlyphEvaluationModel.rank.desc().nulls_first()
         ranked_glyphs_subselect = select(MGlyphEvaluationModel, 
-                                         func.row_number().over(partition_by=EvaluationRoundModel.challenge_id, order_by=order_exec).label('row_num'),
+                                         func.row_number().over(partition_by=EvaluationRoundModel.challenge_id,).label('row_num'),
                                          EvaluationRoundModel.challenge_id.label('challenge_id'))\
             .join(EvaluationRoundModel, and_(EvaluationRoundModel.id == MGlyphEvaluationModel.evaluation_round_id, EvaluationRoundModel.next_round_id.is_(None)))\
             .join(MalleableGlyphModel, MGlyphEvaluationModel.malleable_glyph_id == MalleableGlyphModel.id)
+        ranked_glyphs_subselect = order_by.add_order_by_to_statement(ranked_glyphs_subselect, aliased_model=MGlyphEvaluationModel)
         if only_submitted:
             ranked_glyphs_subselect = ranked_glyphs_subselect.where(MalleableGlyphModel.submission_time.is_not(None))
         ranked_glyphs_subselect = ranked_glyphs_subselect.subquery()
@@ -88,11 +100,7 @@ class MGlyphEvaluationRepository(RepositoryInterface):
             .outerjoin_from(ChallengeModel, ranked_glyphs_subselect, and_(ranked_glyphs_subselect.c.challenge_id == ChallengeModel.id, ranked_glyphs_subselect.c.row_num <= limit_per_challenge))\
             .where(ChallengeModel.id.in_(challenge_ids))
         
-        if order_by == MGlyphEvaluationRepository.OrderByOption.RANK_ASC:
-            select_exec = select_exec.order_by(aliased_mglyph_evaluation.rank.asc().nulls_last())
-        elif order_by == MGlyphEvaluationRepository.OrderByOption.RANK_DESC:
-            select_exec = select_exec.order_by(aliased_mglyph_evaluation.rank.desc().nulls_first())
-        
+        select_exec = order_by.add_order_by_to_statement(select_exec, aliased_model=aliased_mglyph_evaluation)
         select_exec = load_options.add_options_to_statement(select_exec, aliased_model=aliased_mglyph_evaluation)
 
         sql_result = await self.db_session.execute(select_exec)
