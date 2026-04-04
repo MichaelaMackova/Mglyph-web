@@ -101,7 +101,7 @@ img {
 img, .v-skeleton-loader, .v-skeleton-loader::v-deep(.v-skeleton-loader__image) {
   height: 100%;
   width: 100%;
-  border-radius: 10px;
+  border-radius: 10%;
   box-shadow: 2px 2px 5px 0 rgba(0, 0, 0, 0.19);
 }
 

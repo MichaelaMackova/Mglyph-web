@@ -12,7 +12,13 @@
       <tr v-for="glyph in props.glyphs" :key="glyph.id">
         <td>{{ glyph.rank }}</td>
         <td>{{ glyph.author.username }}</td>
-        <td>TODO:</td>
+        <td>
+          <div class="glyph-image-container">
+            <div class="glyph-image">
+              <MGlyphImage :file_id="glyph.file_id" />
+            </div>
+          </div>
+        </td>
         <td>{{ glyph.flags.join(', ') }}</td>
       </tr>
     </tbody>
@@ -20,6 +26,7 @@
 </template>
 
 <script setup lang="ts">
+import MGlyphImage from './MGlyphImage.vue'
 import { ChallengeGlyph } from '@/services/types'
 
 interface Props {
@@ -62,6 +69,18 @@ th {
 
   &.flags {
     width: 100px;
+  }
+}
+
+.glyph-image-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  & .glyph-image {
+    margin: 1px 0;
+    height: 55px;
+    width: 55px;
   }
 }
 </style>
