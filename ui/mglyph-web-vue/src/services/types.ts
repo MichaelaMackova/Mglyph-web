@@ -55,13 +55,14 @@ class ChallengeGlyph {
   id: UUID
   rank: number
   author: User
-  // glyph_src: ???
+  file_id: UUID
   flags: string[]
 
-  constructor(id: UUID, rank: number, author: User, flags: string[]) {
+  constructor(id: UUID, rank: number, author: User, file_id: UUID, flags: string[]) {
     this.id = id
     this.rank = rank
     this.author = author
+    this.file_id = file_id
     this.flags = flags
   }
 
@@ -73,6 +74,7 @@ class ChallengeGlyph {
         apiResponse.malleable_glyph.creator.id,
         apiResponse.malleable_glyph.creator.username,
       ),
+      apiResponse.malleable_glyph.zip_file_id,
       new Array<string>(), // TODO: Replace with actual flags from response
     )
   }

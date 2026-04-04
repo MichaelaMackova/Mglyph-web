@@ -287,7 +287,7 @@ onBeforeUnmount(() => {
 .header-container {
   position: sticky;
   top: 0;
-  z-index: 2;
+  z-index: 5;
 }
 
 header {
@@ -389,7 +389,7 @@ ul.nav {
   box-shadow: -1.5px 3px 5px 0
     color-mix(in srgb, var(--md-sys-color-outline, #67635e) 50%, transparent);
   color: var(--md-sys-color-on-surface-variant, #171511);
-  z-index: 2;
+  z-index: 5;
 
   ul {
     flex-direction: column;
@@ -425,7 +425,7 @@ ul.nav {
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 3;
+  z-index: 10;
 }
 
 #login-prompt,

@@ -30,7 +30,7 @@ import { createVuetify } from 'vuetify'
 // import * as components from 'vuetify/components'
 // import * as directives from 'vuetify/directives'
 import { VPagination } from 'vuetify/components/VPagination'
-import { VDataTableServer } from 'vuetify/components'
+import { VDataTableServer, VSkeletonLoader } from 'vuetify/components'
 
 const minimalTheme = {
   variables: {
@@ -53,7 +53,7 @@ const minimalTheme = {
 const vuetify = createVuetify({
   // components,
   // directives,
-  components: { VPagination, VDataTableServer },
+  components: { VPagination, VDataTableServer, VSkeletonLoader },
   theme: {
     defaultTheme: 'minimalTheme',
     themes: {

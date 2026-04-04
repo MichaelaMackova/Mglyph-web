@@ -80,18 +80,29 @@
           @update:options="
             ({ page, itemsPerPage, sortBy }) => {
               glyphsCurrentPage = 1
-              fetchPaginatedGlyphsData(page, itemsPerPage, getOrderByParam(sortBy[0] || null))
+              fetchPaginatedGlyphsData(page, itemsPerPage, getOrderByParam(sortBy[0]))
             }
           "
           sort-asc-icon="fa-solid fa-sort-up"
           sort-desc-icon="fa-solid fa-sort-down"
           sort-icon="fa-solid fa-sort"
+          :fixed-header="true"
+          height="min-content"
+          :no-data-text="'No data available.'"
         >
+          <template v-slot:item.rank="{ item }">
+            {{ item.rank !== null ? item.rank : '-' }}
+          </template>
+
           <template v-slot:item.author="{ item }">
             {{ item.author.username }}
           </template>
 
-          <template v-slot:item.glyph="{ item }"> TODO: </template>
+          <template v-slot:item.glyph="{ item }">
+            <div class="glyph-image">
+              <MGlyphImage :file_id="item.file_id" />
+            </div>
+          </template>
 
           <template v-slot:item.flags="{ item }">
             {{ item.flags.join(', ') }}
@@ -123,6 +134,7 @@ import PopupNote from '@/components/PopupNote.vue'
 import ChallengeState from '@/components/ChallengeState.vue'
 import SolverIcon from '@/components/SolverIcon.vue'
 import EvaluatorIcon from '@/components/EvaluatorIcon.vue'
+import MGlyphImage from '@/components/MGlyphImage.vue'
 import {
   ChallengeDetail,
   ChallengeGlyph,
@@ -178,7 +190,7 @@ async function fetchChallengeData() {
 async function fetchPaginatedGlyphsData(
   page: number,
   itemsPerPage: number,
-  orderBy?: OrderByParam,
+  orderBy: OrderByParam | null = null,
 ) {
   glyphsLoading.value = true
   try {
@@ -250,13 +262,23 @@ fetchChallengeData()
 
 .glyph-table {
   margin-top: 24px;
+
+  .glyph-image {
+    margin: 8px 0;
+    height: 100px;
+    width: 100px;
+  }
 }
 
 /* == table styles == */
 
 .v-table {
   &::v-deep(th) {
-    background-color: color-mix(in srgb, var(--md-sys-color-outline, #67635e) 25%, transparent);
+    background-color: color-mix(
+      in srgb,
+      var(--md-sys-color-outline, #67635e) 25%,
+      var(--md-sys-color-surface, #fff8f4)
+    );
     font-weight: bold;
   }
 }
