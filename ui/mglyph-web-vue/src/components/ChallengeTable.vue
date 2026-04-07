@@ -15,7 +15,7 @@
         <td>
           <div class="glyph-image-container">
             <div class="glyph-image">
-              <MGlyphImage :file_id="glyph.file_id" />
+              <MGlyphPreviewImage :file_id="glyph.file_id" />
             </div>
           </div>
         </td>
@@ -26,7 +26,7 @@
 </template>
 
 <script setup lang="ts">
-import MGlyphImage from './MGlyphImage.vue'
+import MGlyphPreviewImage from '@/components/MGlyphPreviewImage.vue'
 import { ChallengeGlyph } from '@/services/types'
 
 interface Props {

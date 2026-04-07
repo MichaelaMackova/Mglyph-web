@@ -100,7 +100,7 @@
 
           <template v-slot:item.glyph="{ item }">
             <div class="glyph-image">
-              <MGlyphImage :file_id="item.file_id" />
+              <MGlyphPreviewImage :file_id="item.file_id" />
             </div>
           </template>
 
@@ -132,9 +132,9 @@
 <script setup lang="ts">
 import PopupNote from '@/components/PopupNote.vue'
 import ChallengeState from '@/components/ChallengeState.vue'
-import SolverIcon from '@/components/SolverIcon.vue'
-import EvaluatorIcon from '@/components/EvaluatorIcon.vue'
-import MGlyphImage from '@/components/MGlyphImage.vue'
+import SolverIcon from '@/components/icons/SolverIcon.vue'
+import EvaluatorIcon from '@/components/icons/EvaluatorIcon.vue'
+import MGlyphPreviewImage from '@/components/MGlyphPreviewImage.vue'
 import {
   ChallengeDetail,
   ChallengeGlyph,

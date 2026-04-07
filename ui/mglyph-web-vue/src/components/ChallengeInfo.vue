@@ -38,8 +38,8 @@
 <script setup lang="ts">
 import ChallengeState from '@/components/ChallengeState.vue'
 import ChallengeTable from '@/components/ChallengeTable.vue'
-import SolverIcon from '@/components/SolverIcon.vue'
-import EvaluatorIcon from '@/components/EvaluatorIcon.vue'
+import SolverIcon from '@/components/icons/SolverIcon.vue'
+import EvaluatorIcon from '@/components/icons/EvaluatorIcon.vue'
 import { ChallengeStateEnum, ChallengeGlyph } from '@/services/types'
 import type { UUID } from 'crypto'
 
