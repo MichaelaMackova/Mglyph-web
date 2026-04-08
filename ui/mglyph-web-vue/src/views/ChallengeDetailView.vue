@@ -277,8 +277,8 @@ fetchChallengeData()
   &::v-deep(th) {
     background-color: color-mix(
       in srgb,
-      var(--md-sys-color-outline, #67635e) 25%,
-      var(--md-sys-color-surface, #fff8f4)
+      rgb(var(--md-sys-color-outline, 103, 99, 94)) 25%,
+      rgb(var(--md-sys-color-surface, 255, 248, 244))
     );
     font-weight: bold;
   }

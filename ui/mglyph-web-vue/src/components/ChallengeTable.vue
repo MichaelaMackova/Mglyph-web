@@ -49,12 +49,16 @@ table {
   th,
   td {
     padding: 3px 8px;
-    border: 1px solid var(--md-sys-color-outline, #67635e);
+    border: 1px solid rgb(var(--md-sys-color-outline, 103, 99, 94));
   }
 }
 
 th {
-  background-color: color-mix(in srgb, var(--md-sys-color-outline, #67635e) 25%, transparent);
+  background-color: color-mix(
+    in srgb,
+    rgb(var(--md-sys-color-outline, 103, 99, 94)) 25%,
+    transparent
+  );
 
   &.rank {
     width: 60px;

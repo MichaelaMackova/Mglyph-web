@@ -296,8 +296,8 @@ header {
   padding: 0 20px;
 
   border-radius: 0 0 8px 8px;
-  background: var(--md-sys-color-primary, #f07167);
-  color: var(--md-sys-color-on-primary, #ffffff);
+  background: rgb(var(--md-sys-color-primary, 240, 113, 103));
+  color: rgb(var(--md-sys-color-on-primary, 255, 255, 255));
 
   display: grid;
   grid-template-areas:
@@ -323,7 +323,8 @@ ul {
 
   hr {
     border: none;
-    border-top: 1px dashed color-mix(in srgb, var(--md-sys-color-outline, #67635e) 50%, transparent);
+    border-top: 1px dashed
+      color-mix(in srgb, rgb(var(--md-sys-color-outline, 103, 99, 94)) 50%, transparent);
     width: 92%;
     margin: 3px auto;
   }
@@ -366,7 +367,7 @@ ul.nav {
   .login {
     height: 4em;
     width: 4em;
-    border: 3px solid var(--md-sys-color-on-primary, #ffffff);
+    border: 3px solid rgb(var(--md-sys-color-on-primary, 255, 255, 255));
     border-radius: 50%;
     overflow: hidden;
 
@@ -384,11 +385,11 @@ ul.nav {
   position: absolute;
   top: 90px;
   right: 20px;
-  background-color: var(--md-sys-color-surface-variant, #fef1e5);
+  background-color: rgb(var(--md-sys-color-surface-variant, 254, 241, 229));
   border-radius: 5px;
   box-shadow: -1.5px 3px 5px 0
-    color-mix(in srgb, var(--md-sys-color-outline, #67635e) 50%, transparent);
-  color: var(--md-sys-color-on-surface-variant, #171511);
+    color-mix(in srgb, rgb(var(--md-sys-color-outline, 103, 99, 94)) 50%, transparent);
+  color: rgb(var(--md-sys-color-on-surface-variant, 23, 21, 17));
   z-index: 5;
 
   ul {
@@ -408,7 +409,7 @@ ul.nav {
   content: '';
   position: absolute;
   border: 10px solid transparent;
-  border-bottom-color: var(--md-sys-color-surface-variant, #fef1e5);
+  border-bottom-color: rgb(var(--md-sys-color-surface-variant, 254, 241, 229));
   bottom: 100%;
   right: 32px;
   transform: translateX(50%);
@@ -438,8 +439,8 @@ ul.nav {
   align-items: center;
   text-align: center;
 
-  background-color: var(--md-sys-color-surface, #fff8f4);
+  background-color: rgb(var(--md-sys-color-surface, 255, 248, 244));
   border-radius: 4px;
-  color: var(--md-sys-color-on-surface, #201b13);
+  color: rgb(var(--md-sys-color-on-surface, 32, 27, 19));
 }
 </style>

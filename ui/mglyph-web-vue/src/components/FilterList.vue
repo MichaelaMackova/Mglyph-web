@@ -48,17 +48,18 @@ li {
   padding: 5px 10px;
   align-content: center;
   border-radius: 8px;
-  border: 1px solid color-mix(in srgb, var(--md-sys-color-outline, #67635e) 25%, transparent);
-  background: var(--md-sys-color-secondary, #00afb9);
-  color: var(--md-sys-color-on-secondary, #ffffff);
+  border: 1px solid
+    color-mix(in srgb, rgb(var(--md-sys-color-outline, 103, 99, 94)) 25%, transparent);
+  background: rgb(var(--md-sys-color-secondary, 0, 175, 185));
+  color: rgb(var(--md-sys-color-on-secondary, 255, 255, 255));
 
   &:hover {
     cursor: pointer;
   }
 
   &.selected {
-    background: var(--md-sys-color-secondary-container, #9de2e6);
-    color: var(--md-sys-color-on-secondary-container, #003033);
+    background: rgb(var(--md-sys-color-secondary-container, 157, 226, 230));
+    color: rgb(var(--md-sys-color-on-secondary-container, 0, 48, 51));
   }
 }
 </style>

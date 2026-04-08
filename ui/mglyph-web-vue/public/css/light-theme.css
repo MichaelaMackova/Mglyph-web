@@ -1,51 +1,51 @@
 :root {
-    --md-sys-color-primary: #F07167;
-    --md-sys-color-on-primary: #FFFFFF;
-    --md-sys-color-primary-container: #E6BFBC;
-    --md-sys-color-on-primary-container: #331816;
-    --md-sys-color-secondary: #00AFB9;
-    --md-sys-color-on-secondary: #FFFFFF;
-    --md-sys-color-secondary-container: #9DE2E6;
-    --md-sys-color-on-secondary-container: #003033;
-    --md-sys-color-tertiary: #0081A7;
-    --md-sys-color-on-tertiary: #FFFFFF;
-    --md-sys-color-tertiary-container: #9DD5E6;
-    --md-sys-color-on-tertiary-container: #002733;
-    --md-sys-color-quaternary: #FED9B7;
-    --md-sys-color-on-quaternary: #FFFFFF;
-    --md-sys-color-quaternary-container: #E6DBD1;
-    --md-sys-color-on-quaternary-container: #332B25;
-    --md-sys-color-error: #BA1A1A;
-    --md-sys-color-on-error: #FFFFFF;
-    --md-sys-color-error-container: #E6A7A7;
-    --md-sys-color-on-error-container: #330707;
-    --md-sys-color-background: #FFF8F4;
-    --md-sys-color-on-background: #201B13;
-    --md-sys-color-surface: #FFF8F4;
-    --md-sys-color-on-surface: #201B13;
-    --md-sys-color-surface-variant: #FEF1E5;
-    --md-sys-color-on-surface-variant: #171511;
-    --md-sys-color-outline: #67635E;
+  --md-sys-color-primary: 240, 113, 103;
+  --md-sys-color-on-primary: 255, 255, 255;
+  --md-sys-color-primary-container: 230, 191, 188;
+  --md-sys-color-on-primary-container: 51, 24, 22;
+  --md-sys-color-secondary: 0, 175, 185;
+  --md-sys-color-on-secondary: 255, 255, 255;
+  --md-sys-color-secondary-container: 157, 226, 230;
+  --md-sys-color-on-secondary-container: 0, 48, 51;
+  --md-sys-color-tertiary: 0, 129, 167;
+  --md-sys-color-on-tertiary: 255, 255, 255;
+  --md-sys-color-tertiary-container: 157, 213, 230;
+  --md-sys-color-on-tertiary-container: 0, 39, 51;
+  --md-sys-color-quaternary: 254, 217, 183;
+  --md-sys-color-on-quaternary: 255, 255, 255;
+  --md-sys-color-quaternary-container: 230, 219, 209;
+  --md-sys-color-on-quaternary-container: 51, 43, 37;
+  --md-sys-color-error: 186, 26, 26;
+  --md-sys-color-on-error: 255, 255, 255;
+  --md-sys-color-error-container: 230, 167, 167;
+  --md-sys-color-on-error-container: 51, 7, 7;
+  --md-sys-color-background: 255, 248, 244;
+  --md-sys-color-on-background: 32, 27, 19;
+  --md-sys-color-surface: 255, 248, 244;
+  --md-sys-color-on-surface: 32, 27, 19;
+  --md-sys-color-surface-variant: 254, 241, 229;
+  --md-sys-color-on-surface-variant: 23, 21, 17;
+  --md-sys-color-outline: 103, 99, 94;
 
-    /*State Colors*/
-    --md-extended-color-state-color-1: #05C793;
-    --md-extended-color-on-state-color-1: #FFFFFF;
-    --md-extended-color-state-color-1-container: #9FE6D3;
-    --md-extended-color-on-state-color-1-container: #023326;
-    --md-extended-color-state-color-2: #F64A8A;
-    --md-extended-color-on-state-color-2: #FFFFFF;
-    --md-extended-color-state-color-2-container: #E6B3BE;
-    --md-extended-color-on-state-color-2-container: #330F17;
-    --md-extended-color-state-color-3: #2742BA;
-    --md-extended-color-on-state-color-3: #FFFFFF;
-    --md-extended-color-state-color-3-container: #ACB6E6;
-    --md-extended-color-on-state-color-3-container: #0B1233;
-    --md-extended-color-state-color-4: #FFCE5C;
-    --md-extended-color-on-state-color-4: #FFFFFF;
-    --md-extended-color-state-color-4-container: #E6D8B7;
-    --md-extended-color-on-state-color-4-container: #332912;
+  /*State Colors*/
+  --md-extended-color-state-color-1: 5, 199, 147;
+  --md-extended-color-on-state-color-1: 255, 255, 255;
+  --md-extended-color-state-color-1-container: 159, 230, 211;
+  --md-extended-color-on-state-color-1-container: 2, 51, 38;
+  --md-extended-color-state-color-2: 246, 74, 138;
+  --md-extended-color-on-state-color-2: 255, 255, 255;
+  --md-extended-color-state-color-2-container: 230, 179, 190;
+  --md-extended-color-on-state-color-2-container: 51, 15, 23;
+  --md-extended-color-state-color-3: 39, 66, 186;
+  --md-extended-color-on-state-color-3: 255, 255, 255;
+  --md-extended-color-state-color-3-container: 172, 182, 230;
+  --md-extended-color-on-state-color-3-container: 11, 18, 51;
+  --md-extended-color-state-color-4: 255, 206, 92;
+  --md-extended-color-on-state-color-4: 255, 255, 255;
+  --md-extended-color-state-color-4-container: 230, 216, 183;
+  --md-extended-color-on-state-color-4-container: 51, 41, 18;
 
-    /* Hyperlink Colors */
-    --md-extended-color-hyperlink-color: #041A8F;
-    --md-extended-color-hyperlink-visited-color: #830570;
+  /* Hyperlink Colors */
+  --md-extended-color-hyperlink-color: 4, 26, 143;
+  --md-extended-color-hyperlink-visited-color: 131, 5, 112;
 }

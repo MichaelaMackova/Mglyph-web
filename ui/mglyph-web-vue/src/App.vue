@@ -20,16 +20,16 @@ body {
   margin: 0;
   padding: 0;
   font-family: Arial, Helvetica, sans-serif;
-  background-color: var(--md-sys-color-background, #fff8f4);
-  color: var(--md-sys-color-on-background, #201b13);
+  background-color: rgb(var(--md-sys-color-background, 255, 248, 244));
+  color: rgb(var(--md-sys-color-on-background, 32, 27, 19));
 }
 
 a:link {
-  color: var(--md-extended-color-hyperlink-color, #041a8f);
+  color: rgb(var(--md-extended-color-hyperlink-color, 4, 26, 143));
 }
 
 a:visited {
-  color: var(--md-extended-color-hyperlink-visited-color, #830570);
+  color: rgb(var(--md-extended-color-hyperlink-visited-color, 131, 5, 112));
 }
 
 .main-padding {

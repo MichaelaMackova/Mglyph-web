@@ -69,12 +69,12 @@ import FilterList from '@/components/FilterList.vue'
   padding-top: 20px;
   padding-bottom: 20px;
 
-  background-color: var(--md-sys-color-surface, #fff8f4);
-  color: var(--md-sys-color-on-surface, #201b13);
+  background-color: rgb(var(--md-sys-color-surface, 255, 248, 244));
+  color: rgb(var(--md-sys-color-on-surface, 32, 27, 19));
 
   &:nth-child(odd) {
-    background-color: var(--md-sys-color-surface-variant, #fef1e5);
-    color: var(--md-sys-color-on-surface-variant, #171511);
+    background-color: rgb(var(--md-sys-color-surface-variant, 254, 241, 229));
+    color: rgb(var(--md-sys-color-on-surface-variant, 23, 21, 17));
   }
 }
 

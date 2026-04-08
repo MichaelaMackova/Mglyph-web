@@ -32,18 +32,18 @@ const props = defineProps<Props>()
   font-weight: bold;
 
   &.open {
-    background-color: var(--md-extended-color-state-color-1, #05c793);
-    color: var(--md-extended-color-on-state-color-1, #ffffff);
+    background-color: rgb(var(--md-extended-color-state-color-1, 5, 199, 147));
+    color: rgb(var(--md-extended-color-on-state-color-1, 255, 255, 255));
   }
 
   &.progress {
-    background-color: var(--md-extended-color-state-color-2, #f64a8a);
-    color: var(--md-extended-color-on-state-color-2, #ffffff);
+    background-color: rgb(var(--md-extended-color-state-color-2, 246, 74, 138));
+    color: rgb(var(--md-extended-color-on-state-color-2, 255, 255, 255));
   }
 
   &.finished {
-    background-color: var(--md-extended-color-state-color-3, #2742ba);
-    color: var(--md-extended-color-on-state-color-3, #ffffff);
+    background-color: rgb(var(--md-extended-color-state-color-3, 39, 66, 186));
+    color: rgb(var(--md-extended-color-on-state-color-3, 255, 255, 255));
   }
 }
 </style>
