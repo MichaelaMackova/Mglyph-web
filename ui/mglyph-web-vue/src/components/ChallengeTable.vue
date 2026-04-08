@@ -15,7 +15,9 @@
         <td>
           <div class="glyph-image-container">
             <div class="glyph-image">
-              <MGlyphPreviewImage :file_id="glyph.file_id" />
+              <RouterLink :to="{ name: 'MGlyphDetail', params: { id: glyph.id } }">
+                <MGlyphPreviewImage :file_id="glyph.file_id" />
+              </RouterLink>
             </div>
           </div>
         </td>

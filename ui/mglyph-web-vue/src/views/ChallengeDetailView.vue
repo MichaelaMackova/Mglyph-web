@@ -100,7 +100,9 @@
 
           <template v-slot:item.glyph="{ item }">
             <div class="glyph-image">
-              <MGlyphPreviewImage :file_id="item.file_id" />
+              <RouterLink :to="{ name: 'MGlyphDetail', params: { id: item.id } }">
+                <MGlyphPreviewImage :file_id="item.file_id" />
+              </RouterLink>
             </div>
           </template>
 
@@ -174,7 +176,6 @@ function getOrderByParam(
 
 async function fetchChallengeData() {
   try {
-    // Simulate an API call to fetch challenge data
     const response = await mglyphClient.get(`/challenges/${router.currentRoute.value.params.id}`, {
       authorizeEndpoint: authStore.user ? true : false,
     })

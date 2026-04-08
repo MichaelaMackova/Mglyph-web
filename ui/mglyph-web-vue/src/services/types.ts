@@ -237,6 +237,55 @@ class PaginatedData<T> {
   }
 }
 
+class MGlyphDetail {
+  id: UUID
+  short_name: string
+  long_name: string
+  last_updated: Date
+  submission_time: Date
+  file_id: UUID
+  author: User
+  code: string | null
+  is_code_public: boolean
+  // TODO: challenge + rank in challenge
+
+  constructor(
+    id: UUID,
+    short_name: string,
+    long_name: string,
+    last_updated: Date,
+    submission_time: Date,
+    file_id: UUID,
+    author: User,
+    code: string | null,
+    is_code_public: boolean,
+  ) {
+    this.id = id
+    this.short_name = short_name
+    this.long_name = long_name
+    this.last_updated = last_updated
+    this.submission_time = submission_time
+    this.file_id = file_id
+    this.author = author
+    this.code = code
+    this.is_code_public = is_code_public
+  }
+
+  public static fromAPIResponse(apiResponse: any): MGlyphDetail {
+    return new MGlyphDetail(
+      apiResponse.id,
+      apiResponse.short_name,
+      apiResponse.long_name,
+      new Date(apiResponse.last_updated_time),
+      new Date(apiResponse.submission_time),
+      apiResponse.zip_file_id,
+      new User(apiResponse.creator.id, apiResponse.creator.username),
+      apiResponse.code,
+      apiResponse.is_code_public,
+    )
+  }
+}
+
 export {
   ChallengeStateEnum,
   ChallengeSimple,
@@ -248,4 +297,5 @@ export {
   ChallengeUserSolverRelationshipType,
   ChallengeUserEvaluatorRelationshipType,
   ChallengeDetail,
+  MGlyphDetail,
 }

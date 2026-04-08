@@ -35,4 +35,12 @@ a:visited {
 .main-padding {
   padding: 0 30px;
 }
+
+.main-top-margin {
+  margin-top: 20px;
+}
+
+.main-bottom-margin {
+  margin-bottom: 20px;
+}
 </style>
