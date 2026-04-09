@@ -247,6 +247,8 @@ class MGlyphDetail {
   author: User
   code: string | null
   is_code_public: boolean
+  challenge: {id: UUID; title: string}
+  evaluation: {id: UUID; rank: number, score: number}
   // TODO: challenge + rank in challenge
 
   constructor(
@@ -259,6 +261,8 @@ class MGlyphDetail {
     author: User,
     code: string | null,
     is_code_public: boolean,
+    challenge: {id: UUID; title: string},
+    evaluation: {id: UUID; rank: number, score: number},
   ) {
     this.id = id
     this.short_name = short_name
@@ -269,6 +273,8 @@ class MGlyphDetail {
     this.author = author
     this.code = code
     this.is_code_public = is_code_public
+    this.challenge = challenge
+    this.evaluation = evaluation
   }
 
   public static fromAPIResponse(apiResponse: any): MGlyphDetail {
@@ -282,6 +288,8 @@ class MGlyphDetail {
       new User(apiResponse.creator.id, apiResponse.creator.username),
       apiResponse.code,
       apiResponse.is_code_public,
+      {id: apiResponse.challenge.id, title: apiResponse.challenge.name},
+      {id: apiResponse.last_evaluation.id, rank: apiResponse.last_evaluation.rank, score: apiResponse.last_evaluation.score}
     )
   }
 }

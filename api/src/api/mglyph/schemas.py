@@ -8,7 +8,7 @@ from api.users.schemas import UserPublicSimpleDTO
 
 from db.models.malleableGlyphModel import MalleableGlyphModel
 from db.models.mglyphEvaluationModel import MGlyphEvaluationModel
-
+from db.models.challengeModel import ChallengeModel
 
 
 
@@ -76,6 +76,32 @@ class MGlyphPublicSimpleWithCreatorDTO(MGlyphBase):
         )
 
 
+
+class MGlyphEvaluationPublicSimpleDTO(BaseModel):
+    id: UUID
+    rank: Optional[int] = None
+    score: Optional[float] = None
+
+    @staticmethod
+    def from_model(mglyph_evaluation_model: MGlyphEvaluationModel) -> "MGlyphEvaluationPublicSimpleDTO":
+        return MGlyphEvaluationPublicSimpleDTO(
+            id=mglyph_evaluation_model.id,
+            rank=mglyph_evaluation_model.rank,
+            score=mglyph_evaluation_model.score
+        )
+
+class ChallengeSimpleDTO(BaseModel):
+    id: UUID
+    name: str
+
+    @staticmethod
+    def from_model(challengeModel: ChallengeModel) -> "ChallengeSimpleDTO":
+        return ChallengeSimpleDTO(
+            id=challengeModel.id,
+            name=challengeModel.name,
+        )
+
+
 class MGlyphPublicDTO(MGlyphBase):
     id: UUID
     last_updated_time: datetime
@@ -84,12 +110,18 @@ class MGlyphPublicDTO(MGlyphBase):
     code: str | None
     is_code_public: bool
     creator: UserPublicSimpleDTO
+    challenge: ChallengeSimpleDTO
+    last_evaluation: MGlyphEvaluationPublicSimpleDTO
     # TODO: add evaluations or rank? (and report flags ?)
     #report_flags: list[MGlyphReportFlagPublicDTO]
-    #mglyph_evaluations: list[MGlyphEvaluationPublicDTO]
 
     @staticmethod
     def from_model(mglyph_model: MalleableGlyphModel) -> "MGlyphPublicDTO":
+        last_mglyph_evaluation = mglyph_model.mglyph_evaluation_links[-1]
+        if last_mglyph_evaluation.evaluation_round.next_round_id is not None:
+            for mglyph_evaluation in mglyph_model.mglyph_evaluation_links:
+                if mglyph_evaluation.evaluation_round.sequence_number > last_mglyph_evaluation.evaluation_round.sequence_number:
+                    last_mglyph_evaluation = mglyph_evaluation
         return MGlyphPublicDTO(
             id=mglyph_model.id,
             short_name=mglyph_model.short_name,
@@ -99,9 +131,10 @@ class MGlyphPublicDTO(MGlyphBase):
             zip_file_id=mglyph_model.zip_file_id,
             code=mglyph_model.code if mglyph_model.is_code_public else None,
             is_code_public=mglyph_model.is_code_public,
-            creator=UserPublicSimpleDTO.from_model(mglyph_model.creator)
+            creator=UserPublicSimpleDTO.from_model(mglyph_model.creator),
+            challenge=ChallengeSimpleDTO.from_model(last_mglyph_evaluation.evaluation_round.challenge),
+            last_evaluation=MGlyphEvaluationPublicSimpleDTO.from_model(last_mglyph_evaluation)
         )
-
 
 
 class MGlyphEvaluationPublicDTO(BaseModel):

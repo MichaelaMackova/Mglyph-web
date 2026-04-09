@@ -15,23 +15,23 @@
       <h1>{{ mglyphData.long_name }}</h1>
       <h2 class="author">by {{ mglyphData.author.username }}</h2>
       <div class="info-column">
-        <div class="info-piece" style="color: red">
-          <span class="label">Created:</span>
-          {{ mglyphData.last_updated.toLocaleString() }}? (last updated)
+        <div class="info-piece">
+          <span class="label">Last updated:</span>
+          {{ mglyphData.last_updated.toLocaleString() }}
         </div>
         <div class="info-piece">
           <span class="label">Short name:</span> {{ mglyphData.short_name }}
         </div>
-        <div class="info-piece" style="color: red"><span class="label">Version:</span> 1.1.1?</div>
+        <div class="info-piece"><span class="label">Version:</span> {{ mglyphZipFile?.metadata?.version ?? 'unknown' }}</div>
       </div>
       <div class="info-column">
-        <div class="info-piece" style="color: red">
-          <span class="label">Submitted in challenge:</span> Some challenge title?
+        <div class="info-piece">
+          <span class="label">Submitted in challenge:</span> <RouterLink :to="`/challenges/${mglyphData.challenge.id}`">{{ mglyphData.challenge.title }}</RouterLink>
         </div>
         <div class="info-piece">
           <span class="label">Submitted:</span> {{ mglyphData.submission_time.toLocaleString() }}
         </div>
-        <div class="info-piece" style="color: red"><span class="label">Rank no.:</span> 12?</div>
+        <div class="info-piece"><span class="label">Score:</span> {{ mglyphData.evaluation.score ? `${mglyphData.evaluation.score} (#${mglyphData.evaluation.rank})` : 'N/A' }}</div>
       </div>
 
       <div class="cards-container">

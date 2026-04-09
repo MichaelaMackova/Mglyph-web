@@ -22,20 +22,24 @@ class MalleableGlyphRepository(RepositoryInterface):
         self.db_session = db_session
 
     class LoadOptions(RepositoryInterface.LoadOptionsInterface):
-        def __init__(self, load_creator: bool = False, load_mglyph_evaluation_links: bool = False, load_report_flags: bool = False):
+        def __init__(self, load_creator: bool = False, load_mglyph_evaluation_links: bool = False, load_evaluation_challenge: bool = False, load_report_flags: bool = False):
             self.load_creator = load_creator
             self.load_mglyph_evaluation_links = load_mglyph_evaluation_links
+            self.load_evaluation_challenge = load_evaluation_challenge
             self.load_report_flags = load_report_flags
 
         @staticmethod
         def all_options():
-            return MalleableGlyphRepository.LoadOptions(load_creator=True, load_mglyph_evaluation_links=True, load_report_flags=True)
+            return MalleableGlyphRepository.LoadOptions(load_creator=True, load_mglyph_evaluation_links=True, load_evaluation_challenge=True, load_report_flags=True)
 
         def add_options_to_statement(self, statement: Select) -> Select:
             if self.load_creator:
                 statement = statement.options(joinedload(MalleableGlyphModel.creator))
             if self.load_mglyph_evaluation_links:
-                statement = statement.options(selectinload(MalleableGlyphModel.mglyph_evaluation_links))
+                load_expr = selectinload(MalleableGlyphModel.mglyph_evaluation_links)
+                if self.load_evaluation_challenge:
+                    load_expr = load_expr.joinedload(MGlyphEvaluationModel.evaluation_round).joinedload(EvaluationRoundModel.challenge)
+                statement = statement.options(load_expr)
             if self.load_report_flags:
                 statement = statement.options(selectinload(MalleableGlyphModel.report_flags))
             return statement
