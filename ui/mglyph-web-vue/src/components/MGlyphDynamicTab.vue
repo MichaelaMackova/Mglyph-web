@@ -85,7 +85,7 @@ const glyphIndex = ref(0)
 
 .v-slider {
   width: 100%;
-  --v-theme-surface-variant: 200, 200, 15;
-  --v-theme-on-surface-variant: 0, 100, 100;
+  --v-theme-surface-variant: var(--md-sys-color-on-surface, 32, 27, 19);
+  --v-theme-on-surface-variant: var(--md-sys-color-surface, 255, 248, 244);
 }
 </style>

@@ -183,7 +183,7 @@ fetchGlyphData()
   margin: 20px 40px 0 40px;
   background: rgba(124, 124, 124, 0.16);
   box-shadow: 2px 2px 5px 0 rgba(128, 128, 128, 0.5);
-  /* --v-theme-primary: 255, 124, 124; */
+  --v-theme-primary: var(--md-sys-color-primary, 240, 113, 103);
 }
 
 .card-content-container {
