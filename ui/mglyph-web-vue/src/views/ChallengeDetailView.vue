@@ -1,9 +1,9 @@
 <template>
   <div class="main-padding">
-    <div v-if="isLoading" class="top-margin">
+    <div v-if="isLoading" class="main-top-margin">
       Loading challenge data... <i class="fa-solid fa-spinner fa-spin-pulse"></i>
     </div>
-    <div v-else-if="errorOccurred || !challengeData" class="top-margin">
+    <div v-else-if="errorOccurred || !challengeData" class="main-top-margin">
       <PopupNote
         message="An error occurred while fetching challenge data. Please try again later."
         type="error"
@@ -223,10 +223,6 @@ fetchChallengeData()
 </script>
 
 <style lang="css" scoped>
-.top-margin {
-  margin-top: 20px;
-}
-
 .title-and-state {
   display: flex;
   justify-content: space-between;
