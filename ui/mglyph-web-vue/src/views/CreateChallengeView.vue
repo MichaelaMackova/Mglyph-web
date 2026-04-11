@@ -9,7 +9,7 @@
     </div>
     <div v-else>
       <h1>Create Challenge</h1>
-      <CustomForm submitText="Create Challenge" :onSubmit="submitForm">
+      <CustomForm submitText="Create Challenge" :onSubmit="submitForm" :isLoading="isFormLoading">
         <v-text-field
           v-model="challengeNameInput.modelValue"
           :rules="challengeNameInput.rules"
@@ -50,10 +50,12 @@
 import PopupNote from '@/components/PopupNote.vue'
 import CustomForm from '@/components/CustomForm.vue'
 import { dateToLocalISOLikeString, validateDateIsInFuture } from '@/services/date-format-utils'
-import { authStore } from '@/main'
+import { authStore, popupStore } from '@/main'
 import { mglyphClient } from '@/clients/mglyph_client'
 import { type AxiosResponse } from 'axios'
-import { ref, watch } from 'vue'
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+const router = useRouter()
 
 type InputProps = {
   modelValue: string
@@ -65,6 +67,7 @@ type InputProps = {
 }
 
 const nowDate = new Date()
+const isFormLoading = ref(false)
 const challengeNameInput = ref<InputProps>({
   modelValue: '',
   label: 'Challenge name',
@@ -132,15 +135,39 @@ async function createChallenge(): Promise<AxiosResponse> {
 }
 
 async function submitForm(isFormValid: boolean | null): Promise<void> {
-  if (!isFormValid) return
+  isFormLoading.value = true
+  challengeNameInput.value.errorMessages = []
+  mglyphSubmissionDeadlineInput.value.errorMessages = []
+  endTimeInput.value.errorMessages = []
+
+  if (!isFormValid) {
+    isFormLoading.value = false
+    return
+  }
 
   try {
     const response = await createChallenge()
-    console.log('Challenge created successfully:', response.data)
-    // Optionally, redirect to the challenge page or show a success message
-  } catch (error) {
+    popupStore.addPopup(
+      `Challenge "${response.data.name}" created successfully!`,
+      popupStore.PopupTypeEnum.info,
+    )
+    // Redirect to the newly created challenge's detail page
+    router.push({ name: 'ChallengeDetail', params: { id: response.data.id } })
+  } catch (error: any) {
+    if (error.response && error.response.data && error.response.data.err_code) {
+      if (error.response.data.err_code === 205) {
+        challengeNameInput.value.errorMessages = ['A challenge with this name already exists.']
+        return
+      }
+    }
     console.error('Error creating challenge:', error)
+    popupStore.addPopup(
+      'Failed to create challenge. Please try again.',
+      popupStore.PopupTypeEnum.error,
+    )
     // Optionally, show an error message to the user
+  } finally {
+    isFormLoading.value = false
   }
 }
 </script>

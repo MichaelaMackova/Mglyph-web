@@ -1,9 +1,14 @@
 <template>
-  <v-form ref="formRef" @submit.prevent="submitForm" v-model="valid">
+  <v-form ref="formRef" @submit.prevent="submitForm" v-model="valid" :disabled="props.isLoading">
     <!-- `.prevent` prevents reloading the page on submit -->
     <div class="form-container">
       <slot></slot>
-      <button class="submit-button" type="submit">{{ props.submitText }}</button>
+      <button class="submit-button" type="submit" :disabled="props.isLoading">
+        <i v-if="props.isLoading" class="fas fa-spinner fa-spin"></i>
+        <span v-else>
+          {{ props.submitText }}
+        </span>
+      </button>
     </div>
   </v-form>
 </template>
@@ -13,18 +18,30 @@ import { ref, useTemplateRef } from 'vue'
 interface Props {
   submitText: string
   onSubmit: (isFormValid: boolean | null) => void
+  isLoading?: boolean
 }
 
-const props = defineProps<Props>()
+const props = withDefaults(defineProps<Props>(), {
+  isLoading: false,
+})
 
 const valid = ref<boolean | null>(null)
 const formEl = useTemplateRef('formRef')
 
 function submitForm() {
+  if (props.isLoading) return
+
   if (formEl.value) {
-    formEl.value.validate().then((validationResult: boolean) => {
-      props.onSubmit(validationResult.valid)
-    })
+    formEl.value
+      .validate()
+      .then(
+        (validationResult: {
+          valid: boolean
+          errors: { id: string | number; errorMessages: string[] }[]
+        }) => {
+          props.onSubmit(validationResult.valid)
+        },
+      )
   } else {
     props.onSubmit(valid.value)
   }
