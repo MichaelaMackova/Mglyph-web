@@ -165,6 +165,4 @@ class ChallengePublicDTO(ChallengeBase):
 class ChallengeUpdateDTO(BaseModel):
     name: str | None = None
     glyph_submit_deadline: datetime | None = None
-    submissions_ended: bool | None = None
-    challenge_finished: bool | None = None
     

@@ -229,6 +229,18 @@ async def reject_evaluator_invite(challenge_id: UUID, current_user_id: CurrentUs
         if e.err_code == ErrorCode.BAD_REQUEST_WRONG_STATE:
             raise BadRequestError.HTTPException(BadRequestError("Challenge Evaluator is not in invited_pending state", ErrorCode.BAD_REQUEST_WRONG_STATE))
         raise BadRequestError.HTTPException(e)
+
+
+
+@router.post("/{challenge_id}/end-submissions")
+async def end_challenge_submissions(challenge_id: UUID, current_user_id: CurrentAdminUserIdDep, challenge_service: ChallengeServiceDep) -> None:
+    await challenge_service.end_challenge_submissions(challenge_id)
+
+
+
+@router.post("/{challenge_id}/end-challenge")
+async def end_challenge(challenge_id: UUID, current_user_id: CurrentAdminUserIdDep, challenge_service: ChallengeServiceDep) -> None:
+    await challenge_service.end_challenge(challenge_id)
     
 
 

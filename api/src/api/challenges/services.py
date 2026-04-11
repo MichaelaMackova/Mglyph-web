@@ -59,9 +59,11 @@ class ChallengeEvaluatorService:
 
 
     async def change_state_of_challenge_evaluator(self, challenge_id: UUID, evaluator_user_id: UUID, new_state: ChallengeEvaluatorState, confirm_old_state: ChallengeEvaluatorState | None = None):
-        challenge_evaluator_db = await self.challenge_evaluator_repository.get_challenge_evaluator_by_challenge_id_and_evaluator_id(challenge_id, evaluator_user_id)
+        challenge_evaluator_db = await self.challenge_evaluator_repository.get_challenge_evaluator_by_challenge_id_and_evaluator_id(challenge_id, evaluator_user_id, load_options=ChallengeEvaluatorRepository.LoadOptions(load_challenge=True))
         if not challenge_evaluator_db:
             raise mglyph_errors.NotFoundError("Challenge Evaluator link", mglyph_errors.ErrorCode.NOT_FOUND_ID)
+        if challenge_evaluator_db.challenge.challenge_finished:
+            raise mglyph_errors.BadRequestError("Challenge has already ended", mglyph_errors.ErrorCode.BAD_REQUEST_WRONG_STATE)
         if confirm_old_state is not None and challenge_evaluator_db.state != confirm_old_state:
             raise mglyph_errors.BadRequestError("Challenge Evaluator state does not match", mglyph_errors.ErrorCode.BAD_REQUEST_WRONG_STATE)
         challenge_evaluator_db.state = new_state
@@ -222,6 +224,37 @@ class ChallengeService:
         await self.db_session.commit()
         challenge_db = await self.challenge_repository.get_challenge_by_id(challenge_id, load_options=ChallengeRepository.LoadOptions(load_creator=True, load_solvers=True, load_challenge_evaluator_links=True, load_evaluation_rounds=True))
         return challenge_db
+    
+
+    async def end_challenge_submissions(self, challenge_id: UUID) -> ChallengeModel:
+        challenge_db = await self.challenge_repository.get_challenge_by_id(challenge_id)
+        if not challenge_db:
+            raise mglyph_errors.NotFoundError("Challenge", mglyph_errors.ErrorCode.NOT_FOUND_ID)
+        if challenge_db.challenge_finished:
+            raise mglyph_errors.BadRequestError("This challenge has already ended", mglyph_errors.ErrorCode.BAD_REQUEST_WRONG_STATE)
+        if challenge_db.submissions_ended:
+            raise mglyph_errors.BadRequestError("Malleable glyph submissions for this challenge already ended", mglyph_errors.ErrorCode.BAD_REQUEST_ALREADY_DONE)
+        challenge_db.submissions_ended = True
+        self.db_session.add(challenge_db)
+        await self.db_session.commit()
+        challenge_db = await self.challenge_repository.get_challenge_by_id(challenge_id, load_options=ChallengeRepository.LoadOptions(load_creator=True, load_solvers=True, load_challenge_evaluator_links=True, load_evaluation_rounds=True))
+        return challenge_db
+    
+
+    async def end_challenge(self, challenge_id: UUID) -> ChallengeModel:
+        challenge_db = await self.challenge_repository.get_challenge_by_id(challenge_id)
+        if not challenge_db:
+            raise mglyph_errors.NotFoundError("Challenge", mglyph_errors.ErrorCode.NOT_FOUND_ID)
+        if challenge_db.submissions_ended == False:
+            raise mglyph_errors.BadRequestError("Malleable glyph submissions for this challenge have not ended yet", mglyph_errors.ErrorCode.BAD_REQUEST_WRONG_STATE)
+        if challenge_db.challenge_finished:
+            raise mglyph_errors.BadRequestError("This challenge has already ended", mglyph_errors.ErrorCode.BAD_REQUEST_ALREADY_DONE)
+        challenge_db.challenge_finished = True
+        self.db_session.add(challenge_db)
+        await self.db_session.commit()
+        challenge_db = await self.challenge_repository.get_challenge_by_id(challenge_id, load_options=ChallengeRepository.LoadOptions(load_creator=True, load_solvers=True, load_challenge_evaluator_links=True, load_evaluation_rounds=True))
+        return challenge_db
+
 
     async def get_paginated_challenge_glyphs(self, challenge_id: UUID, order_by: MGlyphEvaluationRepository.OrderByOption | None, page: int = 1, size: int = 20) -> PagedResponse[MGlyphEvaluationModel]:
         if order_by is None:
@@ -248,6 +281,8 @@ class ChallengeService:
         challenge_db = await self.challenge_repository.get_challenge_by_id(challenge_id, load_options=ChallengeRepository.LoadOptions(load_solvers=True))
         if not challenge_db:
             raise mglyph_errors.NotFoundError("Challenge", mglyph_errors.ErrorCode.NOT_FOUND_ID)
+        if challenge_db.submissions_ended:
+            raise mglyph_errors.BadRequestError("Challenge has ended submissions", mglyph_errors.ErrorCode.BAD_REQUEST_WRONG_STATE)
         user_db = await self.db_session.get(UserModel, solver_id)
         if not user_db:
             raise mglyph_errors.NotFoundError("User", mglyph_errors.ErrorCode.NOT_FOUND_ID)
@@ -264,6 +299,8 @@ class ChallengeService:
         challenge_db = await self.challenge_repository.get_challenge_by_id(challenge_id, load_options=ChallengeRepository.LoadOptions(load_challenge_evaluator_links=True))
         if not challenge_db:
             raise mglyph_errors.NotFoundError("Challenge", mglyph_errors.ErrorCode.NOT_FOUND_ID)
+        if challenge_db.challenge_finished:
+            raise mglyph_errors.BadRequestError("Challenge has already ended", mglyph_errors.ErrorCode.BAD_REQUEST_WRONG_STATE)
         user_db = await self.db_session.get(UserModel, evaluator_id)
         if not user_db:
             raise mglyph_errors.NotFoundError("User", mglyph_errors.ErrorCode.NOT_FOUND_ID)
