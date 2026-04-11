@@ -88,6 +88,7 @@ class ChallengeRepository(RepositoryInterface):
     async def get_paginated_challenges(self, filters: FilterParams = FilterParams(), page: int = 1, size: int = 20, load_options: LoadOptions = LoadOptions()) -> PagedResponse[ChallengeModel]:
         select_exec = select(ChallengeModel)
         select_exec = filters.apply_filters_to_statement(select_exec)
+        select_exec = select_exec.order_by(ChallengeModel.creation_time.desc())
         select_exec = load_options.add_options_to_statement(select_exec)
         pagination_params = PaginationParams(page=page, size=size)
         result = await paginate(self.db_session, select_exec, ChallengeModel, pagination_params)
@@ -172,6 +173,7 @@ class ChallengeRepository(RepositoryInterface):
         else:
             select_exec = select_exec.where(ChallengeEvaluatorModel.evaluator_id == user_id)
         select_exec = filters.apply_filters_to_statement(select_exec)
+        select_exec = select_exec.order_by(ChallengeModel.creation_time.desc())
         select_exec = load_options.add_options_to_statement(select_exec)
 
         pagination_params = PaginationParams(page=page, size=size)
