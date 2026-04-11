@@ -81,15 +81,18 @@ class ChallengePublicSimpleDTO(ChallengeBase):
     id: UUID
     state: ChallengeState
     creation_time: datetime
+    last_evaluation_round: EvaluationRoundPublicDTO | None
 
     @staticmethod
     def from_model(challengeModel: ChallengeModel) -> "ChallengePublicSimpleDTO":
+        last_round = max(challengeModel.evaluation_rounds, key=lambda round: round.sequence_number, default=None)
         return ChallengePublicSimpleDTO(
             id=challengeModel.id,
             name=challengeModel.name,
             creation_time=challengeModel.creation_time,
             glyph_submit_deadline=challengeModel.glyph_submit_deadline,
-            state=ChallengeState.from_model_params(challengeModel.challenge_finished, challengeModel.submissions_ended)
+            state=ChallengeState.from_model_params(challengeModel.challenge_finished, challengeModel.submissions_ended),
+            last_evaluation_round=EvaluationRoundPublicDTO.from_model(last_round) if last_round else None
         )
     
 

@@ -8,7 +8,7 @@ from api.auth.dependencies import CurrentAdminUserIdDep, CurrentUserIdDep, Curre
 from api.challenges.services import ChallengeServiceDep, ChallengeEvaluatorServiceDep
 
 
-from api.challenges.schemas import ChallengeFilterParamsAsQuery, ChallengePublicDTO, ChallengePublicMiniDetailDTO, ChallengePublicSimpleDTO, ChallengeCreateDTO, ChallengeUserRelationshipDTO, ChallengeState
+from api.challenges.schemas import ChallengeFilterParamsAsQuery, ChallengePublicDTO, ChallengePublicMiniDetailDTO, EvaluationRoundPublicDTO, ChallengeCreateDTO, ChallengeUserRelationshipDTO, ChallengeState
 from api.mglyph.schemas import MGlyphEvaluationPublicDTO
 from db.models.challengeEvaluatorModel import ChallengeEvaluatorState
 from db.repos.mglyphEvaluationRepository import MGlyphEvaluationRepository
@@ -53,6 +53,7 @@ async def read_challenges(
             glyph_submit_deadline=item["challenge"].glyph_submit_deadline,
             state=ChallengeState.from_model_params(item["challenge"].challenge_finished, item["challenge"].submissions_ended),
             mglyph_evaluations=[MGlyphEvaluationPublicDTO.from_model(mglyph_evaluation) for mglyph_evaluation in item["glyphs"]],
+            last_evaluation_round=EvaluationRoundPublicDTO.from_model(max(item["challenge"].evaluation_rounds, key=lambda round: round.sequence_number, default=None)) if item["challenge"].evaluation_rounds else None,
             user_relationship=ChallengeUserRelationshipDTO.from_relationship_flags(
                 is_solver=item["user_relationship"]["is_solver"],
                 has_submitted_mglyph=item["user_relationship"]["has_submitted_mglyph"],
@@ -74,7 +75,7 @@ async def read_challenges_where_user_is_participant(
     page: Annotated[int, Query(ge=1)] = 1,
     size: Annotated[int, Query(ge=1, le=100)] = 20
 ) -> PagedResponse[ChallengePublicMiniDetailDTO]:
-    challenges_with_glyphs_and_user_relationship = await challenge_service.get_challenges_where_user_is_participant_with_glyphs_and_user_relationship(user_id=UUID(user_id), filters=filter_params, as_solver=as_solver, glyph_count=glyph_count, page=page, size=size)
+    challenges_with_glyphs_and_user_relationship = await challenge_service.get_paginated_challenges_where_user_is_participant_with_glyphs_and_user_relationship(user_id=UUID(user_id), filters=filter_params, as_solver=as_solver, glyph_count=glyph_count, page=page, size=size)
     challenges_with_glyphs_and_user_relationship.items = [
         ChallengePublicMiniDetailDTO(
             id=item["challenge"].id,
@@ -83,6 +84,7 @@ async def read_challenges_where_user_is_participant(
             creation_time=item["challenge"].creation_time,
             state=ChallengeState.from_model_params(item["challenge"].challenge_finished, item["challenge"].submissions_ended),
             mglyph_evaluations=[MGlyphEvaluationPublicDTO.from_model(mglyph_evaluation) for mglyph_evaluation in item["glyphs"]],
+            last_evaluation_round=EvaluationRoundPublicDTO.from_model(max(item["challenge"].evaluation_rounds, key=lambda round: round.sequence_number, default=None)) if item["challenge"].evaluation_rounds else None,
             user_relationship=ChallengeUserRelationshipDTO.from_relationship_flags(
                 is_solver=item["user_relationship"]["is_solver"],
                 has_submitted_mglyph=item["user_relationship"]["has_submitted_mglyph"],

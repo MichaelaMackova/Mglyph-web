@@ -152,7 +152,7 @@ class ChallengeService:
             name_contains=filters.name_contains,
             state=[state.to_model_params() for state in filters.state] if filters.state else None
         )
-        paginated_challenges_db = await self.challenge_repository.get_paginated_challenges(filters=filter_params, page=page, size=size)
+        paginated_challenges_db = await self.challenge_repository.get_paginated_challenges(filters=filter_params, page=page, size=size, load_options=ChallengeRepository.LoadOptions(load_evaluation_rounds=True))
         challenge_ids = [challenge.id for challenge in paginated_challenges_db.items]
         glyphs_per_challenge = await self.mglyph_evaluation_repository.get_mglyph_evaluations_in_challenges(challenge_ids, only_submitted=True, order_by=MGlyphEvaluationRepository.OrderByOption.RANK_ASC, limit_per_challenge=glyph_count, load_options=MGlyphEvaluationRepository.LoadOptions(load_malleable_glyph=True, load_malleable_glyph_creator=True))
         user_relationships_per_challenge = await self.challenge_repository.get_user_relationship_for_challenges(user_id=current_user_id, challenge_ids=challenge_ids)
@@ -168,12 +168,12 @@ class ChallengeService:
         
 
 
-    async def get_challenges_where_user_is_participant_with_glyphs_and_user_relationship(self, user_id: UUID, filters: ChallengeFilterParams, as_solver: bool | None = None, glyph_count: int = 0, page: int = 1, size: int = 20) -> PagedResponse[dict]:
+    async def get_paginated_challenges_where_user_is_participant_with_glyphs_and_user_relationship(self, user_id: UUID, filters: ChallengeFilterParams, as_solver: bool | None = None, glyph_count: int = 0, page: int = 1, size: int = 20) -> PagedResponse[dict]:
         filter_params = ChallengeRepository.FilterParams(
             name_contains=filters.name_contains,
             state=[state.to_model_params() for state in filters.state] if filters.state else None
         )
-        paginated_challenges_db = await self.challenge_repository.get_paginated_challenges_with_participating_user(user_id=user_id, filters=filter_params, as_solver=as_solver, page=page, size=size)
+        paginated_challenges_db = await self.challenge_repository.get_paginated_challenges_with_participating_user(user_id=user_id, filters=filter_params, as_solver=as_solver, page=page, size=size, load_options=ChallengeRepository.LoadOptions(load_evaluation_rounds=True))
         challenge_ids = [challenge.id for challenge in paginated_challenges_db.items]
         glyphs_per_challenge = await self.mglyph_evaluation_repository.get_mglyph_evaluations_in_challenges(challenge_ids, only_submitted=True, order_by=MGlyphEvaluationRepository.OrderByOption.RANK_ASC, limit_per_challenge=glyph_count, load_options=MGlyphEvaluationRepository.LoadOptions(load_malleable_glyph=True, load_malleable_glyph_creator=True))
         user_relationships_per_challenge = await self.challenge_repository.get_user_relationship_for_challenges(user_id=user_id, challenge_ids=challenge_ids)
@@ -214,6 +214,9 @@ class ChallengeService:
         if not challenge_db:
             raise mglyph_errors.NotFoundError("Challenge", mglyph_errors.ErrorCode.NOT_FOUND_ID)
         challenge_data = challenge_update.model_dump(exclude_unset=True)
+        is_valid_unique_params = await self.challenge_repository.validate_unique_challenge_params(name=challenge_data["name"], exclude_challenge_id=challenge_id)
+        if not is_valid_unique_params:
+            raise mglyph_errors.BadRequestError("Challenge with the same name already exists", mglyph_errors.ErrorCode.BAD_REQUEST_CREATE_CHALLENGE_NAME_TAKEN)
         challenge_db.sqlmodel_update(challenge_data)
         self.db_session.add(challenge_db)
         await self.db_session.commit()
