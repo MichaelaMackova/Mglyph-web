@@ -5,6 +5,7 @@ import ChallengesView from '@/views/ChallengesView.vue'
 import MyChallengesView from '@/views/MyChallengesView.vue'
 import ChallengeDetailView from '@/views/ChallengeDetailView.vue'
 import MGlyphDetailView from '@/views/MGlyphDetailView.vue'
+import CreateChallengeView from '@/views/CreateChallengeView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -38,6 +39,11 @@ const router = createRouter({
       path: '/mglyph/:id',
       name: 'MGlyphDetail',
       component: MGlyphDetailView,
+    },
+    {
+      path: '/create-challenge',
+      name: 'CreateChallenge',
+      component: CreateChallengeView,
     },
     {
       path: '/:catchAll(.*)*',

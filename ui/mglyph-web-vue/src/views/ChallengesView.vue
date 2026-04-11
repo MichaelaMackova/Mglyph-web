@@ -16,6 +16,13 @@
     :challenges="responseData?.items || []"
     :isLoading="isLoading"
     :errorOccurred="errorOccurred"
+    :showAddNewButton="authStore.user?.role === 'admin'"
+    :onAddNewButtonClicked="
+      () => {
+        console.log('Add new challenge button clicked')
+        router.push({ name: 'CreateChallenge' })
+      }
+    "
   />
 </template>
 

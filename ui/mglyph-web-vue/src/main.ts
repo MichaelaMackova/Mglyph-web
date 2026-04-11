@@ -38,6 +38,8 @@ import {
   VTabsWindow,
   VTabsWindowItem,
   VSlider,
+  VForm,
+  VTextField,
 } from 'vuetify/components'
 
 const minimalTheme = {
@@ -70,6 +72,8 @@ const vuetify = createVuetify({
     VTabsWindow,
     VTabsWindowItem,
     VSlider,
+    VForm,
+    VTextField,
   },
   theme: {
     defaultTheme: 'minimalTheme',
