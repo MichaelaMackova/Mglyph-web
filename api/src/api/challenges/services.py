@@ -189,9 +189,11 @@ class ChallengeService:
     
 
     async def create_challenge(self, challenge: ChallengeCreateDTO, current_user_id: UUID) -> ChallengeModel:
-        # TODO: check if challenge name already exists
         try:
             challenge_data = challenge.model_dump()
+            is_valid_unique_params = await self.challenge_repository.validate_unique_challenge_params(name=challenge_data["name"])
+            if not is_valid_unique_params:
+                raise mglyph_errors.BadRequestError("Challenge with the same name already exists", mglyph_errors.ErrorCode.BAD_REQUEST_CREATE_CHALLENGE_NAME_TAKEN)
             challenge_data["creator_id"] = current_user_id
             first_round_data = challenge_data.pop("first_evaluation_round")
             db_challenge = ChallengeModel.model_validate(challenge_data)

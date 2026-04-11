@@ -77,6 +77,14 @@ class ChallengeRepository(RepositoryInterface):
         challenge_db = result.scalar_one_or_none()
         return challenge_db
 
+    async def validate_unique_challenge_params(self, name: str, exclude_challenge_id: UUID | None = None) -> bool:
+        select_exec = select(ChallengeModel).where(ChallengeModel.name == name)
+        if exclude_challenge_id:
+            select_exec = select_exec.where(ChallengeModel.id != exclude_challenge_id)
+        result = await self.db_session.execute(select_exec)
+        existing_challenge = result.scalar_one_or_none()
+        return existing_challenge is None
+
     async def get_paginated_challenges(self, filters: FilterParams = FilterParams(), page: int = 1, size: int = 20, load_options: LoadOptions = LoadOptions()) -> PagedResponse[ChallengeModel]:
         select_exec = select(ChallengeModel)
         select_exec = filters.apply_filters_to_statement(select_exec)
