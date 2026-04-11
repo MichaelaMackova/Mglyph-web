@@ -29,6 +29,7 @@
           :id="challenge_info.challenge.id"
           :title="challenge_info.challenge.title"
           :start_time="challenge_info.challenge.start_time"
+          :submission_deadline="challenge_info.challenge.submission_deadline"
           :end_time="challenge_info.challenge.evaluation_deadline"
           :state="challenge_info.challenge.state"
           :challengeGlyphs="challenge_info.glyphs"

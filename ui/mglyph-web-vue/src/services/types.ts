@@ -158,7 +158,7 @@ class ChallengeMiniDetail {
       apiResponse.name,
       new Date(apiResponse.creation_time),
       new Date(apiResponse.glyph_submit_deadline),
-      new Date(2022, 0, 1), // TODO: Replace with actual evaluation deadline from response
+      new Date(apiResponse.last_evaluation_round.estimated_end_time),
       apiResponse.state,
     )
     const glyphs = apiResponse.mglyph_evaluations.map((glyph: any) => {
@@ -195,12 +195,15 @@ class ChallengeDetail {
   }
 
   public static fromAPIResponse(apiResponse: any): ChallengeDetail {
+    const last_evaluation_round = apiResponse.rounds.find(
+      (round: any) => round.next_round_id === null,
+    )
     const challenge = new ChallengeSimple(
       apiResponse.id,
       apiResponse.name,
       new Date(apiResponse.creation_time),
       new Date(apiResponse.glyph_submit_deadline),
-      new Date(2022, 0, 1), // TODO: Replace with actual evaluation deadline from response
+      new Date(last_evaluation_round.estimated_end_time),
       apiResponse.state,
     )
     const user_relationship = {
@@ -247,9 +250,8 @@ class MGlyphDetail {
   author: User
   code: string | null
   is_code_public: boolean
-  challenge: {id: UUID; title: string}
-  evaluation: {id: UUID; rank: number, score: number}
-  // TODO: challenge + rank in challenge
+  challenge: { id: UUID; title: string }
+  evaluation: { id: UUID; rank: number; score: number }
 
   constructor(
     id: UUID,
@@ -261,8 +263,8 @@ class MGlyphDetail {
     author: User,
     code: string | null,
     is_code_public: boolean,
-    challenge: {id: UUID; title: string},
-    evaluation: {id: UUID; rank: number, score: number},
+    challenge: { id: UUID; title: string },
+    evaluation: { id: UUID; rank: number; score: number },
   ) {
     this.id = id
     this.short_name = short_name
@@ -288,8 +290,12 @@ class MGlyphDetail {
       new User(apiResponse.creator.id, apiResponse.creator.username),
       apiResponse.code,
       apiResponse.is_code_public,
-      {id: apiResponse.challenge.id, title: apiResponse.challenge.name},
-      {id: apiResponse.last_evaluation.id, rank: apiResponse.last_evaluation.rank, score: apiResponse.last_evaluation.score}
+      { id: apiResponse.challenge.id, title: apiResponse.challenge.name },
+      {
+        id: apiResponse.last_evaluation.id,
+        rank: apiResponse.last_evaluation.rank,
+        score: apiResponse.last_evaluation.score,
+      },
     )
   }
 }

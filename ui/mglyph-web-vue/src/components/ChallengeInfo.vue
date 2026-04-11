@@ -7,13 +7,11 @@
     </h3>
     <div class="content">
       <div class="date">
-        <span>{{
-          props.start_time.toLocaleString([], { dateStyle: 'long', timeStyle: undefined })
-        }}</span>
+        <span>{{ formatDate(props.start_time) }}</span>
         -
-        <span>{{
-          props.end_time.toLocaleString([], { dateStyle: 'long', timeStyle: undefined })
-        }}</span>
+        <span>{{ formatDate(props.submission_deadline) }}</span>
+        -
+        <span>{{ formatDate(props.end_time) }}</span>
       </div>
       <div
         v-show="props.state !== ChallengeStateEnum.open && props.challengeGlyphs.length > 0"
@@ -48,6 +46,7 @@ interface Props {
   title: string
   state: ChallengeStateEnum
   start_time: Date
+  submission_deadline: Date
   end_time: Date
   user_solver_relationship?: 'none' | 'registered' | 'mglyph_submitted'
   user_evaluator_relationship?:
@@ -72,6 +71,10 @@ const props = withDefaults(defineProps<Props>(), {
   },
   challengeGlyphs: () => [],
 })
+
+function formatDate(date: Date): string {
+  return date.toLocaleString([], { dateStyle: 'long', timeStyle: undefined })
+}
 </script>
 
 <style lang="css" scoped>
