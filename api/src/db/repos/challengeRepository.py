@@ -167,7 +167,7 @@ class ChallengeRepository(RepositoryInterface):
                 .outerjoin(ChallengeSolverModel, ChallengeSolverModel.challenge_id == ChallengeModel.id)
         if as_solver is None or not as_solver:
             select_exec = select_exec\
-                .outerjoin(ChallengeEvaluatorModel, ChallengeEvaluatorModel.challenge_id == ChallengeModel.id)
+                .outerjoin(ChallengeEvaluatorModel, and_(ChallengeEvaluatorModel.challenge_id == ChallengeModel.id, ChallengeEvaluatorModel.state == ChallengeEvaluatorState.confirmed))
         
         if as_solver is None:
             select_exec = select_exec.where(or_(ChallengeSolverModel.solver_id == user_id, ChallengeEvaluatorModel.evaluator_id == user_id))
