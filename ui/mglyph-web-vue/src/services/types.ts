@@ -113,6 +113,10 @@ function getChallengeUserSolverRelationshipTypeFromString(
 enum ChallengeUserEvaluatorRelationshipType {
   none = 'none',
   registered = 'registered',
+  pending_volunteer = 'pending_volunteer',
+  pending_invited = 'pending_invited',
+  rejected_volunteer = 'rejected_volunteer',
+  rejected_invited = 'rejected_invited',
   evaluation_awaiting = 'evaluation_awaiting',
   evaluation_finished = 'evaluation_finished',
 }
@@ -126,6 +130,14 @@ function getChallengeUserEvaluatorRelationshipTypeFromString(
     return ChallengeUserEvaluatorRelationshipType.evaluation_finished
   } else if (relationship === 'registered') {
     return ChallengeUserEvaluatorRelationshipType.registered
+  } else if (relationship === 'pending_volunteer') {
+    return ChallengeUserEvaluatorRelationshipType.pending_volunteer
+  } else if (relationship === 'pending_invited') {
+    return ChallengeUserEvaluatorRelationshipType.pending_invited
+  } else if (relationship === 'rejected_volunteer') {
+    return ChallengeUserEvaluatorRelationshipType.rejected_volunteer
+  } else if (relationship === 'rejected_invited') {
+    return ChallengeUserEvaluatorRelationshipType.rejected_invited
   } else {
     return ChallengeUserEvaluatorRelationshipType.none
   }

@@ -25,9 +25,7 @@
       <SolverIcon
         v-show="props.user_solver_relationship && props.user_solver_relationship !== 'none'"
       />
-      <EvaluatorIcon
-        v-show="props.user_evaluator_relationship && props.user_evaluator_relationship !== 'none'"
-      />
+      <EvaluatorIcon v-show="isActiveEvaluator()" />
       <ChallengeState :state="props.state" />
     </div>
   </div>
@@ -38,7 +36,12 @@ import ChallengeState from '@/components/ChallengeState.vue'
 import ChallengeTable from '@/components/ChallengeTable.vue'
 import SolverIcon from '@/components/icons/SolverIcon.vue'
 import EvaluatorIcon from '@/components/icons/EvaluatorIcon.vue'
-import { ChallengeStateEnum, ChallengeGlyph } from '@/services/types'
+import {
+  ChallengeStateEnum,
+  ChallengeGlyph,
+  ChallengeUserSolverRelationshipType,
+  ChallengeUserEvaluatorRelationshipType,
+} from '@/services/types'
 import type { UUID } from 'crypto'
 
 interface Props {
@@ -48,12 +51,8 @@ interface Props {
   start_time: Date
   submission_deadline: Date
   end_time: Date
-  user_solver_relationship?: 'none' | 'registered' | 'mglyph_submitted'
-  user_evaluator_relationship?:
-    | 'none'
-    | 'registered'
-    | 'evaluation_awaiting'
-    | 'evaluation_finished'
+  user_solver_relationship?: ChallengeUserSolverRelationshipType
+  user_evaluator_relationship?: ChallengeUserEvaluatorRelationshipType
   challengeGlyphs?: ChallengeGlyph[]
 }
 
@@ -74,6 +73,18 @@ const props = withDefaults(defineProps<Props>(), {
 
 function formatDate(date: Date): string {
   return date.toLocaleString([], { dateStyle: 'long', timeStyle: undefined })
+}
+
+function isActiveEvaluator(): boolean {
+  return (
+    (props.user_evaluator_relationship &&
+      (props.user_evaluator_relationship === ChallengeUserEvaluatorRelationshipType.registered ||
+        props.user_evaluator_relationship ===
+          ChallengeUserEvaluatorRelationshipType.evaluation_awaiting ||
+        props.user_evaluator_relationship ===
+          ChallengeUserEvaluatorRelationshipType.evaluation_finished)) ||
+    false
+  )
 }
 </script>
 

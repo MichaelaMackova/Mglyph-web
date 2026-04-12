@@ -19,7 +19,6 @@
     :showAddNewButton="authStore.user?.role === 'admin'"
     :onAddNewButtonClicked="
       () => {
-        console.log('Add new challenge button clicked')
         router.push({ name: 'CreateChallenge' })
       }
     "

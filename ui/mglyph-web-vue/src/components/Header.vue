@@ -46,11 +46,14 @@
             ><span ref="myChallengesLinkRef">My challenges</span></RouterLink
           >
         </li>
+        <li>
+          My invites
+        </li>
         <li>My glyphs</li>
         <hr />
         <li @click="toggleTheme">
-          <span v-show="currentTheme === 'dark'"><i class="fa-solid fa-moon"></i> Dark</span>
-          <span v-show="currentTheme === 'light'"><i class="fa-solid fa-sun"></i> Light</span>
+          <span v-show="currentTheme === 'light'"><i class="fa-solid fa-moon"></i> Dark</span>
+          <span v-show="currentTheme === 'dark'"><i class="fa-solid fa-sun"></i> Light</span>
           Theme
         </li>
         <hr />

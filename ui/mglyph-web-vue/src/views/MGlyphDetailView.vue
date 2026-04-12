@@ -22,16 +22,28 @@
         <div class="info-piece">
           <span class="label">Short name:</span> {{ mglyphData.short_name }}
         </div>
-        <div class="info-piece"><span class="label">Version:</span> {{ mglyphZipFile?.metadata?.version ?? 'unknown' }}</div>
+        <div class="info-piece">
+          <span class="label">Version:</span> {{ mglyphZipFile?.metadata?.version ?? 'unknown' }}
+        </div>
       </div>
       <div class="info-column">
         <div class="info-piece">
-          <span class="label">Submitted in challenge:</span> <RouterLink :to="`/challenges/${mglyphData.challenge.id}`">{{ mglyphData.challenge.title }}</RouterLink>
+          <span class="label">Submitted in challenge:</span>
+          <RouterLink :to="`/challenges/${mglyphData.challenge.id}`">{{
+            mglyphData.challenge.title
+          }}</RouterLink>
         </div>
         <div class="info-piece">
           <span class="label">Submitted:</span> {{ mglyphData.submission_time.toLocaleString() }}
         </div>
-        <div class="info-piece"><span class="label">Score:</span> {{ mglyphData.evaluation.score ? `${mglyphData.evaluation.score} (#${mglyphData.evaluation.rank})` : 'N/A' }}</div>
+        <div class="info-piece">
+          <span class="label">Score:</span>
+          {{
+            mglyphData.evaluation.score
+              ? `${mglyphData.evaluation.score} (#${mglyphData.evaluation.rank})`
+              : 'N/A'
+          }}
+        </div>
       </div>
 
       <div class="cards-container">
@@ -134,12 +146,10 @@ async function fetchGlyphData() {
       authorizeEndpoint: false,
     })
     mglyphData.value = MGlyphDetail.fromAPIResponse(response.data)
-    console.log('MGlyph data fetched:', mglyphData.value)
 
     try {
       const zipResponse = await fetchZipFileAsArrayBuffer(mglyphData.value.file_id)
       mglyphZipFile.value = await unzip(zipResponse.data)
-      console.log('MGlyph zip file fetched and unzipped:', mglyphZipFile.value)
     } catch (zipError) {
       console.error('Error fetching or unzipping glyph zip file:', zipError)
       errorOccurredZip.value = true

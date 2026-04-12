@@ -19,7 +19,7 @@
           <ChallengeState :state="challengeData.challenge.state" />
           <div class="user-info">
             <SolverIcon v-show="isUserSolver()" />
-            <EvaluatorIcon v-show="isUserEvaluator()" />
+            <EvaluatorIcon v-show="isActiveUserEvaluator()" />
           </div>
         </div>
       </div>
@@ -108,7 +108,13 @@
             >
               Show My Malleable Glyph
             </button> -->
-          <button v-if="!isUserEvaluator()" class="user-button" @click="onEvaluatorSignUpClick">
+          <button
+            v-if="!isActiveUserEvaluator()"
+            class="user-button"
+            @click="onEvaluatorSignUpClick"
+            :disabled="getVolunteerButtonIsDisabledAndTitle().disabled"
+            :title="getVolunteerButtonIsDisabledAndTitle().title"
+          >
             <div class="label-with-icon">
               <span class="label">Volunteer As Evaluator</span>
               <span class="icon"><EvaluatorIcon /></span>
@@ -116,7 +122,8 @@
           </button>
           <button
             v-if="
-              challengeData.challenge.state === ChallengeStateEnum.progress && isUserEvaluator()
+              challengeData.challenge.state === ChallengeStateEnum.progress &&
+              isActiveUserEvaluator()
             "
             class="user-button"
             @click="onStartEvaluatingClick"
@@ -293,13 +300,51 @@ function isUserSolver(): boolean {
   )
 }
 
-function isUserEvaluator(): boolean {
+function isActiveUserEvaluator(): boolean {
   return (
     (challengeData.value?.user_relationship?.user_evaluator_relationship &&
-      challengeData.value?.user_relationship?.user_evaluator_relationship !==
-        ChallengeUserEvaluatorRelationshipType.none) ||
+      (challengeData.value.user_relationship.user_evaluator_relationship ===
+        ChallengeUserEvaluatorRelationshipType.registered ||
+        challengeData.value.user_relationship.user_evaluator_relationship ===
+          ChallengeUserEvaluatorRelationshipType.evaluation_awaiting ||
+        challengeData.value.user_relationship.user_evaluator_relationship ===
+          ChallengeUserEvaluatorRelationshipType.evaluation_finished)) ||
     false
   )
+}
+
+function getVolunteerButtonIsDisabledAndTitle(): { disabled: boolean; title: string | undefined } {
+  if (
+    challengeData.value?.user_relationship?.user_evaluator_relationship ===
+    ChallengeUserEvaluatorRelationshipType.pending_volunteer
+  ) {
+    return {
+      disabled: true,
+      title: 'Your request to become an evaluator is pending review by the administrators.',
+    }
+  } else if (
+    challengeData.value?.user_relationship?.user_evaluator_relationship ===
+    ChallengeUserEvaluatorRelationshipType.rejected_volunteer
+  ) {
+    return {
+      disabled: true,
+      title:
+        'Your request to become an evaluator has been rejected by the administrators. You cannot volunteer as an evaluator for this challenge.',
+    }
+  } else if (
+    challengeData.value?.user_relationship?.user_evaluator_relationship === undefined ||
+    challengeData.value?.user_relationship?.user_evaluator_relationship ===
+    ChallengeUserEvaluatorRelationshipType.none
+  ) {
+    return {
+      disabled: false,
+      title: undefined,
+    }
+  }
+  return {
+    disabled: true,
+    title: undefined,
+  }
 }
 
 async function reloadComponent() {
@@ -494,6 +539,12 @@ fetchChallengeData()
         rgb(var(--md-sys-color-secondary, 0, 175, 185)),
         rgb(var(--md-sys-color-on-secondary, 255, 255, 255)) 10%
       );
+    }
+
+    &:disabled {
+      cursor: not-allowed;
+      -webkit-filter: grayscale(1);
+      opacity: 0.5;
     }
   }
 }
