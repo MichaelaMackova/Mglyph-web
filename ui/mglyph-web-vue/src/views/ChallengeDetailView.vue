@@ -18,20 +18,8 @@
         <div class="state-and-user-info">
           <ChallengeState :state="challengeData.challenge.state" />
           <div class="user-info">
-            <SolverIcon
-              v-show="
-                challengeData.user_relationship?.user_solver_relationship &&
-                challengeData.user_relationship?.user_solver_relationship !==
-                  ChallengeUserSolverRelationshipType.none
-              "
-            />
-            <EvaluatorIcon
-              v-show="
-                challengeData.user_relationship?.user_evaluator_relationship &&
-                challengeData.user_relationship?.user_evaluator_relationship !==
-                  ChallengeUserEvaluatorRelationshipType.none
-              "
-            />
+            <SolverIcon v-show="isUserSolver()" />
+            <EvaluatorIcon v-show="isUserEvaluator()" />
           </div>
         </div>
       </div>
@@ -64,8 +52,84 @@
         }}
       </div>
 
+      <div
+        v-if="authStore.user && challengeData.challenge.state !== ChallengeStateEnum.finished"
+        class="buttons-container"
+      >
+        <div v-if="authStore.user.role === 'admin'">
+          <button
+            class="admin-button"
+            v-if="challengeData.challenge.state === ChallengeStateEnum.open"
+            @click="onEndSubmissionsClick"
+          >
+            End Submissions
+          </button>
+          <button
+            class="admin-button"
+            v-if="challengeData.challenge.state === ChallengeStateEnum.progress"
+            @click="onEndChallengeClick"
+          >
+            End Challenge
+          </button>
+        </div>
+        <div class="user-buttons-container">
+          <button
+            v-if="challengeData.challenge.state === ChallengeStateEnum.open && !isUserSolver()"
+            class="user-button"
+            @click="onParticipantSignUpClick"
+          >
+            <div class="label-with-icon">
+              <span class="label">Sign Up As Participant</span>
+              <span class="icon"><SolverIcon /></span>
+            </div>
+          </button>
+          <button
+            v-if="
+              challengeData.challenge.state === ChallengeStateEnum.open &&
+              challengeData.user_relationship!.user_solver_relationship! ===
+                ChallengeUserSolverRelationshipType.registered
+            "
+            class="user-button"
+            @click="onUploadGlyphClick"
+          >
+            <div class="label-with-icon">
+              <span class="label">Upload My Malleable Glyph</span>
+              <span class="icon"><i class="fa-solid fa-upload"></i></span>
+            </div>
+          </button>
+          <!-- TODO: check if it works properly and find glyph -->
+          <!-- <button
+              v-if="
+              challengeData.challenge.state === ChallengeStateEnum.open &&
+                challengeData.user_relationship!.user_solver_relationship! ===
+                ChallengeUserSolverRelationshipType.mglyph_submitted
+              "
+              class="user-button"
+            >
+              Show My Malleable Glyph
+            </button> -->
+          <button v-if="!isUserEvaluator()" class="user-button" @click="onEvaluatorSignUpClick">
+            <div class="label-with-icon">
+              <span class="label">Volunteer As Evaluator</span>
+              <span class="icon"><EvaluatorIcon /></span>
+            </div>
+          </button>
+          <button
+            v-if="
+              challengeData.challenge.state === ChallengeStateEnum.progress && isUserEvaluator()
+            "
+            class="user-button"
+            @click="onStartEvaluatingClick"
+          >
+            <div class="label-with-icon">
+              <span class="label">Start Evaluating</span>
+            </div>
+          </button>
+        </div>
+      </div>
+
       <!-- NOTE: possible expansion: choose round (implement multiple rounds) -->
-      <div class="glyph-table">
+      <div v-if="challengeData.challenge.state !== ChallengeStateEnum.open" class="glyph-table">
         <v-data-table-server
           :items="glyphsData || []"
           :items-length="10"
@@ -142,10 +206,11 @@ import {
   ChallengeGlyph,
   ChallengeUserSolverRelationshipType,
   ChallengeUserEvaluatorRelationshipType,
+  ChallengeStateEnum,
 } from '@/services/types'
 import { mglyphClient } from '@/clients/mglyph_client'
-import { authStore } from '@/main'
-import { useRouter, type LocationQuery } from 'vue-router'
+import { authStore, popupStore } from '@/main'
+import { useRouter } from 'vue-router'
 import { ref } from 'vue'
 const router = useRouter()
 
@@ -219,6 +284,129 @@ async function fetchPaginatedGlyphsData(
   }
 }
 
+function isUserSolver(): boolean {
+  return (
+    (challengeData.value?.user_relationship?.user_solver_relationship &&
+      challengeData.value?.user_relationship?.user_solver_relationship !==
+        ChallengeUserSolverRelationshipType.none) ||
+    false
+  )
+}
+
+function isUserEvaluator(): boolean {
+  return (
+    (challengeData.value?.user_relationship?.user_evaluator_relationship &&
+      challengeData.value?.user_relationship?.user_evaluator_relationship !==
+        ChallengeUserEvaluatorRelationshipType.none) ||
+    false
+  )
+}
+
+async function reloadComponent() {
+  isLoading.value = true
+  errorOccurred.value = false
+  glyphsLoading.value = true
+  challengeData.value = null
+  glyphsData.value = null
+  await fetchChallengeData()
+}
+
+async function onEndSubmissionsClick() {
+  try {
+    const confirmed = confirm(
+      'Are you sure you want to end submissions? This action cannot be undone, and users will no longer be able to submit their malleable glyphs.',
+    )
+    if (!confirmed) return
+
+    await mglyphClient.post(
+      `/challenges/${router.currentRoute.value.params.id}/end-submissions`,
+      {},
+      { authorizeEndpoint: true },
+    )
+    await reloadComponent()
+  } catch (error: any) {
+    console.error('Error ending submissions:', error)
+    popupStore.addPopup(
+      error.response?.data?.detail ||
+        'An error occurred while ending submissions. Please try again later.',
+      popupStore.PopupTypeEnum.error,
+    )
+  }
+}
+
+async function onEndChallengeClick() {
+  try {
+    const confirmed = confirm(
+      'Are you sure you want to end the challenge? This action cannot be undone.',
+    )
+    if (!confirmed) return
+
+    await mglyphClient.post(
+      `/challenges/${router.currentRoute.value.params.id}/end-challenge`,
+      {},
+      { authorizeEndpoint: true },
+    )
+    await reloadComponent()
+  } catch (error: any) {
+    console.error('Error ending challenge:', error)
+    popupStore.addPopup(
+      error.response?.data?.detail ||
+        'An error occurred while ending the challenge. Please try again later.',
+      popupStore.PopupTypeEnum.error,
+    )
+  }
+}
+
+async function onParticipantSignUpClick() {
+  try {
+    await mglyphClient.post(
+      `/challenges/${router.currentRoute.value.params.id}/register-solver`,
+      {},
+      { authorizeEndpoint: true },
+    )
+    await reloadComponent()
+  } catch (error: any) {
+    console.error('Error signing up as participant:', error)
+    popupStore.addPopup(
+      error.response?.data?.detail ||
+        'An error occurred while signing up as a participant. Please try again later.',
+      popupStore.PopupTypeEnum.error,
+    )
+  }
+}
+
+function onUploadGlyphClick() {
+  console.log('Upload glyph clicked')
+  // TODO:
+  // router.push({ name: 'MGlyphUpload', params: { challengeId: router.currentRoute.value.params.id } })
+}
+
+async function onEvaluatorSignUpClick() {
+  try {
+    await mglyphClient.post(
+      `/challenges/${router.currentRoute.value.params.id}/volunteer-evaluator`,
+      {},
+      { authorizeEndpoint: true },
+    )
+    await reloadComponent()
+    // TODO: evaluator relationship zahrnout pending types
+    console.log(challengeData.value)
+  } catch (error: any) {
+    console.error('Error signing up as evaluator:', error)
+    popupStore.addPopup(
+      error.response?.data?.detail ||
+        'An error occurred while signing up as an evaluator. Please try again later.',
+      popupStore.PopupTypeEnum.error,
+    )
+  }
+}
+
+function onStartEvaluatingClick() {
+  console.log('Start evaluating clicked')
+  // TODO:
+  // router.push({ name: 'ChallengeEvaluation', params: { id: router.currentRoute.value.params.id } })
+}
+
 fetchChallengeData()
 </script>
 
@@ -254,6 +442,70 @@ fetchChallengeData()
   .label {
     font-weight: bold;
     margin-right: 4px;
+  }
+}
+
+.buttons-container {
+  margin: 22px 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 22px;
+
+  .admin-button {
+    background-color: rgb(var(--md-sys-color-tertiary, 0, 129, 167));
+    color: rgb(var(--md-sys-color-on-tertiary, 255, 255, 255));
+    border: none;
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1rem;
+
+    &:hover {
+      background-color: color-mix(
+        in srgb,
+        rgb(var(--md-sys-color-tertiary, 0, 129, 167)),
+        rgb(var(--md-sys-color-on-tertiary, 255, 255, 255)) 10%
+      );
+    }
+  }
+
+  .user-buttons-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 8px 12px;
+  }
+
+  .user-button {
+    background-color: rgb(var(--md-sys-color-secondary, 0, 175, 185));
+    color: rgb(var(--md-sys-color-on-secondary, 255, 255, 255));
+    border: none;
+    padding: 8px 16px;
+    border-radius: 500px;
+    cursor: pointer;
+    font-size: 1rem;
+
+    &:hover {
+      background-color: color-mix(
+        in srgb,
+        rgb(var(--md-sys-color-secondary, 0, 175, 185)),
+        rgb(var(--md-sys-color-on-secondary, 255, 255, 255)) 10%
+      );
+    }
+  }
+}
+
+.label-with-icon {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  .icon {
+    display: flex;
+    align-items: center;
   }
 }
 

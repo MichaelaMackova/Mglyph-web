@@ -139,13 +139,13 @@ async def get_glyphs_of_challenge(
     return paginated_glyph_evaluations
 
 
-@router.post("/{challenge_id}/add-solver",
+@router.post("/{challenge_id}/register-solver",
                 responses={
                     NotFoundError.http_code: NotFoundError.response_dict(),
                     BadRequestError.http_code: BadRequestError.response_dict()
                 }
              )
-async def add_self_as_solver(challenge_id: UUID, user_id: CurrentUserIdDep, challenge_service: ChallengeServiceDep) -> ChallengePublicDTO:
+async def register_self_as_solver(challenge_id: UUID, user_id: CurrentUserIdDep, challenge_service: ChallengeServiceDep) -> ChallengePublicDTO:
     try:
         challenge_db = await challenge_service.add_solver_to_challenge(challenge_id, UUID(user_id))
     except NotFoundError as e:
