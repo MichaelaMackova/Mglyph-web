@@ -94,7 +94,7 @@ class ChallengeRepository(RepositoryInterface):
         result = await paginate(self.db_session, select_exec, ChallengeModel, pagination_params)
         return result
 
-    async def get_user_relationship_for_challenges(self, user_id: UUID | None = None, challenge_ids: list[UUID] | None = None) -> dict[UUID, dict[str, bool]]:
+    async def get_user_relationship_for_challenges(self, user_id: UUID | None = None, challenge_ids: list[UUID] | None = None) -> dict[UUID, dict]:
         """
         Returns:
             dict:
@@ -102,7 +102,8 @@ class ChallengeRepository(RepositoryInterface):
                 - value: dict with keys:
                     is_solver: bool
                     has_submitted_mglyph: bool
-                    is_evaluator: bool
+                    is_active_evaluator: bool
+                    evaluator_state: ChallengeEvaluatorState | None
                     waiting_for_evaluation: bool
         """
         mglyph_evaluator_without_answer_exists_subq = select(MGlyphEvaluatorModel.id)\
@@ -130,25 +131,27 @@ class ChallengeRepository(RepositoryInterface):
                             else_=False).label("has_submitted_mglyph"),
                         case(
                             (user_id is None, False),
-                            (ChallengeEvaluatorModel.evaluator_id == user_id, True),
-                            else_=False).label("is_evaluator"),
+                            (and_(ChallengeEvaluatorModel.evaluator_id == user_id, ChallengeEvaluatorModel.state == ChallengeEvaluatorState.confirmed), True),
+                            else_=False).label("is_active_evaluator"),
+                        ChallengeEvaluatorModel.state.label("evaluator_state"),
                         case(
                             (mglyph_evaluator_without_answer_exists_subq, True),
                             else_=False).label("waiting_for_evaluation")
                     )\
             .outerjoin(ChallengeSolverModel, and_(ChallengeSolverModel.challenge_id == ChallengeModel.id, ChallengeSolverModel.solver_id == user_id))\
-            .outerjoin(ChallengeEvaluatorModel, and_(ChallengeEvaluatorModel.challenge_id == ChallengeModel.id, ChallengeEvaluatorModel.evaluator_id == user_id, ChallengeEvaluatorModel.state == ChallengeEvaluatorState.confirmed))\
+            .outerjoin(ChallengeEvaluatorModel, and_(ChallengeEvaluatorModel.challenge_id == ChallengeModel.id, ChallengeEvaluatorModel.evaluator_id == user_id))\
             .where(ChallengeModel.id.in_(challenge_ids))
         
         result = await self.db_session.execute(select_exec)
         user_relationships = result.all()
 
         user_relationships_per_challenge = {}
-        for challenge_id, is_solver, has_submitted_mglyph, is_evaluator, waiting_for_evaluation in user_relationships:
+        for challenge_id, is_solver, has_submitted_mglyph, is_active_evaluator, evaluator_state, waiting_for_evaluation in user_relationships:
             user_relationships_per_challenge[challenge_id] = {
                 "is_solver": is_solver,
                 "has_submitted_mglyph": has_submitted_mglyph,
-                "is_evaluator": is_evaluator,
+                "is_active_evaluator": is_active_evaluator,
+                "evaluator_state": evaluator_state,
                 "waiting_for_evaluation": waiting_for_evaluation
             }
         return user_relationships_per_challenge

@@ -10,6 +10,7 @@ from api.mglyph.schemas import MGlyphEvaluationPublicDTO
 
 from db.models.challengeModel import ChallengeModel
 from db.models.evaluationRoundModel import EvaluationRoundModel
+from db.models.challengeEvaluatorModel import ChallengeEvaluatorState
 
 
 
@@ -103,6 +104,10 @@ class ChallengeUserSolverRelationshipType(Enum):
 
 class ChallengeUserEvaluatorRelationshipType(Enum):
     NONE = "none"
+    PENDING_INVITED = "pending_invited"
+    PENDING_VOLUNTEER = "pending_volunteer"
+    REJECTED_INVITED = "rejected_invited"
+    REJECTED_VOLUNTEER = "rejected_volunteer"
     REGISTERED = "registered"
     EVALUATION_AWAITING = "evaluation_awaiting"
     EVALUATION_FINISHED = "evaluation_finished"
@@ -112,7 +117,7 @@ class ChallengeUserRelationshipDTO(BaseModel):
     evaluator_relationship: ChallengeUserEvaluatorRelationshipType
 
     @staticmethod
-    def from_relationship_flags(is_solver: bool, has_submitted_mglyph: bool, is_evaluator: bool, waiting_for_evaluation: bool) -> "ChallengeUserRelationshipDTO":
+    def from_relationship_flags(is_solver: bool, has_submitted_mglyph: bool, is_active_evaluator: bool, evaluator_state: ChallengeEvaluatorState | None, waiting_for_evaluation: bool) -> "ChallengeUserRelationshipDTO":
         if is_solver:
             if has_submitted_mglyph:
                 solver_relationship = ChallengeUserSolverRelationshipType.MGLYPH_SUBMITTED
@@ -121,13 +126,22 @@ class ChallengeUserRelationshipDTO(BaseModel):
         else:
             solver_relationship = ChallengeUserSolverRelationshipType.NONE
 
-        if is_evaluator:
+        if is_active_evaluator:
             if waiting_for_evaluation:
                 evaluator_relationship = ChallengeUserEvaluatorRelationshipType.EVALUATION_AWAITING
             else:
                 evaluator_relationship = ChallengeUserEvaluatorRelationshipType.EVALUATION_FINISHED
         else:
-            evaluator_relationship = ChallengeUserEvaluatorRelationshipType.NONE
+            if evaluator_state == ChallengeEvaluatorState.volunteer_pending:
+                evaluator_relationship = ChallengeUserEvaluatorRelationshipType.PENDING_VOLUNTEER
+            elif evaluator_state == ChallengeEvaluatorState.invited_pending:
+                evaluator_relationship = ChallengeUserEvaluatorRelationshipType.PENDING_INVITED
+            elif evaluator_state == ChallengeEvaluatorState.volunteer_rejected:
+                evaluator_relationship = ChallengeUserEvaluatorRelationshipType.REJECTED_VOLUNTEER
+            elif evaluator_state == ChallengeEvaluatorState.invited_rejected:
+                evaluator_relationship = ChallengeUserEvaluatorRelationshipType.REJECTED_INVITED
+            else:
+                evaluator_relationship = ChallengeUserEvaluatorRelationshipType.NONE
 
         return ChallengeUserRelationshipDTO(
             solver_relationship=solver_relationship,

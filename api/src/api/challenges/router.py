@@ -57,7 +57,8 @@ async def read_challenges(
             user_relationship=ChallengeUserRelationshipDTO.from_relationship_flags(
                 is_solver=item["user_relationship"]["is_solver"],
                 has_submitted_mglyph=item["user_relationship"]["has_submitted_mglyph"],
-                is_evaluator=item["user_relationship"]["is_evaluator"],
+                is_active_evaluator=item["user_relationship"]["is_active_evaluator"],
+                evaluator_state=item["user_relationship"]["evaluator_state"],
                 waiting_for_evaluation=item["user_relationship"]["waiting_for_evaluation"]
             ) if item["user_relationship"] else None
         )
@@ -88,7 +89,8 @@ async def read_challenges_where_user_is_participant(
             user_relationship=ChallengeUserRelationshipDTO.from_relationship_flags(
                 is_solver=item["user_relationship"]["is_solver"],
                 has_submitted_mglyph=item["user_relationship"]["has_submitted_mglyph"],
-                is_evaluator=item["user_relationship"]["is_evaluator"],
+                is_active_evaluator=item["user_relationship"]["is_active_evaluator"],
+                evaluator_state=item["user_relationship"]["evaluator_state"],
                 waiting_for_evaluation=item["user_relationship"]["waiting_for_evaluation"]
             ) if item["user_relationship"] else None
         )
@@ -112,7 +114,8 @@ async def read_challenge(challenge_id: UUID, current_user_id: CurrentUserIdOrNon
         user_relationship=ChallengeUserRelationshipDTO.from_relationship_flags(
                 is_solver=user_relationship["is_solver"],
                 has_submitted_mglyph=user_relationship["has_submitted_mglyph"],
-                is_evaluator=user_relationship["is_evaluator"],
+                is_active_evaluator=user_relationship["is_active_evaluator"],
+                evaluator_state=user_relationship["evaluator_state"],
                 waiting_for_evaluation=user_relationship["waiting_for_evaluation"]
             ) if user_relationship else None
         )
