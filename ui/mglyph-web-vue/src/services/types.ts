@@ -181,7 +181,7 @@ class ChallengeMiniDetail {
         apiResponse.user_relationship?.solver_relationship ?? 'none',
       ),
       user_evaluator_relationship: getChallengeUserEvaluatorRelationshipTypeFromString(
-        apiResponse.user_relationship?.evaluator_relationship ?? 'none',
+        apiResponse.user_relationship?.evaluator_relationship?.relationship_type ?? 'none',
       ),
     }
     return new ChallengeMiniDetail(challenge, glyphs, user_relationship)
@@ -223,7 +223,7 @@ class ChallengeDetail {
         apiResponse.user_relationship?.solver_relationship ?? 'none',
       ),
       user_evaluator_relationship: getChallengeUserEvaluatorRelationshipTypeFromString(
-        apiResponse.user_relationship?.evaluator_relationship ?? 'none',
+        apiResponse.user_relationship?.evaluator_relationship?.relationship_type ?? 'none',
       ),
     }
     return new ChallengeDetail(challenge, user_relationship)
