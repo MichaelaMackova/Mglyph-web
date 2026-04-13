@@ -8,9 +8,9 @@ from api.auth.dependencies import CurrentAdminUserIdDep, CurrentUserIdDep, Curre
 from api.challenges.services import ChallengeServiceDep, ChallengeEvaluatorServiceDep
 
 
-from api.challenges.schemas import ChallengeFilterParamsAsQuery, ChallengePublicDTO, ChallengePublicMiniDetailDTO, EvaluationRoundPublicDTO, ChallengeCreateDTO, ChallengeUserRelationshipDTO, ChallengeState
+from api.challenges.schemas import ChallengeFilterParamsAsQuery, ChallengePublicDTO, ChallengePublicMiniDetailDTO, EvaluationRoundPublicDTO, ChallengeCreateDTO, ChallengeUserRelationshipDTO, ChallengeState, EvaluatorInvitationInfo
 from api.mglyph.schemas import MGlyphEvaluationPublicDTO
-from db.models.challengeEvaluatorModel import ChallengeEvaluatorState
+from db.models.challengeEvaluatorModel import InvitationState, InvitationType
 from db.repos.mglyphEvaluationRepository import MGlyphEvaluationRepository
 from db.pagination import PagedResponse
 
@@ -58,7 +58,10 @@ async def read_challenges(
                 is_solver=item["user_relationship"]["is_solver"],
                 has_submitted_mglyph=item["user_relationship"]["has_submitted_mglyph"],
                 is_active_evaluator=item["user_relationship"]["is_active_evaluator"],
-                evaluator_state=item["user_relationship"]["evaluator_state"],
+                evaluator_state=EvaluatorInvitationInfo(
+                    invitation_type=item["user_relationship"]["evaluator_state"]["invitation_type"],
+                    invitation_state=item["user_relationship"]["evaluator_state"]["invitation_state"])
+                    if item["user_relationship"]["evaluator_state"] else None,
                 waiting_for_evaluation=item["user_relationship"]["waiting_for_evaluation"]
             ) if item["user_relationship"] else None
         )
@@ -90,13 +93,36 @@ async def read_challenges_where_user_is_participant(
                 is_solver=item["user_relationship"]["is_solver"],
                 has_submitted_mglyph=item["user_relationship"]["has_submitted_mglyph"],
                 is_active_evaluator=item["user_relationship"]["is_active_evaluator"],
-                evaluator_state=item["user_relationship"]["evaluator_state"],
+                evaluator_state=EvaluatorInvitationInfo(
+                    invitation_type=item["user_relationship"]["evaluator_state"]["invitation_type"],
+                    invitation_state=item["user_relationship"]["evaluator_state"]["invitation_state"]
+                ) if item["user_relationship"]["evaluator_state"] else None,
                 waiting_for_evaluation=item["user_relationship"]["waiting_for_evaluation"]
             ) if item["user_relationship"] else None
         )
         for item in challenges_with_glyphs_and_user_relationship.items
     ]
     return challenges_with_glyphs_and_user_relationship
+
+
+@router.get("/evaluator-invite-states")
+async def get_challenge_evaluator_states(
+    current_user_id: CurrentAdminUserIdDep,
+    challenge_evaluator_service: ChallengeEvaluatorServiceDep
+):
+    # TODO:
+    pass
+
+
+
+@router.get("/my-evaluator-invites")
+async def get_my_challenge_evaluator_invites(
+    current_user_id: CurrentUserIdDep,
+    challenge_evaluator_service: ChallengeEvaluatorServiceDep
+):
+    # TODO:
+    pass
+
 
 
 @router.get("/{challenge_id}",
@@ -115,7 +141,10 @@ async def read_challenge(challenge_id: UUID, current_user_id: CurrentUserIdOrNon
                 is_solver=user_relationship["is_solver"],
                 has_submitted_mglyph=user_relationship["has_submitted_mglyph"],
                 is_active_evaluator=user_relationship["is_active_evaluator"],
-                evaluator_state=user_relationship["evaluator_state"],
+                evaluator_state=EvaluatorInvitationInfo(
+                    invitation_type=user_relationship["evaluator_state"]["invitation_type"],
+                    invitation_state=user_relationship["evaluator_state"]["invitation_state"])
+                    if user_relationship["evaluator_state"] else None,
                 waiting_for_evaluation=user_relationship["waiting_for_evaluation"]
             ) if user_relationship else None
         )
@@ -185,7 +214,7 @@ async def invite_evaluator(challenge_id: UUID, evaluator_user_id: UUID, current_
 @router.post("/{challenge_id}/confirm-volunteer-evaluator/{evaluator_user_id}")
 async def confirm_volunteer_evaluator(challenge_id: UUID, evaluator_user_id: UUID, current_user_id: CurrentAdminUserIdDep, challenge_evaluator_service: ChallengeEvaluatorServiceDep) -> None:
     try:
-        await challenge_evaluator_service.change_state_of_challenge_evaluator(challenge_id, evaluator_user_id, ChallengeEvaluatorState.confirmed, confirm_old_state=ChallengeEvaluatorState.volunteer_pending)
+        await challenge_evaluator_service.change_invitation_state_of_challenge_evaluator(challenge_id, evaluator_user_id, InvitationState.confirmed, confirm_old_state=InvitationState.pending, confirm_invitation_type=InvitationType.volunteer)
     except NotFoundError as e:
         raise NotFoundError.HTTPException(e)
     except BadRequestError as e:
@@ -198,7 +227,7 @@ async def confirm_volunteer_evaluator(challenge_id: UUID, evaluator_user_id: UUI
 @router.post("/{challenge_id}/reject-volunteer-evaluator/{evaluator_user_id}")
 async def reject_volunteer_evaluator(challenge_id: UUID, evaluator_user_id: UUID, current_user_id: CurrentAdminUserIdDep, challenge_evaluator_service: ChallengeEvaluatorServiceDep) -> None:
     try:
-        await challenge_evaluator_service.change_state_of_challenge_evaluator(challenge_id, evaluator_user_id, ChallengeEvaluatorState.volunteer_rejected, confirm_old_state=ChallengeEvaluatorState.volunteer_pending)
+        await challenge_evaluator_service.change_invitation_state_of_challenge_evaluator(challenge_id, evaluator_user_id, InvitationState.rejected, confirm_old_state=InvitationState.pending, confirm_invitation_type=InvitationType.volunteer)
     except NotFoundError as e:
         raise NotFoundError.HTTPException(e)
     except BadRequestError as e:
@@ -211,7 +240,7 @@ async def reject_volunteer_evaluator(challenge_id: UUID, evaluator_user_id: UUID
 @router.post("/{challenge_id}/confirm-evaluator-invite")
 async def confirm_evaluator_invite(challenge_id: UUID, current_user_id: CurrentUserIdDep, challenge_evaluator_service: ChallengeEvaluatorServiceDep) -> None:
     try:
-        await challenge_evaluator_service.change_state_of_challenge_evaluator(challenge_id, UUID(current_user_id), ChallengeEvaluatorState.confirmed, confirm_old_state=ChallengeEvaluatorState.invited_pending)
+        await challenge_evaluator_service.change_invitation_state_of_challenge_evaluator(challenge_id, UUID(current_user_id), InvitationState.confirmed, confirm_old_state=InvitationState.pending, confirm_invitation_type=InvitationType.invited)
     except NotFoundError as e:
         raise NotFoundError.HTTPException(e)
     except BadRequestError as e:
@@ -224,7 +253,7 @@ async def confirm_evaluator_invite(challenge_id: UUID, current_user_id: CurrentU
 @router.post("/{challenge_id}/reject-evaluator-invite")
 async def reject_evaluator_invite(challenge_id: UUID, current_user_id: CurrentUserIdDep, challenge_evaluator_service: ChallengeEvaluatorServiceDep) -> None:
     try:
-        await challenge_evaluator_service.change_state_of_challenge_evaluator(challenge_id, UUID(current_user_id), ChallengeEvaluatorState.invited_rejected, confirm_old_state=ChallengeEvaluatorState.invited_pending)
+        await challenge_evaluator_service.change_invitation_state_of_challenge_evaluator(challenge_id, UUID(current_user_id), InvitationState.rejected, confirm_old_state=InvitationState.pending, confirm_invitation_type=InvitationType.invited)
     except NotFoundError as e:
         raise NotFoundError.HTTPException(e)
     except BadRequestError as e:
@@ -232,6 +261,13 @@ async def reject_evaluator_invite(challenge_id: UUID, current_user_id: CurrentUs
         if e.err_code == ErrorCode.BAD_REQUEST_WRONG_STATE:
             raise BadRequestError.HTTPException(BadRequestError("Challenge Evaluator is not in invited_pending state", ErrorCode.BAD_REQUEST_WRONG_STATE))
         raise BadRequestError.HTTPException(e)
+
+
+
+@router.get("/{challenge_id}/evaluators")
+async def get_evaluators_of_challenge(challenge_id: UUID, current_user_id: CurrentAdminUserIdDep, challenge_service: ChallengeServiceDep):
+    # TODO:
+    pass
 
 
 

@@ -12,7 +12,7 @@ from db.pagination import PagedResponse
 from db.models.challengeModel import ChallengeModel
 from db.models.userModel import UserModel
 from db.models.evaluationRoundModel import EvaluationRoundModel
-from db.models.challengeEvaluatorModel import ChallengeEvaluatorModel, ChallengeEvaluatorState
+from db.models.challengeEvaluatorModel import ChallengeEvaluatorModel, InvitationState, InvitationType
 from db.models.mglyphEvaluationModel import MGlyphEvaluationModel
 
 from db.repos.challengeRepository import ChallengeRepository, ChallengeRepositoryDep
@@ -58,15 +58,17 @@ class ChallengeEvaluatorService:
         self.challenge_evaluator_repository = challenge_evaluator_repository
 
 
-    async def change_state_of_challenge_evaluator(self, challenge_id: UUID, evaluator_user_id: UUID, new_state: ChallengeEvaluatorState, confirm_old_state: ChallengeEvaluatorState | None = None):
+    async def change_invitation_state_of_challenge_evaluator(self, challenge_id: UUID, evaluator_user_id: UUID, new_state: InvitationState, confirm_old_state: InvitationState | None = None, confirm_invitation_type: InvitationType | None = None) -> ChallengeEvaluatorModel:
         challenge_evaluator_db = await self.challenge_evaluator_repository.get_challenge_evaluator_by_challenge_id_and_evaluator_id(challenge_id, evaluator_user_id, load_options=ChallengeEvaluatorRepository.LoadOptions(load_challenge=True))
         if not challenge_evaluator_db:
             raise mglyph_errors.NotFoundError("Challenge Evaluator link", mglyph_errors.ErrorCode.NOT_FOUND_ID)
         if challenge_evaluator_db.challenge.challenge_finished:
             raise mglyph_errors.BadRequestError("Challenge has already ended", mglyph_errors.ErrorCode.BAD_REQUEST_WRONG_STATE)
-        if confirm_old_state is not None and challenge_evaluator_db.state != confirm_old_state:
+        if confirm_invitation_type is not None and challenge_evaluator_db.invitation_type != confirm_invitation_type:
+            raise mglyph_errors.BadRequestError("Challenge Evaluator invitation type does not match", mglyph_errors.ErrorCode.BAD_REQUEST_WRONG_STATE)
+        if confirm_old_state is not None and challenge_evaluator_db.invitation_state != confirm_old_state:
             raise mglyph_errors.BadRequestError("Challenge Evaluator state does not match", mglyph_errors.ErrorCode.BAD_REQUEST_WRONG_STATE)
-        challenge_evaluator_db.state = new_state
+        challenge_evaluator_db.invitation_state = new_state
         self.db_session.add(challenge_evaluator_db)
         await self.db_session.commit()
         return challenge_evaluator_db
@@ -77,7 +79,8 @@ class ChallengeEvaluatorService:
             id=None,
             challenge_id=challenge_id,
             evaluator_id=evaluator_user_id,
-            state=ChallengeEvaluatorState.volunteer_pending if is_volunteer else ChallengeEvaluatorState.invited_pending
+            invitation_type=InvitationType.volunteer if is_volunteer else InvitationType.invited,
+            invitation_state=InvitationState.pending
         )
         self.db_session.add(new_challenge_evaluator)
         await self.db_session.commit()

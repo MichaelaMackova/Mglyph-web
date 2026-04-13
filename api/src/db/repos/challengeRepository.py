@@ -10,7 +10,7 @@ from db.pagination import paginate, PaginationParams, PagedResponse
 
 from db.models.challengeModel import ChallengeModel
 from db.models.challengeSolverModel import ChallengeSolverModel
-from db.models.challengeEvaluatorModel import ChallengeEvaluatorModel, ChallengeEvaluatorState
+from db.models.challengeEvaluatorModel import ChallengeEvaluatorModel, InvitationState, InvitationType
 from db.models.mglyphEvaluatorModel import MGlyphEvaluatorModel
 from db.models.answerModel import AnswerModel
 from db.models.evaluationRoundModel import EvaluationRoundModel
@@ -103,7 +103,7 @@ class ChallengeRepository(RepositoryInterface):
                     is_solver: bool
                     has_submitted_mglyph: bool
                     is_active_evaluator: bool
-                    evaluator_state: ChallengeEvaluatorState | None
+                    evaluator_state: {invitation_state: InvitationState, invitation_type: InvitationType} | None
                     waiting_for_evaluation: bool
         """
         mglyph_evaluator_without_answer_exists_subq = select(MGlyphEvaluatorModel.id)\
@@ -131,9 +131,10 @@ class ChallengeRepository(RepositoryInterface):
                             else_=False).label("has_submitted_mglyph"),
                         case(
                             (user_id is None, False),
-                            (and_(ChallengeEvaluatorModel.evaluator_id == user_id, ChallengeEvaluatorModel.state == ChallengeEvaluatorState.confirmed), True),
+                            (and_(ChallengeEvaluatorModel.evaluator_id == user_id, ChallengeEvaluatorModel.invitation_state == InvitationState.confirmed), True),
                             else_=False).label("is_active_evaluator"),
-                        ChallengeEvaluatorModel.state.label("evaluator_state"),
+                        ChallengeEvaluatorModel.invitation_type.label("invitation_type"),
+                        ChallengeEvaluatorModel.invitation_state.label("invitation_state"),
                         case(
                             (mglyph_evaluator_without_answer_exists_subq, True),
                             else_=False).label("waiting_for_evaluation")
@@ -146,12 +147,15 @@ class ChallengeRepository(RepositoryInterface):
         user_relationships = result.all()
 
         user_relationships_per_challenge = {}
-        for challenge_id, is_solver, has_submitted_mglyph, is_active_evaluator, evaluator_state, waiting_for_evaluation in user_relationships:
+        for challenge_id, is_solver, has_submitted_mglyph, is_active_evaluator, invitation_type, invitation_state, waiting_for_evaluation in user_relationships:
             user_relationships_per_challenge[challenge_id] = {
                 "is_solver": is_solver,
                 "has_submitted_mglyph": has_submitted_mglyph,
                 "is_active_evaluator": is_active_evaluator,
-                "evaluator_state": evaluator_state,
+                "evaluator_state": {
+                    "invitation_state": invitation_state,
+                    "invitation_type": invitation_type
+                } if invitation_type and invitation_state else None,
                 "waiting_for_evaluation": waiting_for_evaluation
             }
         return user_relationships_per_challenge
@@ -167,7 +171,7 @@ class ChallengeRepository(RepositoryInterface):
                 .outerjoin(ChallengeSolverModel, ChallengeSolverModel.challenge_id == ChallengeModel.id)
         if as_solver is None or not as_solver:
             select_exec = select_exec\
-                .outerjoin(ChallengeEvaluatorModel, and_(ChallengeEvaluatorModel.challenge_id == ChallengeModel.id, ChallengeEvaluatorModel.state == ChallengeEvaluatorState.confirmed))
+                .outerjoin(ChallengeEvaluatorModel, and_(ChallengeEvaluatorModel.challenge_id == ChallengeModel.id, ChallengeEvaluatorModel.invitation_state == InvitationState.confirmed))
         
         if as_solver is None:
             select_exec = select_exec.where(or_(ChallengeSolverModel.solver_id == user_id, ChallengeEvaluatorModel.evaluator_id == user_id))

@@ -10,7 +10,7 @@ from api.mglyph.schemas import MGlyphEvaluationPublicDTO
 
 from db.models.challengeModel import ChallengeModel
 from db.models.evaluationRoundModel import EvaluationRoundModel
-from db.models.challengeEvaluatorModel import ChallengeEvaluatorState
+from db.models.challengeEvaluatorModel import InvitationState, InvitationType
 
 
 
@@ -112,12 +112,21 @@ class ChallengeUserEvaluatorRelationshipType(Enum):
     EVALUATION_AWAITING = "evaluation_awaiting"
     EVALUATION_FINISHED = "evaluation_finished"
 
+class EvaluatorInvitationInfo(BaseModel):
+    invitation_type: InvitationType
+    invitation_state: InvitationState
+
+class ChallengeUserEvaluatorRelationship(BaseModel):
+    relationship_type: ChallengeUserEvaluatorRelationshipType
+    invitation_info: EvaluatorInvitationInfo | None
+
+
 class ChallengeUserRelationshipDTO(BaseModel):
     solver_relationship: ChallengeUserSolverRelationshipType
-    evaluator_relationship: ChallengeUserEvaluatorRelationshipType
+    evaluator_relationship: ChallengeUserEvaluatorRelationship | None
 
     @staticmethod
-    def from_relationship_flags(is_solver: bool, has_submitted_mglyph: bool, is_active_evaluator: bool, evaluator_state: ChallengeEvaluatorState | None, waiting_for_evaluation: bool) -> "ChallengeUserRelationshipDTO":
+    def from_relationship_flags(is_solver: bool, has_submitted_mglyph: bool, is_active_evaluator: bool, evaluator_state: EvaluatorInvitationInfo | None, waiting_for_evaluation: bool) -> "ChallengeUserRelationshipDTO":
         if is_solver:
             if has_submitted_mglyph:
                 solver_relationship = ChallengeUserSolverRelationshipType.MGLYPH_SUBMITTED
@@ -132,20 +141,25 @@ class ChallengeUserRelationshipDTO(BaseModel):
             else:
                 evaluator_relationship = ChallengeUserEvaluatorRelationshipType.EVALUATION_FINISHED
         else:
-            if evaluator_state == ChallengeEvaluatorState.volunteer_pending:
-                evaluator_relationship = ChallengeUserEvaluatorRelationshipType.PENDING_VOLUNTEER
-            elif evaluator_state == ChallengeEvaluatorState.invited_pending:
-                evaluator_relationship = ChallengeUserEvaluatorRelationshipType.PENDING_INVITED
-            elif evaluator_state == ChallengeEvaluatorState.volunteer_rejected:
-                evaluator_relationship = ChallengeUserEvaluatorRelationshipType.REJECTED_VOLUNTEER
-            elif evaluator_state == ChallengeEvaluatorState.invited_rejected:
-                evaluator_relationship = ChallengeUserEvaluatorRelationshipType.REJECTED_INVITED
+            if evaluator_state:
+                if evaluator_state.invitation_type == InvitationType.volunteer and evaluator_state.invitation_state == InvitationState.pending:
+                    evaluator_relationship = ChallengeUserEvaluatorRelationshipType.PENDING_VOLUNTEER
+                elif evaluator_state.invitation_type == InvitationType.invited and evaluator_state.invitation_state == InvitationState.pending:
+                    evaluator_relationship = ChallengeUserEvaluatorRelationshipType.PENDING_INVITED
+                elif evaluator_state.invitation_type == InvitationType.volunteer and evaluator_state.invitation_state == InvitationState.rejected:
+                    evaluator_relationship = ChallengeUserEvaluatorRelationshipType.REJECTED_VOLUNTEER
+                elif evaluator_state.invitation_type == InvitationType.invited and evaluator_state.invitation_state == InvitationState.rejected:
+                    evaluator_relationship = ChallengeUserEvaluatorRelationshipType.REJECTED_INVITED
+                else:
+                    evaluator_relationship = ChallengeUserEvaluatorRelationshipType.REGISTERED
             else:
                 evaluator_relationship = ChallengeUserEvaluatorRelationshipType.NONE
 
         return ChallengeUserRelationshipDTO(
             solver_relationship=solver_relationship,
-            evaluator_relationship=evaluator_relationship
+            evaluator_relationship=ChallengeUserEvaluatorRelationship(
+                relationship_type=evaluator_relationship,
+                invitation_info=evaluator_state if evaluator_state else None)
         )
 
 class ChallengePublicMiniDetailDTO(ChallengePublicSimpleDTO):
