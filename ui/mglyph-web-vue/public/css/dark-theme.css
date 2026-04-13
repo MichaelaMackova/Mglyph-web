@@ -19,6 +19,10 @@
   --md-sys-color-on-error: 76, 11, 11;
   --md-sys-color-error-container: 102, 14, 14;
   --md-sys-color-on-error-container: 230, 167, 167;
+  --md-sys-color-success: 167, 230, 177;
+  --md-sys-color-on-success: 7, 51, 10;
+  --md-sys-color-success-container: 230, 219, 209;
+  --md-sys-color-on-success-container: 7, 51, 10;
   --md-sys-color-background: 24, 18, 11;
   --md-sys-color-on-background: 237, 224, 212;
   --md-sys-color-surface: 24, 18, 11;

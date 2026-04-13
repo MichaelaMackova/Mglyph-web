@@ -109,7 +109,11 @@
               Show My Malleable Glyph
             </button> -->
           <button
-            v-if="!isActiveUserEvaluator()"
+            v-if="
+              !isActiveUserEvaluator() &&
+              challengeData.user_relationship?.user_evaluator_relationship !==
+                ChallengeUserEvaluatorRelationshipType.pending_invited
+            "
             class="user-button"
             @click="onEvaluatorSignUpClick"
             :disabled="getVolunteerButtonIsDisabledAndTitle().disabled"
@@ -117,6 +121,36 @@
           >
             <div class="label-with-icon">
               <span class="label">Volunteer As Evaluator</span>
+              <span class="icon"><EvaluatorIcon /></span>
+            </div>
+          </button>
+          <button
+            v-if="
+              !isActiveUserEvaluator() &&
+              challengeData.user_relationship?.user_evaluator_relationship ===
+                ChallengeUserEvaluatorRelationshipType.pending_invited
+            "
+            class="user-button confirm"
+            @click="onConfirmEvaluatorInvitationClick()"
+          >
+            <div class="label-with-icon">
+              <span class="icon"><i class="fa-solid fa-check"></i></span>
+              <span class="label">Confirm Evaluator Invitation</span>
+              <span class="icon"><EvaluatorIcon /></span>
+            </div>
+          </button>
+          <button
+            v-if="
+              !isActiveUserEvaluator() &&
+              challengeData.user_relationship?.user_evaluator_relationship ===
+                ChallengeUserEvaluatorRelationshipType.pending_invited
+            "
+            class="user-button reject"
+            @click="onRejectEvaluatorInvitationClick()"
+          >
+            <div class="label-with-icon">
+              <span class="icon"><i class="fa-solid fa-xmark"></i></span>
+              <span class="label">Reject Evaluator Invitation</span>
               <span class="icon"><EvaluatorIcon /></span>
             </div>
           </button>
@@ -334,7 +368,7 @@ function getVolunteerButtonIsDisabledAndTitle(): { disabled: boolean; title: str
   } else if (
     challengeData.value?.user_relationship?.user_evaluator_relationship === undefined ||
     challengeData.value?.user_relationship?.user_evaluator_relationship ===
-    ChallengeUserEvaluatorRelationshipType.none
+      ChallengeUserEvaluatorRelationshipType.none
   ) {
     return {
       disabled: false,
@@ -434,13 +468,47 @@ async function onEvaluatorSignUpClick() {
       { authorizeEndpoint: true },
     )
     await reloadComponent()
-    // TODO: evaluator relationship zahrnout pending types
-    console.log(challengeData.value)
   } catch (error: any) {
     console.error('Error signing up as evaluator:', error)
     popupStore.addPopup(
       error.response?.data?.detail ||
         'An error occurred while signing up as an evaluator. Please try again later.',
+      popupStore.PopupTypeEnum.error,
+    )
+  }
+}
+
+async function onConfirmEvaluatorInvitationClick() {
+  try {
+    await mglyphClient.post(
+      `/challenges/${router.currentRoute.value.params.id}/confirm-evaluator-invite`,
+      {},
+      { authorizeEndpoint: true },
+    )
+    await reloadComponent()
+  } catch (error: any) {
+    console.error('Error confirming evaluator invitation:', error)
+    popupStore.addPopup(
+      error.response?.data?.detail ||
+        'An error occurred while confirming the evaluator invitation. Please try again later.',
+      popupStore.PopupTypeEnum.error,
+    )
+  }
+}
+
+async function onRejectEvaluatorInvitationClick() {
+  try {
+    await mglyphClient.post(
+      `/challenges/${router.currentRoute.value.params.id}/reject-evaluator-invite`,
+      {},
+      { authorizeEndpoint: true },
+    )
+    await reloadComponent()
+  } catch (error: any) {
+    console.error('Error rejecting evaluator invitation:', error)
+    popupStore.addPopup(
+      error.response?.data?.detail ||
+        'An error occurred while rejecting the evaluator invitation. Please try again later.',
       popupStore.PopupTypeEnum.error,
     )
   }
@@ -539,6 +607,16 @@ fetchChallengeData()
         rgb(var(--md-sys-color-secondary, 0, 175, 185)),
         rgb(var(--md-sys-color-on-secondary, 255, 255, 255)) 10%
       );
+    }
+
+    &.confirm:hover {
+      background-color: rgb(var(--md-sys-color-success, 46, 125, 50));
+      color: rgb(var(--md-sys-color-on-success, 255, 255, 255));
+    }
+
+    &.reject:hover {
+      background-color: rgb(var(--md-sys-color-error, 244, 67, 54));
+      color: rgb(var(--md-sys-color-on-error, 255, 255, 255));
     }
 
     &:disabled {
