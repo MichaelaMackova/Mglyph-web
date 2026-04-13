@@ -6,6 +6,8 @@ import MyChallengesView from '@/views/MyChallengesView.vue'
 import ChallengeDetailView from '@/views/ChallengeDetailView.vue'
 import MGlyphDetailView from '@/views/MGlyphDetailView.vue'
 import CreateChallengeView from '@/views/CreateChallengeView.vue'
+import MyInvitesView from '@/views/MyInvitesView.vue'
+import AdminInvitesView from '@/views/AdminInvitesView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -44,6 +46,16 @@ const router = createRouter({
       path: '/create-challenge',
       name: 'CreateChallenge',
       component: CreateChallengeView,
+    },
+    {
+      path: '/my-invites',
+      name: 'MyInvites',
+      component: MyInvitesView,
+    },
+    {
+      path: '/admin-invites',
+      name: 'AdminInvites',
+      component: AdminInvitesView,
     },
     {
       path: '/:catchAll(.*)*',

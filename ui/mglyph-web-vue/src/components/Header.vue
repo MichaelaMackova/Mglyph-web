@@ -47,9 +47,17 @@
           >
         </li>
         <li>
-          My invites
+          <RouterLink :to="{ name: 'MyInvites' }"
+            ><span ref="myInvitesLinkRef">My invites</span></RouterLink
+          >
         </li>
         <li>My glyphs</li>
+        <hr v-if="authStore.user?.role === 'admin'" />
+        <li v-if="authStore.user?.role === 'admin'">
+          <RouterLink :to="{ name: 'AdminInvites' }"
+            ><span ref="adminInvitesLinkRef">Admin invites</span></RouterLink
+          >
+        </li>
         <hr />
         <li @click="toggleTheme">
           <span v-show="currentTheme === 'light'"><i class="fa-solid fa-moon"></i> Dark</span>
@@ -134,10 +142,12 @@ const loginMenuVisible = ref<boolean>(false)
 const loginMenuEl = useTemplateRef('loginMenuRef')
 const loginIconEl = useTemplateRef('loginIconRef')
 const loginButtonEl = useTemplateRef('loginButtonRef')
-const loginMenuOptionCloseExceptionsEls = ref([
+const loginMenuOptionCloseEls = ref([
   loginButtonEl,
   useTemplateRef('myChallengesLinkRef'),
   useTemplateRef('logoutButtonRef'),
+  useTemplateRef('myInvitesLinkRef'),
+  useTemplateRef('adminInvitesLinkRef'),
 ])
 
 function closeLoginMenu() {
@@ -158,7 +168,7 @@ function toggleLoginMenu(event: PointerEvent) {
   }
 
   let close = false
-  loginMenuOptionCloseExceptionsEls.value.forEach((elementRef) => {
+  loginMenuOptionCloseEls.value.forEach((elementRef) => {
     if (elementRef.value?.contains(event.target as Node)) {
       close = true
     }
