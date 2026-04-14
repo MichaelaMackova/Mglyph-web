@@ -8,10 +8,11 @@ from api.auth.dependencies import CurrentAdminUserIdDep, CurrentUserIdDep, Curre
 from api.challenges.services import ChallengeServiceDep, ChallengeEvaluatorServiceDep
 
 
-from api.challenges.schemas import ChallengeFilterParamsAsQuery, ChallengePublicDTO, ChallengePublicMiniDetailDTO, EvaluationRoundPublicDTO, ChallengeCreateDTO, ChallengeUserRelationshipDTO, ChallengeState, EvaluatorInvitationInfo
+from api.challenges.schemas import ChallengeFilterParamsAsQuery, ChallengePublicDTO, ChallengePublicMiniDetailDTO, EvaluationRoundPublicDTO, ChallengeCreateDTO, ChallengeUserRelationshipDTO, ChallengeState, EvaluatorInvitationInfo, ChallengeEvaluatorInviteStatesInfoDTO, ChallengeEvaluatorInfoWithChallengeDTO, ChallengeEvaluatorInfoWithEvaluatorDTO
 from api.mglyph.schemas import MGlyphEvaluationPublicDTO
 from db.models.challengeEvaluatorModel import InvitationState, InvitationType
 from db.repos.mglyphEvaluationRepository import MGlyphEvaluationRepository
+from db.repos.challengeEvaluatorRepository import ChallengeEvaluatorRepository
 from db.pagination import PagedResponse
 
 router = APIRouter(
@@ -108,20 +109,32 @@ async def read_challenges_where_user_is_participant(
 @router.get("/evaluator-invite-states")
 async def get_challenge_evaluator_states(
     current_user_id: CurrentAdminUserIdDep,
-    challenge_evaluator_service: ChallengeEvaluatorServiceDep
-):
-    # TODO:
-    pass
+    challenge_service: ChallengeServiceDep,
+    filter_params: ChallengeFilterParamsAsQuery,
+    page: Annotated[int, Query(ge=1)] = 1,
+    size: Annotated[int, Query(ge=1, le=100)] = 20
+) -> PagedResponse[ChallengeEvaluatorInviteStatesInfoDTO]:
+    paged_response = await challenge_service.get_paginated_challenges_with_evaluator_invites_info(filters=filter_params, page=page, size=size)
+    paged_response.items = [ ChallengeEvaluatorInviteStatesInfoDTO.from_model(challenge_info["challenge"], challenge_info["active_evaluator_count"], challenge_info["has_pending_invites"]) for challenge_info in paged_response.items]
+    return paged_response
 
 
 
 @router.get("/my-evaluator-invites")
 async def get_my_challenge_evaluator_invites(
     current_user_id: CurrentUserIdDep,
-    challenge_evaluator_service: ChallengeEvaluatorServiceDep
-):
-    # TODO:
-    pass
+    challenge_evaluator_service: ChallengeEvaluatorServiceDep,
+    order_by: list[ChallengeEvaluatorRepository.OrderByOption] = Query(default=[], description="Order by options for sorting the challenge evaluator invites. Multiple values can be provided, priority is determined by the order of the values."),
+    page: Annotated[int, Query(ge=1)] = 1,
+    size: Annotated[int, Query(ge=1, le=100)] = 20
+) -> PagedResponse[ChallengeEvaluatorInfoWithChallengeDTO]:
+    paged_challenge_evaluators = await challenge_evaluator_service.get_paginated_challenge_evaluators_by_current_user_id(UUID(current_user_id), page=page, size=size, order_by=set(order_by))
+    paged_challenge_evaluators.items = [
+        ChallengeEvaluatorInfoWithChallengeDTO.from_model(challenge_evaluator)
+        for challenge_evaluator in paged_challenge_evaluators.items
+    ]
+    return paged_challenge_evaluators
+
 
 
 
@@ -265,9 +278,20 @@ async def reject_evaluator_invite(challenge_id: UUID, current_user_id: CurrentUs
 
 
 @router.get("/{challenge_id}/evaluators")
-async def get_evaluators_of_challenge(challenge_id: UUID, current_user_id: CurrentAdminUserIdDep, challenge_service: ChallengeServiceDep):
-    # TODO:
-    pass
+async def get_evaluators_of_challenge(
+    challenge_id: UUID,
+    current_user_id: CurrentAdminUserIdDep,
+    challenge_evaluator_service: ChallengeEvaluatorServiceDep,
+    order_by: list[ChallengeEvaluatorRepository.OrderByOption] = Query(default=[], description="Order by options for sorting the challenge evaluator invites. Multiple values can be provided, priority is determined by the order of the values."),
+    page: Annotated[int, Query(ge=1)] = 1,
+    size: Annotated[int, Query(ge=1, le=100)] = 20
+) -> PagedResponse[ChallengeEvaluatorInfoWithEvaluatorDTO]:
+    paged_challenge_evaluators = await challenge_evaluator_service.get_paginated_challenge_evaluators_by_challenge_id(challenge_id, page=page, size=size, order_by=order_by)
+    paged_challenge_evaluators.items = [
+        ChallengeEvaluatorInfoWithEvaluatorDTO.from_model(challenge_evaluator)
+        for challenge_evaluator in paged_challenge_evaluators.items
+    ]
+    return paged_challenge_evaluators
 
 
 

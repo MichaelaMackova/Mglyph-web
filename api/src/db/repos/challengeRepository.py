@@ -2,7 +2,7 @@ from typing import Annotated
 from fastapi import Depends
 from db.database import SessionDep
 from sqlalchemy.ext.asyncio.session import AsyncSession
-from sqlmodel import select, or_, and_, case
+from sqlmodel import select, or_, and_, case, func
 from sqlalchemy.orm import selectinload, joinedload
 from uuid import UUID
 from db.repos.interface import RepositoryInterface
@@ -187,6 +187,39 @@ class ChallengeRepository(RepositoryInterface):
         paginated_challenges_db = await paginate(self.db_session, select_exec, ChallengeModel, pagination_params)
         return paginated_challenges_db
     
+
+    async def get_paginated_challenges_with_evaluator_invites_info(self, filters: FilterParams = FilterParams(), page: int = 1, size: int = 20, load_options: LoadOptions = LoadOptions()):
+        select_exec = select(
+                ChallengeModel,
+                func.sum(case(
+                    (ChallengeEvaluatorModel.invitation_state == InvitationState.confirmed, 1),
+                    else_=0)
+                ).label("active_evaluator_count"),
+                func.max(case(
+                    (ChallengeEvaluatorModel.invitation_state == InvitationState.pending, 1),
+                    else_=0)
+                ).label("has_pending_invites")
+            )\
+            .outerjoin(ChallengeEvaluatorModel, ChallengeEvaluatorModel.challenge_id == ChallengeModel.id)\
+            .group_by(ChallengeModel)
+        select_exec = filters.apply_filters_to_statement(select_exec)
+        select_exec = select_exec.order_by(ChallengeModel.creation_time.desc())
+        select_exec = load_options.add_options_to_statement(select_exec)
+        pagination_params = PaginationParams(page=page, size=size)
+        result = await paginate(
+            self.db_session,
+            select_exec,
+            dict,
+            pagination_params,
+            as_scalar=False,
+            create_ResponseSchema_data=(lambda row: {
+                "challenge": row[0],
+                "active_evaluator_count": row[1],
+                "has_pending_invites": bool(row[2])
+            })
+        )
+        return result
+
 
 def get_challenge_repository(db_session: SessionDep):
     return ChallengeRepository(db_session)

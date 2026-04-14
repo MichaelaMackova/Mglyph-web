@@ -10,7 +10,7 @@ from api.mglyph.schemas import MGlyphEvaluationPublicDTO
 
 from db.models.challengeModel import ChallengeModel
 from db.models.evaluationRoundModel import EvaluationRoundModel
-from db.models.challengeEvaluatorModel import InvitationState, InvitationType
+from db.models.challengeEvaluatorModel import InvitationState, InvitationType, ChallengeEvaluatorModel
 
 
 
@@ -193,4 +193,48 @@ class ChallengePublicDTO(ChallengeBase):
 class ChallengeUpdateDTO(BaseModel):
     name: str | None = None
     glyph_submit_deadline: datetime | None = None
-    
+
+
+class ChallengeEvaluatorInviteStatesInfoDTO(BaseModel):
+    challenge: ChallengePublicSimpleDTO
+    active_evaluator_count: int
+    has_pending_invites: bool
+
+    @staticmethod
+    def from_model(challengeModel: ChallengeModel, active_evaluator_count: int, has_pending_invites: bool) -> "ChallengeEvaluatorInviteStatesInfoDTO":
+        return ChallengeEvaluatorInviteStatesInfoDTO(
+            challenge=ChallengePublicSimpleDTO.from_model(challengeModel),
+            active_evaluator_count=active_evaluator_count,
+            has_pending_invites=has_pending_invites
+        )
+
+
+class ChallengeEvaluatorInfoBase(BaseModel):
+    id: UUID
+    invitation_state: InvitationState
+    invitation_type: InvitationType
+
+
+class ChallengeEvaluatorInfoWithChallengeDTO(ChallengeEvaluatorInfoBase):
+    challenge: ChallengePublicSimpleDTO
+
+    @staticmethod
+    def from_model(challengeEvaluatorModel: ChallengeEvaluatorModel) -> "ChallengeEvaluatorInfoWithChallengeDTO":
+        return ChallengeEvaluatorInfoWithChallengeDTO(
+            id=challengeEvaluatorModel.id,
+            invitation_state=challengeEvaluatorModel.invitation_state,
+            invitation_type=challengeEvaluatorModel.invitation_type,
+            challenge=ChallengePublicSimpleDTO.from_model(challengeEvaluatorModel.challenge)
+        )
+
+class ChallengeEvaluatorInfoWithEvaluatorDTO(ChallengeEvaluatorInfoBase):
+    evaluator: UserPublicSimpleDTO
+
+    @staticmethod
+    def from_model(challengeEvaluatorModel: ChallengeEvaluatorModel) -> "ChallengeEvaluatorInfoWithEvaluatorDTO":
+        return ChallengeEvaluatorInfoWithEvaluatorDTO(
+            id=challengeEvaluatorModel.id,
+            invitation_state=challengeEvaluatorModel.invitation_state,
+            invitation_type=challengeEvaluatorModel.invitation_type,
+            evaluator=UserPublicSimpleDTO.from_model(challengeEvaluatorModel.evaluator)
+        )

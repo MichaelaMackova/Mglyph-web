@@ -87,6 +87,29 @@ class ChallengeEvaluatorService:
         await self.db_session.refresh(new_challenge_evaluator)
         return new_challenge_evaluator
 
+    async def get_paginated_challenge_evaluators_by_current_user_id(self, current_user_id: UUID, page: int = 1, size: int = 20, order_by: list[ChallengeEvaluatorRepository.OrderByOption] = None) -> PagedResponse[ChallengeEvaluatorModel]:
+        current_user = await self.db_session.get(UserModel, current_user_id)
+        if not current_user:
+            raise mglyph_errors.NotFoundError("User", mglyph_errors.ErrorCode.NOT_FOUND_ID)
+        paged_challenge_evaluators = await self.challenge_evaluator_repository.get_paginated_challenge_evaluators_by_user_id(
+            current_user_id,
+            page=page,
+            size=size,
+            order_by=order_by,
+            load_options=ChallengeEvaluatorRepository.LoadOptions(load_challenge=True, load_challenge_evaluation_rounds=True)
+        )
+        return paged_challenge_evaluators
+    
+    async def get_paginated_challenge_evaluators_by_challenge_id(self, challenge_id: UUID, page: int = 1, size: int = 20, order_by: list[ChallengeEvaluatorRepository.OrderByOption] = None) -> PagedResponse[ChallengeEvaluatorModel]:
+        paged_challenge_evaluators = await self.challenge_evaluator_repository.get_paginated_challenge_evaluators_by_challenge_id(
+            challenge_id,
+            page=page,
+            size=size,
+            order_by=order_by,
+            load_options=ChallengeEvaluatorRepository.LoadOptions(load_evaluator=True)
+        )
+        return paged_challenge_evaluators
+
 def get_challenge_evaluator_service(db_session: SessionDep, challenge_evaluator_repository: ChallengeEvaluatorRepositoryDep):
     return ChallengeEvaluatorService(db_session, challenge_evaluator_repository)
 
@@ -193,12 +216,33 @@ class ChallengeService:
         return paginated_challenges_db
     
 
+    async def get_paginated_challenges_with_evaluator_invites_info(self, filters: ChallengeFilterParams, page: int = 1, size: int = 20) -> PagedResponse[dict]:
+        """
+        Returns:
+            PagedResponse[dict]: A paginated response containing dicts with challenge information and evaluator invite states info for each challenge in the paginated result.
+            Each dict has the following format:
+                {
+                    "challenge": ChallengeModel,
+                    "active_evaluator_count": int,
+                    "has_pending_invites": bool
+                }
+        """
+        filter_params = ChallengeRepository.FilterParams(
+            name_contains=filters.name_contains,
+            state=[state.to_model_params() for state in filters.state] if filters.state else None
+        )
+        paginated_challenges = await self.challenge_repository.get_paginated_challenges_with_evaluator_invites_info(filters=filter_params, page=page, size=size, load_options=ChallengeRepository.LoadOptions(load_evaluation_rounds=True))
+        return paginated_challenges
+
     async def create_challenge(self, challenge: ChallengeCreateDTO, current_user_id: UUID) -> ChallengeModel:
         try:
             challenge_data = challenge.model_dump()
             is_valid_unique_params = await self.challenge_repository.validate_unique_challenge_params(name=challenge_data["name"])
             if not is_valid_unique_params:
                 raise mglyph_errors.BadRequestError("Challenge with the same name already exists", mglyph_errors.ErrorCode.BAD_REQUEST_CREATE_CHALLENGE_NAME_TAKEN)
+            current_user = await self.db_session.get(UserModel, current_user_id)
+            if not current_user:
+                raise mglyph_errors.NotFoundError("User", mglyph_errors.ErrorCode.NOT_FOUND_ID)
             challenge_data["creator_id"] = current_user_id
             first_round_data = challenge_data.pop("first_evaluation_round")
             db_challenge = ChallengeModel.model_validate(challenge_data)
