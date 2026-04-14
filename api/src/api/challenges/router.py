@@ -13,6 +13,7 @@ from api.mglyph.schemas import MGlyphEvaluationPublicDTO
 from db.models.challengeEvaluatorModel import InvitationState, InvitationType
 from db.repos.mglyphEvaluationRepository import MGlyphEvaluationRepository
 from db.repos.challengeEvaluatorRepository import ChallengeEvaluatorRepository
+from db.repos.challengeRepository import ChallengeRepository
 from db.pagination import PagedResponse
 
 router = APIRouter(
@@ -111,10 +112,11 @@ async def get_challenge_evaluator_states(
     current_user_id: CurrentAdminUserIdDep,
     challenge_service: ChallengeServiceDep,
     filter_params: ChallengeFilterParamsAsQuery,
+    order_by: list[ChallengeRepository.EvaluatorInvitesInfoOrderByOptions] | None = Query(default=None, description="Order by options for sorting the challenges. Multiple values can be provided, priority is determined by the order of the values."),
     page: Annotated[int, Query(ge=1)] = 1,
     size: Annotated[int, Query(ge=1, le=100)] = 20
 ) -> PagedResponse[ChallengeEvaluatorInviteStatesInfoDTO]:
-    paged_response = await challenge_service.get_paginated_challenges_with_evaluator_invites_info(filters=filter_params, page=page, size=size)
+    paged_response = await challenge_service.get_paginated_challenges_with_evaluator_invites_info(filters=filter_params, order_by=order_by, page=page, size=size)
     paged_response.items = [ ChallengeEvaluatorInviteStatesInfoDTO.from_model(challenge_info["challenge"], challenge_info["active_evaluator_count"], challenge_info["has_pending_invites"]) for challenge_info in paged_response.items]
     return paged_response
 

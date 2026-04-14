@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, Literal
 from fastapi import Depends
 from db.database import SessionDep
 from sqlalchemy.ext.asyncio.session import AsyncSession
@@ -188,22 +188,43 @@ class ChallengeRepository(RepositoryInterface):
         return paginated_challenges_db
     
 
-    async def get_paginated_challenges_with_evaluator_invites_info(self, filters: FilterParams = FilterParams(), page: int = 1, size: int = 20, load_options: LoadOptions = LoadOptions()):
-        select_exec = select(
-                ChallengeModel,
-                func.sum(case(
+    type EvaluatorInvitesInfoOrderByOptions = Literal["evaluator_count_asc", "evaluator_count_desc", "pending_asc", "pending_desc", "ch_name_asc", "ch_name_desc"]
+    async def get_paginated_challenges_with_evaluator_invites_info(self, filters: FilterParams = FilterParams(), page: int = 1, size: int = 20, order_by: list[EvaluatorInvitesInfoOrderByOptions] | None = None, load_options: LoadOptions = LoadOptions()):
+        active_evaluator_count_label = func.sum(case(
                     (ChallengeEvaluatorModel.invitation_state == InvitationState.confirmed, 1),
                     else_=0)
-                ).label("active_evaluator_count"),
-                func.max(case(
+                ).label("active_evaluator_count")
+        has_pending_invites_label = func.max(case(
                     (ChallengeEvaluatorModel.invitation_state == InvitationState.pending, 1),
                     else_=0)
                 ).label("has_pending_invites")
-            )\
+        
+        select_exec = select(
+                ChallengeModel,
+                active_evaluator_count_label,
+                has_pending_invites_label
+             )\
             .outerjoin(ChallengeEvaluatorModel, ChallengeEvaluatorModel.challenge_id == ChallengeModel.id)\
             .group_by(ChallengeModel)
         select_exec = filters.apply_filters_to_statement(select_exec)
-        select_exec = select_exec.order_by(ChallengeModel.creation_time.desc())
+        if order_by:
+            order_by_clauses = []
+            for order_option in order_by:
+                if order_option == "evaluator_count_asc":
+                    order_by_clauses.append(active_evaluator_count_label.asc())
+                elif order_option == "evaluator_count_desc":
+                    order_by_clauses.append(active_evaluator_count_label.desc())
+                elif order_option == "pending_asc":
+                    order_by_clauses.append(has_pending_invites_label.asc())
+                elif order_option == "pending_desc":
+                    order_by_clauses.append(has_pending_invites_label.desc())
+                elif order_option == "ch_name_asc":
+                    order_by_clauses.append(ChallengeModel.name.asc())
+                elif order_option == "ch_name_desc":
+                    order_by_clauses.append(ChallengeModel.name.desc())
+            select_exec = select_exec.order_by(*order_by_clauses)
+        else:
+            select_exec = select_exec.order_by(ChallengeModel.creation_time.desc())
         select_exec = load_options.add_options_to_statement(select_exec)
         pagination_params = PaginationParams(page=page, size=size)
         result = await paginate(

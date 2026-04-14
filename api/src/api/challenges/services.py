@@ -216,7 +216,7 @@ class ChallengeService:
         return paginated_challenges_db
     
 
-    async def get_paginated_challenges_with_evaluator_invites_info(self, filters: ChallengeFilterParams, page: int = 1, size: int = 20) -> PagedResponse[dict]:
+    async def get_paginated_challenges_with_evaluator_invites_info(self, filters: ChallengeFilterParams, order_by: list[ChallengeRepository.EvaluatorInvitesInfoOrderByOptions] | None = None, page: int = 1, size: int = 20) -> PagedResponse[dict]:
         """
         Returns:
             PagedResponse[dict]: A paginated response containing dicts with challenge information and evaluator invite states info for each challenge in the paginated result.
@@ -231,7 +231,7 @@ class ChallengeService:
             name_contains=filters.name_contains,
             state=[state.to_model_params() for state in filters.state] if filters.state else None
         )
-        paginated_challenges = await self.challenge_repository.get_paginated_challenges_with_evaluator_invites_info(filters=filter_params, page=page, size=size, load_options=ChallengeRepository.LoadOptions(load_evaluation_rounds=True))
+        paginated_challenges = await self.challenge_repository.get_paginated_challenges_with_evaluator_invites_info(filters=filter_params, order_by=order_by, page=page, size=size, load_options=ChallengeRepository.LoadOptions(load_evaluation_rounds=True))
         return paginated_challenges
 
     async def create_challenge(self, challenge: ChallengeCreateDTO, current_user_id: UUID) -> ChallengeModel:
