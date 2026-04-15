@@ -250,6 +250,20 @@ class PaginatedData<T> {
     this.current_page = current_page
     this.page_size = page_size
   }
+
+  public static fromAPIResponse<T>(
+    apiResponse: any,
+    itemFromAPIResponse: (item: any) => T,
+  ): PaginatedData<T> {
+    const items = apiResponse.items.map(itemFromAPIResponse)
+    return new PaginatedData(
+      items,
+      apiResponse.total,
+      apiResponse.total_pages,
+      apiResponse.page,
+      apiResponse.size,
+    )
+  }
 }
 
 class MGlyphDetail {
@@ -312,6 +326,38 @@ class MGlyphDetail {
   }
 }
 
+class ChallengeEvaluatorInvitesInfo {
+  challenge: ChallengeSimple
+  active_evaluator_count: number
+  has_pending_invites: boolean
+
+  constructor(
+    challenge: ChallengeSimple,
+    active_evaluator_count: number,
+    has_pending_invites: boolean,
+  ) {
+    this.challenge = challenge
+    this.active_evaluator_count = active_evaluator_count
+    this.has_pending_invites = has_pending_invites
+  }
+
+  public static fromAPIResponse(apiResponse: any): ChallengeEvaluatorInvitesInfo {
+    const challenge = new ChallengeSimple(
+      apiResponse.challenge.id,
+      apiResponse.challenge.name,
+      new Date(apiResponse.challenge.creation_time),
+      new Date(apiResponse.challenge.glyph_submit_deadline),
+      new Date(apiResponse.challenge.last_evaluation_round.estimated_end_time),
+      apiResponse.challenge.state,
+    )
+    return new ChallengeEvaluatorInvitesInfo(
+      challenge,
+      apiResponse.active_evaluator_count,
+      apiResponse.has_pending_invites,
+    )
+  }
+}
+
 export {
   ChallengeStateEnum,
   ChallengeSimple,
@@ -324,4 +370,5 @@ export {
   ChallengeUserEvaluatorRelationshipType,
   ChallengeDetail,
   MGlyphDetail,
+  ChallengeEvaluatorInvitesInfo,
 }

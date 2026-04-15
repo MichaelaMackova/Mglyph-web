@@ -29,7 +29,7 @@
       <div class="info-column">
         <div class="info-piece">
           <span class="label">Submitted in challenge:</span>
-          <RouterLink :to="`/challenges/${mglyphData.challenge.id}`">{{
+          <RouterLink :to="{ name: 'ChallengeDetail', params: { id: mglyphData.challenge.id } }">{{
             mglyphData.challenge.title
           }}</RouterLink>
         </div>
