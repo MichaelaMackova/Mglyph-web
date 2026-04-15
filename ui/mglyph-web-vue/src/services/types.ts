@@ -358,6 +358,106 @@ class ChallengeEvaluatorInvitesInfo {
   }
 }
 
+enum InvitationStateEnum {
+  pending = 'pending',
+  confirmed = 'confirmed',
+  rejected = 'rejected',
+}
+
+function getInvitationStateEnumFromString(state: string): InvitationStateEnum {
+  if (state === 'confirmed') {
+    return InvitationStateEnum.confirmed
+  } else if (state === 'rejected') {
+    return InvitationStateEnum.rejected
+  } else {
+    return InvitationStateEnum.pending
+  }
+}
+
+enum InvitationTypeEnum {
+  volunteer = 'volunteer',
+  invited = 'invited',
+}
+
+function getInvitationTypeEnumFromString(type: string): InvitationTypeEnum {
+  if (type === 'invited') {
+    return InvitationTypeEnum.invited
+  } else {
+    return InvitationTypeEnum.volunteer
+  }
+}
+
+class ChallengeEvaluatorInfoBase {
+  id: UUID
+  invitation_state: InvitationStateEnum
+  invitation_type: InvitationTypeEnum
+
+  constructor(
+    id: UUID,
+    invitation_state: InvitationStateEnum,
+    invitation_type: InvitationTypeEnum,
+  ) {
+    this.id = id
+    this.invitation_state = invitation_state
+    this.invitation_type = invitation_type
+  }
+}
+
+class ChallengeEvaluatorInfoWithChallenge extends ChallengeEvaluatorInfoBase {
+  challenge: ChallengeSimple
+
+  constructor(
+    id: UUID,
+    invitation_state: InvitationStateEnum,
+    invitation_type: InvitationTypeEnum,
+    challenge: ChallengeSimple,
+  ) {
+    super(id, invitation_state, invitation_type)
+    this.challenge = challenge
+  }
+
+  public static fromAPIResponse(apiResponse: any): ChallengeEvaluatorInfoWithChallenge {
+    const challenge = new ChallengeSimple(
+      apiResponse.challenge.id,
+      apiResponse.challenge.name,
+      new Date(apiResponse.challenge.creation_time),
+      new Date(apiResponse.challenge.glyph_submit_deadline),
+      new Date(apiResponse.challenge.last_evaluation_round.estimated_end_time),
+      apiResponse.challenge.state,
+    )
+    return new ChallengeEvaluatorInfoWithChallenge(
+      apiResponse.id,
+      getInvitationStateEnumFromString(apiResponse.invitation_state),
+      getInvitationTypeEnumFromString(apiResponse.invitation_type),
+      challenge,
+    )
+  }
+}
+
+class ChallengeEvaluatorInfoWithEvaluator extends ChallengeEvaluatorInfoBase {
+  evaluator: User
+
+  constructor(
+    id: UUID,
+    invitation_state: InvitationStateEnum,
+    invitation_type: InvitationTypeEnum,
+    evaluator: User,
+  ) {
+    super(id, invitation_state, invitation_type)
+    this.evaluator = evaluator
+  }
+
+  public static fromAPIResponse(apiResponse: any): ChallengeEvaluatorInfoWithEvaluator {
+    const evaluator = new User(apiResponse.evaluator.id, apiResponse.evaluator.name)
+    return new ChallengeEvaluatorInfoWithEvaluator(
+      apiResponse.id,
+      getInvitationStateEnumFromString(apiResponse.invitation_state),
+      getInvitationTypeEnumFromString(apiResponse.invitation_type),
+      evaluator,
+    )
+  }
+}
+
 export {
   ChallengeStateEnum,
   ChallengeSimple,
@@ -371,4 +471,8 @@ export {
   ChallengeDetail,
   MGlyphDetail,
   ChallengeEvaluatorInvitesInfo,
+  InvitationStateEnum,
+  InvitationTypeEnum,
+  ChallengeEvaluatorInfoWithChallenge,
+  ChallengeEvaluatorInfoWithEvaluator,
 }

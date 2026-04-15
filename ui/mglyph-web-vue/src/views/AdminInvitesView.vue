@@ -4,12 +4,12 @@
       <PopupNote
         message="You do not have permission to access this page."
         type="error"
+        :closable="false"
         width="max-content"
       />
     </div>
     <div v-else>
       <h1>Managing Evaluators And Invites</h1>
-      <!-- Admin invites content goes here -->
       <v-data-table-server
         :items="challengeData?.items || []"
         :items-length="itemsPerPage"
