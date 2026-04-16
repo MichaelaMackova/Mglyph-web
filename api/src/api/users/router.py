@@ -23,10 +23,11 @@ router = APIRouter(
 @router.get("")
 async def read_users(
     user_service: UserServiceDep,
+    username_contains: Annotated[str | None, Query(min_length=1)] = None,
     page: Annotated[int, Query(ge=1)] = 1,
     size: Annotated[int, Query(ge=1, le=100)] = 20
 ) -> PagedResponse[UserPublicSimpleDTO]:
-    paginated_users = await user_service.get_paginated_users(page=page, size=size)
+    paginated_users = await user_service.get_paginated_users(username_contains=username_contains, page=page, size=size)
     paginated_users.items = [UserPublicSimpleDTO.from_model(user) for user in paginated_users.items]
     return paginated_users
 

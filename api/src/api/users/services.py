@@ -27,8 +27,8 @@ class UserService:
         self.user_repository = user_repository
 
     
-    async def get_paginated_users(self, page: int = 1, size: int = 20) -> PagedResponse[UserModel]:
-        return await self.user_repository.get_paginated_users(page=page, size=size)
+    async def get_paginated_users(self, username_contains: str | None = None, page: int = 1, size: int = 20) -> PagedResponse[UserModel]:
+        return await self.user_repository.get_paginated_users(filters=UserRepository.FilterParams(username_contains=username_contains), page=page, size=size)
     
     async def get_user_by_id(self, user_id: UUID) -> UserModel:
         user_db = await self.user_repository.get_user_by_id(user_id, load_options=UserRepository.LoadOptions(True, True, True, True, True, True))

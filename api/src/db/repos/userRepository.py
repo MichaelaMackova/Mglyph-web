@@ -1,9 +1,10 @@
-from typing import Annotated
+from typing import Annotated, Optional
 from fastapi import Depends
 from db.database import SessionDep
 from sqlalchemy.ext.asyncio.session import AsyncSession
 from sqlmodel import select, func
 from sqlalchemy.orm import selectinload, joinedload
+from sqlalchemy import Select
 from uuid import UUID
 from db.repos.interface import RepositoryInterface
 from db.pagination import paginate, PaginationParams, PagedResponse
@@ -61,6 +62,21 @@ class UserRepository(RepositoryInterface):
                 statement = statement.options(selectinload(UserModel.resolved_flags))
             return statement
 
+    class FilterParams():
+        def __init__(
+                self, 
+                username_contains: Optional[str] = None,
+                email_contains: Optional[str] = None,
+            ):
+            self.username_contains = username_contains
+            self.email_contains = email_contains
+
+        def apply_filters_to_statement(self, statement: Select) -> Select:
+            if self.username_contains:
+                statement = statement.where(UserModel.username.ilike(f"%{self.username_contains}%"))
+            if self.email_contains:
+                statement = statement.where(UserModel.email.ilike(f"%{self.email_contains}%"))
+            return statement
 
     async def get_user_by_id(self, user_id: UUID, load_options: LoadOptions = LoadOptions()) -> UserModel | None:
         select_exec = select(UserModel).where(UserModel.id == user_id)
@@ -94,8 +110,9 @@ class UserRepository(RepositoryInterface):
         return user_db
 
 
-    async def get_paginated_users(self, page: int = 1, size: int = 20, load_options: LoadOptions = LoadOptions()) -> PagedResponse[UserModel]:
+    async def get_paginated_users(self, filters: FilterParams = FilterParams(), page: int = 1, size: int = 20, load_options: LoadOptions = LoadOptions()) -> PagedResponse[UserModel]:
         select_exec = select(UserModel)
+        select_exec = filters.apply_filters_to_statement(select_exec)
         select_exec = load_options.add_options_to_statement(select_exec)
         return await paginate(self.db_session, select_exec, UserModel, PaginationParams(page=page, size=size), as_scalar=True)
 
