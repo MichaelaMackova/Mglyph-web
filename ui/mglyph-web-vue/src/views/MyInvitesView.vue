@@ -32,6 +32,12 @@
         :itemsPerPage="itemsPerPage"
         :totalPages="totalPages"
         :extraHeaders="[{ title: 'Challenge Name', key: 'ch_name' }]"
+        :checkIsActionVisible="
+          (item) =>
+            item.invitation_state === InvitationStateEnum.pending &&
+            (item.invitation_type === InvitationTypeEnum.invited ||
+              authStore.user?.role === 'admin')
+        "
         :onConfirm="confirmAction"
         :onReject="rejectAction"
         :checkActionIsDisabled="(item) => item.challenge.state === ChallengeStateEnum.finished"
@@ -52,6 +58,8 @@ import ChallengeEvaluatorTableBase from '@/components/ChallengeEvaluatorTableBas
 import {
   ChallengeEvaluatorInfoWithChallenge,
   PaginatedData,
+  InvitationStateEnum,
+  InvitationTypeEnum,
   ChallengeStateEnum,
 } from '@/services/types'
 import { authStore, popupStore } from '@/main'
@@ -131,21 +139,22 @@ async function fetchChallengeEvaluators(
   }
 }
 
-async function reloadComponent() {
-  isLoading.value = true
-  errorOccurred.value = false
-  challengeEvaluators.value = null
-  await fetchChallengeEvaluators(currentPage.value, itemsPerPage, currentOrderBy.value)
-}
-
 async function confirmAction(item: ChallengeEvaluatorInfoWithChallenge) {
   isLoading.value = true
   try {
-    await mglyphClient.post(
-      `/challenges/${item.challenge.id}/confirm-evaluator-invite`,
-      {},
-      { authorizeEndpoint: true },
-    )
+    if (item.invitation_type === InvitationTypeEnum.invited) {
+      await mglyphClient.post(
+        `/challenges/${item.challenge.id}/confirm-evaluator-invite`,
+        {},
+        { authorizeEndpoint: true },
+      )
+    } else {
+      await mglyphClient.post(
+        `/challenges/${item.challenge.id}/confirm-volunteer-evaluator/${authStore.user?.id}`,
+        {},
+        { authorizeEndpoint: true },
+      )
+    }
     await fetchChallengeEvaluators(currentPage.value, itemsPerPage, currentOrderBy.value)
   } catch (error) {
     console.error('Error confirming action:', error)
@@ -161,11 +170,19 @@ async function confirmAction(item: ChallengeEvaluatorInfoWithChallenge) {
 async function rejectAction(item: ChallengeEvaluatorInfoWithChallenge) {
   isLoading.value = true
   try {
-    await mglyphClient.post(
-      `/challenges/${item.challenge.id}/reject-evaluator-invite`,
-      {},
-      { authorizeEndpoint: true },
-    )
+    if (item.invitation_type === InvitationTypeEnum.invited) {
+      await mglyphClient.post(
+        `/challenges/${item.challenge.id}/reject-evaluator-invite`,
+        {},
+        { authorizeEndpoint: true },
+      )
+    } else {
+      await mglyphClient.post(
+        `/challenges/${item.challenge.id}/reject-volunteer-evaluator/${authStore.user?.id}`,
+        {},
+        { authorizeEndpoint: true },
+      )
+    }
     await fetchChallengeEvaluators(currentPage.value, itemsPerPage, currentOrderBy.value)
   } catch (error) {
     console.error('Error rejecting action:', error)

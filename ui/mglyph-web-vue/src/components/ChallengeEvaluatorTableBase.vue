@@ -32,7 +32,7 @@
     </template>
 
     <template v-slot:item.actions="{ item }">
-      <div class="actions-container" v-if="item.invitation_state == InvitationStateEnum.pending">
+      <div class="actions-container" v-if="checkIsActionVisible(item)">
         <button
           class="action-button confirm"
           @click="props.onConfirm(item)"
@@ -99,6 +99,7 @@ interface Props {
   isLoading?: boolean
   errorOccurred?: boolean
 
+  checkIsActionVisible?: (item: ChallengeEvaluator) => boolean
   onConfirm?: (item: ChallengeEvaluator) => Promise<void> | void
   onReject?: (item: ChallengeEvaluator) => Promise<void> | void
   checkActionIsDisabled?: (item: ChallengeEvaluator) => boolean
@@ -109,6 +110,7 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   isLoading: false,
   errorOccurred: false,
+  checkIsActionVisible: () => true,
   onConfirm: () => {},
   onReject: () => {},
   checkActionIsDisabled: () => false,
