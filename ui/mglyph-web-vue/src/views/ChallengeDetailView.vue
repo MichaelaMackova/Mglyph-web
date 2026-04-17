@@ -56,21 +56,42 @@
         v-if="authStore.user && challengeData.challenge.state !== ChallengeStateEnum.finished"
         class="buttons-container"
       >
-        <div v-if="authStore.user.role === 'admin'">
-          <button
-            class="admin-button"
-            v-if="challengeData.challenge.state === ChallengeStateEnum.open"
-            @click="onEndSubmissionsClick"
-          >
-            End Submissions
-          </button>
-          <button
-            class="admin-button"
-            v-if="challengeData.challenge.state === ChallengeStateEnum.progress"
-            @click="onEndChallengeClick"
-          >
-            End Challenge
-          </button>
+        <div class="admin-container" v-if="authStore.user.role === 'admin'">
+          <div class="admin-buttons-container">
+            <button
+              class="admin-button"
+              v-if="challengeData.challenge.state === ChallengeStateEnum.open"
+              @click="onEndSubmissionsClick"
+            >
+              End Submissions
+            </button>
+            <button
+              class="admin-button"
+              v-if="challengeData.challenge.state === ChallengeStateEnum.progress"
+              @click="onEndChallengeClick"
+            >
+              End Challenge
+            </button>
+            <button
+              class="admin-button"
+              @click="
+                () => {
+                  manageEvaluatorsVisible = !manageEvaluatorsVisible
+                }
+              "
+            >
+              <div class="label-with-icon">
+                <span class="label">Manage Evaluators</span>
+                <span class="icon"
+                  ><i v-if="manageEvaluatorsVisible" class="fa-solid fa-eye-slash"></i
+                  ><i v-else class="fa-solid fa-eye"></i
+                ></span>
+              </div>
+            </button>
+          </div>
+          <div class="manage-evaluators-container" v-if="manageEvaluatorsVisible">
+            <ManageChallengeEvaluators :challenge-id="challengeData.challenge.id" />
+          </div>
         </div>
         <div class="user-buttons-container">
           <button
@@ -242,6 +263,7 @@ import ChallengeState from '@/components/ChallengeState.vue'
 import SolverIcon from '@/components/icons/SolverIcon.vue'
 import EvaluatorIcon from '@/components/icons/EvaluatorIcon.vue'
 import MGlyphPreviewImage from '@/components/MGlyphPreviewImage.vue'
+import ManageChallengeEvaluators from '@/components/ManageChallengeEvaluators.vue'
 import {
   ChallengeDetail,
   ChallengeGlyph,
@@ -254,6 +276,8 @@ import { authStore, popupStore } from '@/main'
 import { useRouter } from 'vue-router'
 import { ref } from 'vue'
 const router = useRouter()
+
+const manageEvaluatorsVisible = ref<boolean>(false)
 
 const isLoading = ref<boolean>(true)
 const errorOccurred = ref<boolean>(false)
@@ -584,12 +608,29 @@ fetchChallengeData()
     }
   }
 
-  .user-buttons-container {
+  .user-buttons-container,
+  .admin-buttons-container {
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
     align-items: center;
     gap: 8px 12px;
+  }
+
+  .admin-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    width: 100%;
+  }
+
+  .manage-evaluators-container {
+    background-color: rgb(var(--md-sys-color-surface-variant, 254, 241, 229));
+    color: rgb(var(--md-sys-color-on-surface-variant, 23, 21, 17));
+    width: 100%;
+    padding: 16px;
+    border-radius: 16px;
   }
 
   .user-button {

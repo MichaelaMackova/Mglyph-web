@@ -448,7 +448,7 @@ class ChallengeEvaluatorInfoWithEvaluator extends ChallengeEvaluatorInfoBase {
   }
 
   public static fromAPIResponse(apiResponse: any): ChallengeEvaluatorInfoWithEvaluator {
-    const evaluator = new User(apiResponse.evaluator.id, apiResponse.evaluator.name)
+    const evaluator = new User(apiResponse.evaluator.id, apiResponse.evaluator.username)
     return new ChallengeEvaluatorInfoWithEvaluator(
       apiResponse.id,
       getInvitationStateEnumFromString(apiResponse.invitation_state),

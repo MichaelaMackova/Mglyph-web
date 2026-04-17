@@ -30,7 +30,6 @@
         @update:options="
           ({ page, itemsPerPage, sortBy }) => {
             currentPage = 1
-            console.log('Sorting by:', sortBy)
             fetchPaginatedData(page, itemsPerPage, getOrderByParam(sortBy))
           }
         "

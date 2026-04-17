@@ -5,11 +5,10 @@
     :headers="headers"
     :items-per-page="props.itemsPerPage"
     :loading="props.isLoading"
-    :loading-text="'Loading challenges...'"
+    :loading-text="loadingText || 'Loading items...'"
     :no-data-text="
-      props.errorOccurred
-        ? 'An error occurred while fetching challenge data.'
-        : 'No challenges found.'
+      props.noDataText ||
+      (errorOccurred ? 'An error occurred while fetching data.' : 'No data available.')
     "
     :multi-sort="true"
     @update:options="props.onUpdateTableOrder"
@@ -96,6 +95,8 @@ interface Props {
   currentPage: number
   itemsPerPage: number
   totalPages: number
+  noDataText?: string
+  loadingText?: string
   isLoading?: boolean
   errorOccurred?: boolean
 

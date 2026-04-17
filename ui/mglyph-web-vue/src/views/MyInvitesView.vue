@@ -10,7 +10,6 @@
       />
     </div>
     <div v-else>
-      <!-- My invites content goes here -->
       <ChallengeEvaluatorTableBase
         :challengeEvaluators="challengeEvaluators || []"
         :isLoading="isLoading"
@@ -31,6 +30,12 @@
         :currentPage="currentPage"
         :itemsPerPage="itemsPerPage"
         :totalPages="totalPages"
+        :noDataText="
+          errorOccurred
+            ? 'An error occurred while fetching challenge data.'
+            : 'No challenges found.'
+        "
+        :loadingText="'Loading challenges...'"
         :extraHeaders="[{ title: 'Challenge Name', key: 'ch_name' }]"
         :checkIsActionVisible="
           (item) =>
