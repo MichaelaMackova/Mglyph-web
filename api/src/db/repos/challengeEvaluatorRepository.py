@@ -12,6 +12,7 @@ from db.pagination import paginate, PaginationParams, PagedResponse
 
 from db.models.challengeEvaluatorModel import ChallengeEvaluatorModel, InvitationType, InvitationState
 from db.models.challengeModel import ChallengeModel
+from db.models.userModel import UserModel
 
 
 
@@ -45,6 +46,8 @@ class ChallengeEvaluatorRepository(RepositoryInterface):
     class OrderByOption(Enum):
         CHALLENGE_NAME_ASC = "challenge_name_asc"
         CHALLENGE_NAME_DESC = "challenge_name_desc"
+        EVALUATOR_USERNAME_ASC = "evaluator_username_asc"
+        EVALUATOR_USERNAME_DESC = "evaluator_username_desc"
         INVITATION_TYPE_ASC = "invitation_type_asc"
         INVITATION_TYPE_DESC = "invitation_type_desc"
         INVITATION_STATE_ASC = "invitation_state_asc"
@@ -61,6 +64,13 @@ class ChallengeEvaluatorRepository(RepositoryInterface):
                         order_by_clauses.append(challenge_model_alias.name.asc())
                     else:
                         order_by_clauses.append(challenge_model_alias.name.desc())
+                elif option == ChallengeEvaluatorRepository.OrderByOption.EVALUATOR_USERNAME_ASC or option == ChallengeEvaluatorRepository.OrderByOption.EVALUATOR_USERNAME_DESC:
+                    user_model_alias = aliased(UserModel)
+                    statement = statement.join(user_model_alias, user_model_alias.id == aliased_model.evaluator_id)
+                    if option == ChallengeEvaluatorRepository.OrderByOption.EVALUATOR_USERNAME_ASC:
+                        order_by_clauses.append(user_model_alias.username.asc())
+                    else:
+                        order_by_clauses.append(user_model_alias.username.desc())
                 elif option == ChallengeEvaluatorRepository.OrderByOption.INVITATION_TYPE_ASC or option == ChallengeEvaluatorRepository.OrderByOption.INVITATION_TYPE_DESC:
                     invitation_type_case = case(
                         (aliased_model.invitation_type == InvitationType.volunteer, 1),
