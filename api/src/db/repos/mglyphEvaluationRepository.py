@@ -3,19 +3,22 @@ from pydantic import BaseModel
 from fastapi import Depends
 from db.database import SessionDep
 from sqlalchemy.ext.asyncio.session import AsyncSession
-from sqlmodel import select, func, and_
+from sqlmodel import select, update, case, func, and_
 from sqlalchemy.orm import selectinload, joinedload, aliased, contains_eager
 from sqlalchemy import Select
 from uuid import UUID
 from enum import Enum
 from db.repos.interface import RepositoryInterface
 from db.pagination import paginate, PaginationParams, PagedResponse
+from calculate_score import calculate_score, GroupedAnswerInfo
 
 from db.models.mglyphEvaluationModel import MGlyphEvaluationModel
 from db.models.malleableGlyphModel import MalleableGlyphModel
 from db.models.evaluationRoundModel import EvaluationRoundModel
 from db.models.challengeModel import ChallengeModel
 from db.models.userModel import UserModel
+from db.models.mglyphEvaluatorModel import MGlyphEvaluatorModel
+from db.models.answerModel import AnswerModel
 
 
 class MGlyphEvaluationRepository(RepositoryInterface):
@@ -68,11 +71,14 @@ class MGlyphEvaluationRepository(RepositoryInterface):
                 return statement
 
 
-    async def get_paginated_mglyph_evaluations_in_challenge_round(self, evaluation_round_id: UUID, only_submitted: bool = True, order_by: OrderByOption = OrderByOption.RANK_ASC, page: int = 1, size: int = 20, load_options: LoadOptions = LoadOptions()) -> PagedResponse[MGlyphEvaluationModel]:
+    async def get_paginated_mglyph_evaluations_in_challenge_round(self, evaluation_round_id: UUID, only_submitted: bool = True, order_by: OrderByOption | None = None, page: int = 1, size: int = 20, load_options: LoadOptions = LoadOptions()) -> PagedResponse[MGlyphEvaluationModel]:
         select_exec = select(MGlyphEvaluationModel).where(MGlyphEvaluationModel.evaluation_round_id == evaluation_round_id)
         if only_submitted:
             select_exec = select_exec.join(MalleableGlyphModel).where(MalleableGlyphModel.submission_time.is_not(None))
-        select_exec = order_by.add_order_by_to_statement(select_exec)
+        if order_by:
+            select_exec = order_by.add_order_by_to_statement(select_exec)
+        else:
+            select_exec = select_exec.order_by(MGlyphEvaluationModel.id.asc())
         select_exec = load_options.add_options_to_statement(select_exec)
         return await paginate(self.db_session, select_exec, MGlyphEvaluationModel, PaginationParams(page=page, size=size), as_scalar=True)
 
@@ -112,7 +118,73 @@ class MGlyphEvaluationRepository(RepositoryInterface):
             if mglyph_evaluation is not None:
                 mglyph_evaluations_per_challenge[challenge_id].append(mglyph_evaluation)
         return mglyph_evaluations_per_challenge
+    
+
+    async def bulk_update_score_of_mglyph_evaluations(self, mglyph_evaluation_scores: list[dict], commit: bool = True):
+        """
+        Args:
+            mglyph_evaluation_scores (list[dict]): A list of dictionaries, where each dictionary has the following keys:
+                - id (UUID): The id of the mglyph evaluation to update the score for
+                - score (float): The new score to set for the mglyph evaluation
+            commit (bool): Whether to commit the transaction after executing the update statement. Default is True.
+        """
+        await self.db_session.execute(update(MGlyphEvaluationModel), mglyph_evaluation_scores)
+        if commit:
+            await self.db_session.commit()
+
+    async def get_mglyph_evaluations_score_calculation_helpers(self, evaluation_round_id: UUID, malleable_glyph_ids: list[UUID]) -> list[tuple[UUID, list[GroupedAnswerInfo]]]:
+        """
+        This is a helper function to get the data needed to calculate the score for mglyph evaluations. It returns a paginated list of tuples, where each tuple contains the mglyph evaluation id and a list of GroupedAnswerInfo objects (grouped by distance).
+        """
+        calculation_helpers_query = select(
+            MGlyphEvaluationModel.id,
+            AnswerModel.glyph_distance,
+            func.count(AnswerModel.id).label('total_answers'),
+            func.sum(
+                case(
+                    (AnswerModel.is_answer_correct == True, 1),
+                    else_=0
+                )
+            ).label('correct_answers')
+        ).join(MGlyphEvaluatorModel, MGlyphEvaluatorModel.mglyph_evaluation_id == MGlyphEvaluationModel.id)\
+        .join(AnswerModel, AnswerModel.mglyph_evaluator_id == MGlyphEvaluatorModel.id)\
+        .where(MGlyphEvaluationModel.malleable_glyph_id.in_(malleable_glyph_ids), MGlyphEvaluationModel.evaluation_round_id == evaluation_round_id)\
+        .group_by(MGlyphEvaluationModel.id, AnswerModel.glyph_distance)\
+        .order_by(MGlyphEvaluationModel.id.asc(), AnswerModel.glyph_distance.asc())
+
+        calculation_helpers_result = await self.db_session.execute(calculation_helpers_query)
+        calculation_helpers_rows = calculation_helpers_result.all()
+
+        # Group the results by mglyph evaluation id
+        grouped_helpers : list[tuple[UUID, list[GroupedAnswerInfo]]] = []
+        for mglyph_evaluation_id, glyph_distance, total_answers, correct_answers in calculation_helpers_rows:
+            if len(grouped_helpers) == 0 or grouped_helpers[-1][0] != mglyph_evaluation_id:
+                grouped_helpers.append((mglyph_evaluation_id, []))
+            grouped_helpers[-1][1].append(GroupedAnswerInfo(distance=glyph_distance, count_total=total_answers, count_correct=correct_answers))
         
+        return grouped_helpers
+
+        
+        
+    async def update_rank_of_all_mglyph_evaluations_in_evaluation_round(self, evaluation_round_id: UUID, commit: bool = True):
+        get_rank_subquery = select(
+            MGlyphEvaluationModel.id,
+            func.row_number().over(order_by=MGlyphEvaluationModel.score.desc().nulls_last()).label('rank')
+        ).where(MGlyphEvaluationModel.evaluation_round_id == evaluation_round_id)
+        get_rank_subquery = get_rank_subquery.subquery()
+
+        # Perform bulk update using the subquery
+        update_stmt = update(MGlyphEvaluationModel).values(
+            rank=get_rank_subquery.c.rank
+        ).where(
+            MGlyphEvaluationModel.id == get_rank_subquery.c.id,
+            MGlyphEvaluationModel.evaluation_round_id == evaluation_round_id,
+            MGlyphEvaluationModel.score.is_not(None)  # Only update rank for evaluations that have a score
+        )
+
+        await self.db_session.execute(update_stmt)
+        if commit:
+            await self.db_session.commit()
 
 
 

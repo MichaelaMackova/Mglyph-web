@@ -8,19 +8,22 @@ from uuid import UUID
 from datetime import datetime, timedelta, timezone
 import errors as mglyph_errors
 from db.pagination import PagedResponse
+from calculate_score import calculate_score
 
 from db.models.challengeModel import ChallengeModel
 from db.models.userModel import UserModel
 from db.models.evaluationRoundModel import EvaluationRoundModel
 from db.models.challengeEvaluatorModel import ChallengeEvaluatorModel, InvitationState, InvitationType
 from db.models.mglyphEvaluationModel import MGlyphEvaluationModel
+from db.models.answerModel import AnsweredSymbol
 
 from db.repos.challengeRepository import ChallengeRepository, ChallengeRepositoryDep
 from db.repos.evaluationRoundRepository import EvaluationRoundRepository, EvaluationRoundRepositoryDep
 from db.repos.challengeEvaluatorRepository import ChallengeEvaluatorRepository, ChallengeEvaluatorRepositoryDep
 from db.repos.mglyphEvaluationRepository import MGlyphEvaluationRepository, MGlyphEvaluationRepositoryDep
+from db.repos.answerRepository import AnswerRepository, AnswerRepositoryDep
 
-from api.challenges.schemas import ChallengeFilterParams, ChallengePublicDTO, ChallengeCreateDTO, ChallengeUpdateDTO, ChallengeUserRelationshipDTO
+from api.challenges.schemas import ChallengeFilterParams, ChallengeCreateDTO, ChallengeUpdateDTO, CreateAnswerDTO
 
 
 class EvaluationRoundService:
@@ -48,6 +51,47 @@ def get_evaluation_round_service(db_session: SessionDep):
 EvaluationRoundServiceDep = Annotated[EvaluationRoundService, Depends(get_evaluation_round_service)]
 
 
+
+
+
+class AnswerService:
+    def __init__(self, db_session: AsyncSession, answer_repository: AnswerRepository):
+        self.db_session = db_session
+        self.answer_repository = answer_repository
+
+    def __evaluate_answer_correctness(self, answer: CreateAnswerDTO) -> bool:
+        if answer.answered_symbol == AnsweredSymbol.equal:
+            return answer.first_glyph_value == answer.second_glyph_value
+        elif answer.answered_symbol == AnsweredSymbol.greater:
+            return answer.first_glyph_value > answer.second_glyph_value
+        elif answer.answered_symbol == AnsweredSymbol.less:
+            return answer.first_glyph_value < answer.second_glyph_value
+
+    async def bulk_add_answers(self, answers: list[CreateAnswerDTO], challenge_evaluator_id: UUID, evaluation_round_id: UUID, commit: bool = True):
+        """
+        NOTE: challenge_evaluator_id is id of ChallengeEvaluatorModel
+        """
+        # TODO: check if glyph is submitted in the challenge and if the evaluator is assigned to evaluate it
+        answers_data = []
+        for answer in answers:
+            answer_data = answer.model_dump()
+            answer_data["is_answer_correct"] = self.__evaluate_answer_correctness(answer)
+            answer_data["glyph_distance"] = abs(answer.first_glyph_value - answer.second_glyph_value)
+            if not answer_data["first_glyph_rotation_angle"]:
+                answer_data["first_glyph_rotation_angle"] = 0.0
+            if not answer_data["second_glyph_rotation_angle"]:
+                answer_data["second_glyph_rotation_angle"] = 0.0
+            answers_data.append(answer_data)
+
+        await self.answer_repository.bulk_insert(answers_data, challenge_evaluator_id, evaluation_round_id)
+        if commit:
+            await self.db_session.commit()
+
+
+def get_answer_service(db_session: SessionDep, answer_repository: AnswerRepositoryDep):
+    return AnswerService(db_session, answer_repository)
+
+AnswerServiceDep = Annotated[AnswerService, Depends(get_answer_service)]
 
 
 
@@ -118,7 +162,7 @@ ChallengeEvaluatorServiceDep = Annotated[ChallengeEvaluatorService, Depends(get_
 
 
 
-
+# TODO: při přidělování challenge evaluator to mglyph (new mglyph evaluator) check if glyph is submitted
 
 
 
@@ -135,15 +179,19 @@ class ChallengeService:
             challenge_repository: ChallengeRepository,
             evaluation_round_repository: EvaluationRoundRepository,
             mglyph_evaluation_repository: MGlyphEvaluationRepository,
+            challenge_evaluator_repository: ChallengeEvaluatorRepository,
             evaluation_round_service: EvaluationRoundService,
             challenge_evaluator_service: ChallengeEvaluatorService,
+            answer_service: AnswerService
         ):
         self.db_session = db_session
         self.challenge_repository = challenge_repository
         self.evaluation_round_repository = evaluation_round_repository
         self.mglyph_evaluation_repository = mglyph_evaluation_repository
+        self.challenge_evaluator_repository = challenge_evaluator_repository
         self.evaluation_round_service = evaluation_round_service
         self.challenge_evaluator_service = challenge_evaluator_service
+        self.answer_service = answer_service
 
 
     async def get_challenge_by_id_with_user_relationship(self, challenge_id: UUID, current_user_id: UUID | None = None) -> tuple[ChallengeModel, dict | None]:
@@ -216,6 +264,7 @@ class ChallengeService:
         return paginated_challenges_db
     
 
+
     async def get_paginated_challenges_with_evaluator_invites_info(self, filters: ChallengeFilterParams, order_by: list[ChallengeRepository.EvaluatorInvitesInfoOrderByOptions] | None = None, page: int = 1, size: int = 20) -> PagedResponse[dict]:
         """
         Returns:
@@ -233,6 +282,8 @@ class ChallengeService:
         )
         paginated_challenges = await self.challenge_repository.get_paginated_challenges_with_evaluator_invites_info(filters=filter_params, order_by=order_by, page=page, size=size, load_options=ChallengeRepository.LoadOptions(load_evaluation_rounds=True))
         return paginated_challenges
+
+
 
     async def create_challenge(self, challenge: ChallengeCreateDTO, current_user_id: UUID) -> ChallengeModel:
         try:
@@ -258,6 +309,7 @@ class ChallengeService:
         return db_challenge
     
 
+
     async def update_challenge(self, challenge_id: UUID, challenge_update: ChallengeUpdateDTO) -> ChallengeModel:
         challenge_db = await self.challenge_repository.get_challenge_by_id(challenge_id)
         if not challenge_db:
@@ -273,6 +325,7 @@ class ChallengeService:
         return challenge_db
     
 
+
     async def end_challenge_submissions(self, challenge_id: UUID) -> ChallengeModel:
         challenge_db = await self.challenge_repository.get_challenge_by_id(challenge_id)
         if not challenge_db:
@@ -287,6 +340,7 @@ class ChallengeService:
         challenge_db = await self.challenge_repository.get_challenge_by_id(challenge_id, load_options=ChallengeRepository.LoadOptions(load_creator=True, load_solvers=True, load_challenge_evaluator_links=True, load_evaluation_rounds=True))
         return challenge_db
     
+
 
     async def end_challenge(self, challenge_id: UUID) -> ChallengeModel:
         challenge_db = await self.challenge_repository.get_challenge_by_id(challenge_id)
@@ -361,15 +415,43 @@ class ChallengeService:
         return challenge_db
 
 
+    async def evaluate_challenge(self, challenge_id: UUID, current_user_id: UUID, answers: list[CreateAnswerDTO]):
+        challenge = await self.challenge_repository.get_challenge_by_id(challenge_id)
+        if not challenge:
+            raise mglyph_errors.NotFoundError("Challenge", mglyph_errors.ErrorCode.NOT_FOUND_ID)
+        if challenge.challenge_finished:
+            raise mglyph_errors.BadRequestError("Challenge has already ended", mglyph_errors.ErrorCode.BAD_REQUEST_WRONG_STATE)
+        if not challenge.submissions_ended:
+            raise mglyph_errors.BadRequestError("Challenge submissions have not ended yet", mglyph_errors.ErrorCode.BAD_REQUEST_WRONG_STATE)
+        last_round = await self.evaluation_round_repository.get_last_round_in_challenge(challenge_id)
+        if not last_round:
+            raise mglyph_errors.NotFoundError("Challenge round", mglyph_errors.ErrorCode.NOT_FOUND_ID)
+        challenge_evaluator = await self.challenge_evaluator_repository.get_challenge_evaluator_by_challenge_id_and_evaluator_id(challenge_id, current_user_id)
+        if not challenge_evaluator:
+            raise mglyph_errors.NotFoundError("Challenge Evaluator link", mglyph_errors.ErrorCode.NOT_FOUND_ID)
+        try:
+            await self.answer_service.bulk_add_answers(answers, challenge_evaluator.id, last_round.id, commit=False)
+        except Exception as e:
+            await self.db_session.rollback()
+            raise mglyph_errors.BadRequestError(f"Error while adding answers - one or more answers might contain:\na) Mglyph for witch user is not an assigned evaluator;\nb) Mglyph is not assigned to active challenge round;\nc) Mglyph does not exist;\nd) or otherwise invalid data.", mglyph_errors.ErrorCode.BAD_REQUEST_ADD_ANSWERS)
+        malleable_glyph_ids = [answer.malleable_glyph_id for answer in answers]
+        mglyph_evaluations_calculation_helpers = await self.mglyph_evaluation_repository.get_mglyph_evaluations_score_calculation_helpers(last_round.id, malleable_glyph_ids)
+        mglyph_evaluations_scores = [{'id': mglyph_evaluation_id, 'score': calculate_score(answers_grouped_by_distance)} for mglyph_evaluation_id, answers_grouped_by_distance in mglyph_evaluations_calculation_helpers]
+        await self.mglyph_evaluation_repository.bulk_update_score_of_mglyph_evaluations(mglyph_evaluations_scores, commit=False)
+        await self.mglyph_evaluation_repository.update_rank_of_all_mglyph_evaluations_in_evaluation_round(last_round.id, commit=False)
+        await self.db_session.commit()
+
 
 def get_challenge_service(
         db_session: SessionDep,
         challenge_repository: ChallengeRepositoryDep,
         evaluation_round_repository: EvaluationRoundRepositoryDep,
         mglyph_evaluation_repository: MGlyphEvaluationRepositoryDep,
+        challenge_evaluator_repository: ChallengeEvaluatorRepositoryDep,
         evaluation_round_service: EvaluationRoundServiceDep,
-        challenge_evaluator_service: ChallengeEvaluatorServiceDep
+        challenge_evaluator_service: ChallengeEvaluatorServiceDep,
+        answer_service: AnswerServiceDep
     ):
-    return ChallengeService(db_session, challenge_repository, evaluation_round_repository, mglyph_evaluation_repository, evaluation_round_service, challenge_evaluator_service)
+    return ChallengeService(db_session, challenge_repository, evaluation_round_repository, mglyph_evaluation_repository, challenge_evaluator_repository, evaluation_round_service, challenge_evaluator_service, answer_service)
 
 ChallengeServiceDep = Annotated[ChallengeService, Depends(get_challenge_service)]

@@ -2,7 +2,7 @@ from fastapi import Depends, Query
 from typing import Optional, Annotated
 from pydantic import BaseModel, Field
 from uuid import UUID
-from datetime import datetime
+from datetime import datetime, timedelta
 from enum import Enum
 
 from api.users.schemas import UserPublicSimpleDTO
@@ -11,6 +11,7 @@ from api.mglyph.schemas import MGlyphEvaluationPublicDTO
 from db.models.challengeModel import ChallengeModel
 from db.models.evaluationRoundModel import EvaluationRoundModel
 from db.models.challengeEvaluatorModel import InvitationState, InvitationType, ChallengeEvaluatorModel
+from db.models.answerModel import AnsweredSymbol, RotationType
 
 
 
@@ -238,3 +239,18 @@ class ChallengeEvaluatorInfoWithEvaluatorDTO(ChallengeEvaluatorInfoBase):
             invitation_type=challengeEvaluatorModel.invitation_type,
             evaluator=UserPublicSimpleDTO.from_model(challengeEvaluatorModel.evaluator)
         )
+
+
+class AnswerBase(BaseModel):
+    first_glyph_value: float
+    second_glyph_value: float
+    answered_symbol: AnsweredSymbol
+    time_taken: timedelta
+    rotation_type: Optional[RotationType] = None
+    
+    
+
+class CreateAnswerDTO(AnswerBase):
+    malleable_glyph_id: UUID
+    first_glyph_rotation_angle: Optional[float] = None
+    second_glyph_rotation_angle: Optional[float] = None

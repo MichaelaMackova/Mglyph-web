@@ -8,7 +8,10 @@ from api.auth.dependencies import CurrentAdminUserIdDep, CurrentUserIdDep, Curre
 from api.challenges.services import ChallengeServiceDep, ChallengeEvaluatorServiceDep
 
 
-from api.challenges.schemas import ChallengeFilterParamsAsQuery, ChallengePublicDTO, ChallengePublicMiniDetailDTO, EvaluationRoundPublicDTO, ChallengeCreateDTO, ChallengeUserRelationshipDTO, ChallengeState, EvaluatorInvitationInfo, ChallengeEvaluatorInviteStatesInfoDTO, ChallengeEvaluatorInfoWithChallengeDTO, ChallengeEvaluatorInfoWithEvaluatorDTO
+from api.challenges.schemas import  ChallengeFilterParamsAsQuery, ChallengePublicDTO, ChallengePublicMiniDetailDTO,\
+                                    CreateAnswerDTO, EvaluationRoundPublicDTO, ChallengeCreateDTO,\
+                                    ChallengeUserRelationshipDTO, ChallengeState, EvaluatorInvitationInfo,\
+                                    ChallengeEvaluatorInviteStatesInfoDTO, ChallengeEvaluatorInfoWithChallengeDTO, ChallengeEvaluatorInfoWithEvaluatorDTO
 from api.mglyph.schemas import MGlyphEvaluationPublicDTO
 from db.models.challengeEvaluatorModel import InvitationState, InvitationType
 from db.repos.mglyphEvaluationRepository import MGlyphEvaluationRepository
@@ -307,6 +310,16 @@ async def end_challenge_submissions(challenge_id: UUID, current_user_id: Current
 async def end_challenge(challenge_id: UUID, current_user_id: CurrentAdminUserIdDep, challenge_service: ChallengeServiceDep) -> None:
     await challenge_service.end_challenge(challenge_id)
     
+
+
+@router.post("/{challenge_id}/evaluate")
+async def evaluate_challenge(
+    challenge_id: UUID,
+    answer_list: list[CreateAnswerDTO],
+    current_user_id: CurrentUserIdDep,
+    challenge_service: ChallengeServiceDep,
+) -> None:
+    await challenge_service.evaluate_challenge(challenge_id, UUID(current_user_id), answer_list)
 
 
 @router.delete("/{challenge_id}", 
