@@ -18,11 +18,6 @@ const router = createRouter({
       component: HomeView,
     },
     {
-      path: '/clicker',
-      name: 'Clicker',
-      component: ClickerView,
-    },
-    {
       path: '/challenges',
       name: 'Challenges',
       component: ChallengesView,
