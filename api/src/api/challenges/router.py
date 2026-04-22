@@ -312,6 +312,17 @@ async def end_challenge(challenge_id: UUID, current_user_id: CurrentAdminUserIdD
     
 
 
+@router.get("/{challenge_id}/evaluate")
+async def get_mglyphs_for_evaluation(
+    challenge_id: UUID,
+    current_user_id: CurrentUserIdDep,
+    challenge_service: ChallengeServiceDep
+) -> list[MGlyphEvaluationPublicDTO]:
+    mglyph_evaluations = await challenge_service.get_mglyphs_for_evaluation(challenge_id, UUID(current_user_id))
+    return [MGlyphEvaluationPublicDTO.from_model(mglyph_evaluation) for mglyph_evaluation in mglyph_evaluations]
+
+
+
 @router.post("/{challenge_id}/evaluate")
 async def evaluate_challenge(
     challenge_id: UUID,

@@ -103,7 +103,7 @@ class ChallengeEvaluatorService:
 
 
     async def change_invitation_state_of_challenge_evaluator(self, challenge_id: UUID, evaluator_user_id: UUID, new_state: InvitationState, confirm_old_state: InvitationState | None = None, confirm_invitation_type: InvitationType | None = None) -> ChallengeEvaluatorModel:
-        challenge_evaluator_db = await self.challenge_evaluator_repository.get_challenge_evaluator_by_challenge_id_and_evaluator_id(challenge_id, evaluator_user_id, load_options=ChallengeEvaluatorRepository.LoadOptions(load_challenge=True))
+        challenge_evaluator_db = await self.challenge_evaluator_repository.get_challenge_evaluator_by_challenge_id_and_user_id(challenge_id, evaluator_user_id, load_options=ChallengeEvaluatorRepository.LoadOptions(load_challenge=True))
         if not challenge_evaluator_db:
             raise mglyph_errors.NotFoundError("Challenge Evaluator link", mglyph_errors.ErrorCode.NOT_FOUND_ID)
         if challenge_evaluator_db.challenge.challenge_finished:
@@ -415,6 +415,29 @@ class ChallengeService:
         return challenge_db
 
 
+    async def get_mglyphs_for_evaluation(self, challenge_id: UUID, current_user_id: UUID) -> list[MGlyphEvaluationModel]:
+        challenge_db = await self.challenge_repository.get_challenge_by_id(challenge_id)
+        if not challenge_db:
+            raise mglyph_errors.NotFoundError("Challenge", mglyph_errors.ErrorCode.NOT_FOUND_ID)
+        if challenge_db.challenge_finished:
+            raise mglyph_errors.BadRequestError("Challenge has already ended", mglyph_errors.ErrorCode.BAD_REQUEST_WRONG_STATE)
+        if not challenge_db.submissions_ended:
+            raise mglyph_errors.BadRequestError("Challenge submissions have not ended yet", mglyph_errors.ErrorCode.BAD_REQUEST_WRONG_STATE)
+        challenge_evaluator = await self.challenge_evaluator_repository.get_challenge_evaluator_by_challenge_id_and_user_id(challenge_id, current_user_id)
+        if not challenge_evaluator or challenge_evaluator.invitation_state != InvitationState.confirmed:
+            raise mglyph_errors.NotFoundError("Challenge Evaluator link", mglyph_errors.ErrorCode.NOT_FOUND_ID)
+        last_round = await self.evaluation_round_repository.get_last_round_in_challenge(challenge_id)
+        if not last_round:
+            raise mglyph_errors.NotFoundError("Challenge round", mglyph_errors.ErrorCode.NOT_FOUND_ID)
+        mglyph_evaluations = await self.mglyph_evaluation_repository.get_mglyph_evaluations_for_evaluation_round_and_evaluator(
+            last_round.id,
+            challenge_evaluator.id,
+            only_submitted=True,
+            load_options=MGlyphEvaluationRepository.LoadOptions(load_malleable_glyph=True, load_malleable_glyph_creator=True)
+        )
+        return mglyph_evaluations
+
+
     async def evaluate_challenge(self, challenge_id: UUID, current_user_id: UUID, answers: list[CreateAnswerDTO]):
         challenge = await self.challenge_repository.get_challenge_by_id(challenge_id)
         if not challenge:
@@ -426,8 +449,8 @@ class ChallengeService:
         last_round = await self.evaluation_round_repository.get_last_round_in_challenge(challenge_id)
         if not last_round:
             raise mglyph_errors.NotFoundError("Challenge round", mglyph_errors.ErrorCode.NOT_FOUND_ID)
-        challenge_evaluator = await self.challenge_evaluator_repository.get_challenge_evaluator_by_challenge_id_and_evaluator_id(challenge_id, current_user_id)
-        if not challenge_evaluator:
+        challenge_evaluator = await self.challenge_evaluator_repository.get_challenge_evaluator_by_challenge_id_and_user_id(challenge_id, current_user_id)
+        if not challenge_evaluator or challenge_evaluator.invitation_state != InvitationState.confirmed:
             raise mglyph_errors.NotFoundError("Challenge Evaluator link", mglyph_errors.ErrorCode.NOT_FOUND_ID)
         try:
             await self.answer_service.bulk_add_answers(answers, challenge_evaluator.id, last_round.id, commit=False)

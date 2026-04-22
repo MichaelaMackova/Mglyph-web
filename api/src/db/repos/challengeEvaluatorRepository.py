@@ -102,7 +102,7 @@ class ChallengeEvaluatorRepository(RepositoryInterface):
         result = await self.db_session.execute(statement)
         return result.scalar_one_or_none()
 
-    async def get_challenge_evaluator_by_challenge_id_and_evaluator_id(self, challenge_id: UUID, evaluator_user_id: UUID, load_options: LoadOptions = LoadOptions()) -> ChallengeEvaluatorModel | None:
+    async def get_challenge_evaluator_by_challenge_id_and_user_id(self, challenge_id: UUID, evaluator_user_id: UUID, load_options: LoadOptions = LoadOptions()) -> ChallengeEvaluatorModel | None:
         statement = select(ChallengeEvaluatorModel).where(
             ChallengeEvaluatorModel.challenge_id == challenge_id,
             ChallengeEvaluatorModel.evaluator_id == evaluator_user_id

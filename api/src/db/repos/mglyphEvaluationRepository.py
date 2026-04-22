@@ -120,6 +120,27 @@ class MGlyphEvaluationRepository(RepositoryInterface):
         return mglyph_evaluations_per_challenge
     
 
+    async def get_mglyph_evaluations_for_evaluation_round_and_evaluator(
+        self,
+        evaluation_round_id: UUID,
+        challenge_evaluator_id: UUID,
+        only_submitted: bool = True,
+        load_options: LoadOptions = LoadOptions()
+    ) -> list[MGlyphEvaluationModel]:
+        select_exec = select(MGlyphEvaluationModel)\
+            .join(MGlyphEvaluatorModel)\
+            .where(
+                MGlyphEvaluationModel.evaluation_round_id == evaluation_round_id,
+                MGlyphEvaluatorModel.challenge_evaluator_id == challenge_evaluator_id
+            )
+        if only_submitted:
+            select_exec = select_exec.join(MalleableGlyphModel, MGlyphEvaluationModel.malleable_glyph_id == MalleableGlyphModel.id)\
+                .where(MalleableGlyphModel.submission_time.is_not(None))
+        select_exec = load_options.add_options_to_statement(select_exec)
+        sql_result = await self.db_session.execute(select_exec)
+        return sql_result.scalars().all()
+
+
     async def bulk_update_score_of_mglyph_evaluations(self, mglyph_evaluation_scores: list[dict], commit: bool = True):
         """
         Args:
