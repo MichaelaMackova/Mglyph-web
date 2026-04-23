@@ -244,6 +244,7 @@ class ChallengeEvaluatorInfoWithEvaluatorDTO(ChallengeEvaluatorInfoBase):
 class AnswerBase(BaseModel):
     first_glyph_value: float
     second_glyph_value: float
+    glyph_distance: float
     answered_symbol: AnsweredSymbol
     time_taken: timedelta
     rotation_type: Optional[RotationType] = None

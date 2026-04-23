@@ -76,7 +76,6 @@ class AnswerService:
         for answer in answers:
             answer_data = answer.model_dump()
             answer_data["is_answer_correct"] = self.__evaluate_answer_correctness(answer)
-            answer_data["glyph_distance"] = abs(answer.first_glyph_value - answer.second_glyph_value)
             if not answer_data["first_glyph_rotation_angle"]:
                 answer_data["first_glyph_rotation_angle"] = 0.0
             if not answer_data["second_glyph_rotation_angle"]:
