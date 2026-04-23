@@ -139,7 +139,6 @@ async function fetchPaginatedData(
     )
     totalPages.value = challengeData.value.total_pages
     currentPage.value = challengeData.value.current_page
-    console.log('Fetched challenge data:', challengeData.value)
   } catch (error) {
     console.error('Error fetching challenge data:', error)
     errorOccurred.value = true

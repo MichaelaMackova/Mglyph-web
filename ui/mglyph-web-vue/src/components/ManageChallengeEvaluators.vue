@@ -226,7 +226,6 @@ async function fetchChallengeEvaluators(
         order_by: orderBy,
       },
     })
-    console.log('Fetched challenge evaluators:', response.data)
     const paginatedEvaluators = PaginatedData.fromAPIResponse(
       response.data,
       ChallengeEvaluatorInfoWithEvaluator.fromAPIResponse,
