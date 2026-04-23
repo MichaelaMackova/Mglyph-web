@@ -456,7 +456,7 @@ class ChallengeService:
             await self.answer_service.bulk_add_answers(answers, challenge_evaluator.id, last_round.id, commit=False)
         except Exception as e:
             await self.db_session.rollback()
-            raise mglyph_errors.BadRequestError(f"Error while adding answers - one or more answers might contain:\na) Mglyph for witch user is not an assigned evaluator;\nb) Mglyph is not assigned to active challenge round;\nc) Mglyph does not exist;\nd) or otherwise invalid data.", mglyph_errors.ErrorCode.BAD_REQUEST_ADD_ANSWERS)
+            raise mglyph_errors.BadRequestError(f"Error while adding answers - one or more answers might contain:\na) Mglyph for which user is not an assigned evaluator;\nb) Mglyph is not assigned to active challenge round;\nc) Mglyph does not exist;\nd) or otherwise invalid data.", mglyph_errors.ErrorCode.BAD_REQUEST_ADD_ANSWERS)
         malleable_glyph_ids = [answer.malleable_glyph_id for answer in answers]
         mglyph_evaluations_calculation_helpers = await self.mglyph_evaluation_repository.get_mglyph_evaluations_score_calculation_helpers(last_round.id, malleable_glyph_ids)
         mglyph_evaluations_scores = [{'id': mglyph_evaluation_id, 'score': calculate_score(answers_grouped_by_distance)} for mglyph_evaluation_id, answers_grouped_by_distance in mglyph_evaluations_calculation_helpers]

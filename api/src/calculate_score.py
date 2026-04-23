@@ -17,8 +17,8 @@ def calculate_score(answers_grouped_by_distance: list[GroupedAnswerInfo], d0: fl
             - count_total (int): The total number of answers in this group
     """
 
-    # Sort the groups by distance (ascending)
-    answers_grouped_by_distance = sorted(answers_grouped_by_distance, key=lambda x: x.distance)
+    # Sort the groups by distance (descending)
+    answers_grouped_by_distance = sorted(answers_grouped_by_distance, key=lambda x: x.distance, reverse=True)
 
     accuracy_per_distance = [ 
         (group.count_correct / group.count_total) if group.count_total > 0 else 0.0
