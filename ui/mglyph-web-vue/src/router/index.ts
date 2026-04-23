@@ -1,6 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
-import ClickerView from '@/views/ClickerView.vue'
 import ChallengesView from '@/views/ChallengesView.vue'
 import MyChallengesView from '@/views/MyChallengesView.vue'
 import ChallengeDetailView from '@/views/ChallengeDetailView.vue'
@@ -8,6 +7,8 @@ import MGlyphDetailView from '@/views/MGlyphDetailView.vue'
 import CreateChallengeView from '@/views/CreateChallengeView.vue'
 import MyInvitesView from '@/views/MyInvitesView.vue'
 import AdminInvitesView from '@/views/AdminInvitesView.vue'
+import ChallengeEvaluationView from '@/views/ChallengeEvaluationView.vue'
+import SelfEvaluationView from '@/views/SelfEvaluationView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -26,6 +27,11 @@ const router = createRouter({
       path: '/challenge/:id',
       name: 'ChallengeDetail',
       component: ChallengeDetailView,
+    },
+    {
+      path: '/challenge/:id/evaluation',
+      name: 'ChallengeEvaluation',
+      component: ChallengeEvaluationView,
     },
     {
       path: '/my-challenges',
@@ -51,6 +57,11 @@ const router = createRouter({
       path: '/admin-invites',
       name: 'AdminInvites',
       component: AdminInvitesView,
+    },
+    {
+      path: '/evaluation',
+      name: 'SelfEvaluation',
+      component: SelfEvaluationView,
     },
     {
       path: '/:catchAll(.*)*',

@@ -1,4 +1,5 @@
 import type { UUID } from 'crypto'
+import { Temporal } from 'temporal-polyfill'
 
 enum ChallengeStateEnum {
   open = 'Submissions Open',
@@ -458,6 +459,40 @@ class ChallengeEvaluatorInfoWithEvaluator extends ChallengeEvaluatorInfoBase {
   }
 }
 
+class EvaluateAnswer {
+  malleable_glyph_id: UUID
+  first_glyph_value: number
+  second_glyph_value: number
+  glyph_distance: number
+  answered_symbol: 'greater' | 'equal' | 'less'
+  time_taken: Temporal.Duration
+  rotation_type?: 'same' | 'different'
+  first_glyph_rotation_angle?: number
+  second_glyph_rotation_angle?: number
+
+  constructor(
+    malleable_glyph_id: UUID,
+    first_glyph_value: number,
+    second_glyph_value: number,
+    glyph_distance: number,
+    answered_symbol: 'greater' | 'equal' | 'less',
+    time_taken: Temporal.Duration,
+    rotation_type?: 'same' | 'different',
+    first_glyph_rotation_angle?: number,
+    second_glyph_rotation_angle?: number,
+  ) {
+    this.first_glyph_value = first_glyph_value
+    this.second_glyph_value = second_glyph_value
+    this.glyph_distance = glyph_distance
+    this.answered_symbol = answered_symbol
+    this.time_taken = time_taken
+    this.rotation_type = rotation_type
+    this.malleable_glyph_id = malleable_glyph_id
+    this.first_glyph_rotation_angle = first_glyph_rotation_angle
+    this.second_glyph_rotation_angle = second_glyph_rotation_angle
+  }
+}
+
 export {
   ChallengeStateEnum,
   ChallengeSimple,
@@ -475,4 +510,5 @@ export {
   InvitationTypeEnum,
   ChallengeEvaluatorInfoWithChallenge,
   ChallengeEvaluatorInfoWithEvaluator,
+  EvaluateAnswer,
 }

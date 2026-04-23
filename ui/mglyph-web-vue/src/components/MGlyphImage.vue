@@ -9,13 +9,17 @@ interface Props {
   imageSrc: string | null
   isLoading?: boolean
   altText?: string
+  showShadow?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
   imageSrc: null,
   isLoading: false,
   altText: "Malleable Glyph Image",
+  showShadow: true
 })
+
+const boxShadowStyle = props.showShadow ? '2px 2px 5px 0 rgba(0, 0, 0, 0.19)' : 'none'
 </script>
 
 <style lang="css" scoped>
@@ -28,7 +32,7 @@ img, .v-skeleton-loader, .v-skeleton-loader::v-deep(.v-skeleton-loader__image) {
   height: auto;
   aspect-ratio: 1/1;
   border-radius: 10%;
-  box-shadow: 2px 2px 5px 0 rgba(0, 0, 0, 0.19);
+  box-shadow: v-bind(boxShadowStyle);
 }
 
 .v-skeleton-loader::v-deep(.v-skeleton-loader__image) {

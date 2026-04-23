@@ -20,12 +20,15 @@ async function fetchPreviewImage() {
   try {
     const response = await fetchZipFileAsArrayBuffer(props.file_id)
     const zipFileContent = await unzip(response.data)
-    imageSrc.value = zipFileContent.images[(zipFileContent.images.length > 20) ? (zipFileContent.images.length - 10) : (zipFileContent.images.length - 1)].blobUrl
-
+    imageSrc.value =
+      zipFileContent.images[
+        zipFileContent.images.length > 20
+          ? zipFileContent.images.length - 10
+          : zipFileContent.images.length - 1
+      ]?.blobUrl || null
   } catch (error) {
     console.error('Error fetching preview image:', error)
-  }
-  finally {
+  } finally {
     isLoading.value = false
   }
 }

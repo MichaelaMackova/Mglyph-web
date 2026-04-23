@@ -11,7 +11,7 @@
         width="max-content"
       />
     </div>
-    <div v-else>
+    <div class="main-bottom-margin" v-else>
       <div class="title-and-state">
         <h1>{{ challengeData.challenge.title }}</h1>
 
@@ -539,9 +539,7 @@ async function onRejectEvaluatorInvitationClick() {
 }
 
 function onStartEvaluatingClick() {
-  console.log('Start evaluating clicked')
-  // TODO:
-  // router.push({ name: 'ChallengeEvaluation', params: { id: router.currentRoute.value.params.id } })
+  router.push({ name: 'ChallengeEvaluation', params: { id: router.currentRoute.value.params.id } })
 }
 
 fetchChallengeData()

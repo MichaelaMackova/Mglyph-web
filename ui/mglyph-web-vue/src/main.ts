@@ -15,12 +15,16 @@ const app = createApp(App)
 import { createPinia } from 'pinia'
 import { useAuthStore } from './store/auth_store'
 import { usePopupStore } from './store/popup_store'
+import { useEvaluationStore } from './store/evaluation_store'
 
 const pinia = createPinia()
 app.use(pinia)
 
 const authStore = useAuthStore()
 await authStore.initializeStoreFromLocalStorage()
+
+const evaluationStore = useEvaluationStore()
+evaluationStore.initializeStoreFromLocalStorage()
 
 const popupStore = usePopupStore()
 
@@ -98,4 +102,4 @@ app.use(vue3GoogleLogin, {
 app.use(router)
 app.mount('#app')
 
-export { authStore, popupStore }
+export { authStore, popupStore, evaluationStore }
