@@ -41,6 +41,6 @@ a:visited {
 }
 
 .main-bottom-margin {
-  margin-bottom: 20px;
+  margin-bottom: 50px;
 }
 </style>

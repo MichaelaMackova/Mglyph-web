@@ -41,6 +41,7 @@ const isVisible = ref<boolean>(true)
   pointer-events: auto;
   overflow: clip;
   width: v-bind('props.width');
+  max-width: 100%;
 
   &.info {
     background-color: #2196f3;

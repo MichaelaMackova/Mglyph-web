@@ -7,7 +7,7 @@
       width="max-content"
     />
   </div>
-  <div v-else>
+  <div v-else class="main-bottom-margin">
     <div v-if="isLoading" class="main-top-margin main-padding">
       <p>Loading evaluation mglyphs... <i class="fa-solid fa-spinner fa-spin-pulse"></i></p>
     </div>
@@ -28,9 +28,12 @@
           width="max-content"
         />
       </div>
-      <div v-else>
-        <EvaluationViewTemplate :mglyphs="evaluationMglyphs" v-model="answersObj.answers" />
-        <!-- TODO: End Evaluation Button -->
+      <div class="evaluation-container" v-else>
+        <EvaluationViewTemplate
+          :mglyphs="evaluationMglyphs"
+          v-model="answersObj.answers"
+          @endEvaluation="onEndEvaluation"
+        />
       </div>
     </div>
   </div>
@@ -99,6 +102,15 @@ async function sendAnswersToServer() {
     )
     // Optionally, you can keep the answers in the array to retry sending later
   }
+}
+
+function onEndEvaluation() {
+  // Send any remaining answers to the server
+  if (answersObj.value.answers.length > 0) {
+    sendAnswersToServer()
+    answersObj.value.answers = [] // Clear answers after sending
+  }
+  router.push({ name: 'ChallengeDetail', params: { id: router.currentRoute.value.params.id } })
 }
 
 watch(answersObj.value, () => {

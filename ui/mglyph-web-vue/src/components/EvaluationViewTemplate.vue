@@ -1,27 +1,44 @@
 <template>
   <div class="main-padding">
     <div v-if="props.mglyphs.length <= 0" class="main-top-margin">
-      <PopupNote message="Hupsík dupsík" type="error" :closable="false" />
+      <PopupNote message="No evaluation mglyphs available." type="error" :closable="false" />
     </div>
-    <div v-else-if="showConfig" class="main-top-margin">
-      Prosím nastavte konfiguraci
-      <!-- TODO: config show -->
+    <div v-else-if="showConfig" class="main-top-margin configuration-container">
+      <PopupNote
+        v-show="showConfigPopup"
+        message="You do not have configured evaluation setting on this device. Please configure the evaluation settings before starting the evaluation."
+        type="warning"
+        width="max-content"
+        :closable="false"
+      />
+      <EvaluationConfiguration @setupComplete="onConfigComplete" />
     </div>
     <div v-else-if="currentGlyphIndex === null" class="main-top-margin">
       Loading... <i class="fas fa-spinner fa-pulse"></i>
     </div>
     <div v-else class="glyph-sort-container main-bottom-margin">
-      <GlyphSortCard
-        :onAnswer="onAnswer"
-        :mglyph1Src="
-          props.mglyphs[currentGlyphIndex || 0]?.file.images[currentGlyphValIndex1 || 0]?.blobUrl ||
-          ''
-        "
-        :mglyph2Src="
-          props.mglyphs[currentGlyphIndex || 0]?.file.images[currentGlyphValIndex2 || 0]?.blobUrl ||
-          ''
-        "
-      />
+      <div class="glyph-sort-content">
+        <button class="config-button" @click="showConfig = true">
+          <i class="fa-solid fa-gear"></i>
+        </button>
+        <GlyphSortCard
+          :onAnswer="onAnswer"
+          :mglyph1Src="
+            props.mglyphs[currentGlyphIndex]?.file.images[currentGlyphValIndex1 || 0]?.blobUrl || ''
+          "
+          :mglyph2Src="
+            props.mglyphs[currentGlyphIndex]?.file.images[currentGlyphValIndex2 || 0]?.blobUrl || ''
+          "
+        />
+        <div class="eval-button-container">
+          <button class="eval-button" @click="onEndEvaluation">
+            <div class="label-with-icon">
+              <span class="label">End Evaluation</span>
+              <span class="icon"><i class="fa-solid fa-arrow-right"></i></span>
+            </div>
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -29,6 +46,7 @@
 <script lang="ts" setup>
 import PopupNote from '@/components/PopupNote.vue'
 import GlyphSortCard from './GlyphSortCard.vue'
+import EvaluationConfiguration from './EvaluationConfiguration.vue'
 import { type ZipFileContent } from '@/services/zip-file-utils'
 import { evaluationStore } from '@/main'
 import { ChallengeGlyph, EvaluateAnswer } from '@/services/types'
@@ -48,8 +66,12 @@ const props = defineProps<Props>()
 const answers = defineModel<EvaluateAnswer[]>({
   required: true,
 })
+const emit = defineEmits<{
+  (e: 'endEvaluation'): void
+}>()
 
-const showConfig = ref<boolean>(/*!evaluationStore.isConfigurationSet()*/ false)
+const showConfig = ref<boolean>(!evaluationStore.isConfigurationSet())
+const showConfigPopup = ref<boolean>(!evaluationStore.isConfigurationSet())
 
 const currentGlyphIndex = ref<number | null>(null)
 const currentGlyphValIndex1 = ref<number | null>(null)
@@ -99,6 +121,18 @@ function saveAnswer(answer: 'greater' | 'equal' | 'less', calculatedDistance: nu
       milliseconds: endTime.value!.getTime() - startTime.value!.getTime(),
     }),
   )
+  if (newAnswer.first_glyph_value == -1 || newAnswer.second_glyph_value == -1) {
+    console.error(
+      'Invalid glyph value(s) for the answer:',
+      newAnswer,
+      'currentGlyph:',
+      currentGlyph,
+      'currentGlyphValIndex1:',
+      currentGlyphValIndex1.value,
+      'currentGlyphValIndex2:',
+      currentGlyphValIndex2.value,
+    ) // TODO: odstranit po debugování
+  }
   answers.value.push(newAnswer)
 }
 
@@ -204,7 +238,6 @@ function getNewGlyphPairValues(
 
   // Get new distance
   // calculate distance if needed
-  // TODO: kontrola jestli se cyklus správně ukončuje
   while (newDistanceIndex > currentHelper.usedComputedDistancesBuffer.length - 1) {
     let smallestDistance =
       currentHelper.usedComputedDistancesBuffer[
@@ -264,10 +297,21 @@ function getClosestIndex(mglyphImages: { glyphValue: number }[], targetDistance:
     : rightIndex
 }
 
+function onConfigComplete() {
+  showConfig.value = false
+  showConfigPopup.value = !evaluationStore.isConfigurationSet()
+}
+
+function onEndEvaluation() {
+  emit('endEvaluation')
+}
+
 watch(
   () => showConfig.value,
   (showConfigValue) => {
-    if (!showConfigValue) {
+    if (showConfigValue) {
+      showConfigPopup.value = !evaluationStore.isConfigurationSet()
+    } else {
       startNewGlyphEvaluation(getNextGlyphs())
     }
   },
@@ -277,8 +321,74 @@ watch(
 
 <style lang="css" scoped>
 .glyph-sort-container {
-  margin-top: 8.5rem;
+  margin-top: 7rem;
   display: flex;
   justify-content: center;
+}
+
+.glyph-sort-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  align-items: flex-start;
+}
+
+.config-button {
+  font-size: 0.9rem;
+  cursor: pointer;
+  border-radius: 12px;
+  padding: 6px;
+  aspect-ratio: 1 / 1;
+  background-color: rgb(var(--md-sys-color-secondary-container, 157, 226, 230));
+  color: rgb(var(--md-sys-color-on-secondary-container, 0, 48, 51));
+  border: 1px solid rgb(var(--md-sys-color-outline, 103, 99, 94));
+  opacity: 0.7;
+
+  &:hover {
+    opacity: 1;
+  }
+}
+
+.eval-button-container {
+  margin-top: 1rem;
+  display: flex;
+  justify-content: flex-end;
+  width: 100%;
+}
+
+.eval-button {
+  font-size: 1.1rem;
+  cursor: pointer;
+  border-radius: 50px;
+  padding: 6px 12px;
+  background-color: rgb(var(--md-sys-color-secondary, 0, 175, 185));
+  color: rgb(var(--md-sys-color-on-secondary, 255, 255, 255));
+  border: none;
+  opacity: 0.8;
+
+  &:hover {
+    opacity: 1;
+  }
+}
+
+.configuration-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2rem;
+  width: 70vw;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.label-with-icon {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  .icon {
+    display: flex;
+    align-items: center;
+  }
 }
 </style>
