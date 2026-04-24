@@ -121,18 +121,6 @@ function saveAnswer(answer: 'greater' | 'equal' | 'less', calculatedDistance: nu
       milliseconds: endTime.value!.getTime() - startTime.value!.getTime(),
     }),
   )
-  if (newAnswer.first_glyph_value == -1 || newAnswer.second_glyph_value == -1) {
-    console.error(
-      'Invalid glyph value(s) for the answer:',
-      newAnswer,
-      'currentGlyph:',
-      currentGlyph,
-      'currentGlyphValIndex1:',
-      currentGlyphValIndex1.value,
-      'currentGlyphValIndex2:',
-      currentGlyphValIndex2.value,
-    ) // TODO: odstranit po debugování
-  }
   answers.value.push(newAnswer)
 }
 
