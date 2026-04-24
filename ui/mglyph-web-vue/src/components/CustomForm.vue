@@ -77,17 +77,15 @@ function submitForm() {
   max-width: max-content;
 }
 
-.v-form::v-deep(.v-field:has(input[required])) {
-  .v-label {
-    padding-inline-end: 8px;
-
-    &::after {
-      position: absolute;
-      content: '*';
-      color: red;
-      top: 0;
-      inset-inline-end: 0; /* to support also RTL direction */
-    }
+.v-form::v-deep(.v-input:has(input[required])) {
+  .v-label::after {
+    position: relative;
+    content: '*';
+    color: red;
+    top: 0;
+    left: 0;
+    padding-left: 2px;
+    inset-inline-end: 0; /* to support also RTL direction */
   }
 }
 </style>
