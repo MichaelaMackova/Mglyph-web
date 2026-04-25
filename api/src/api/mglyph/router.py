@@ -6,7 +6,7 @@ import shutil
 from errors import NotFoundError, BadRequestError, ErrorCode
 from db.pagination import PagedResponse
 
-from api.auth.dependencies import CurrentAdminUserIdDep, CurrentUserIdDep
+from api.auth.dependencies import CurrentAdminUserIdDep, CurrentUserIdDep, CurrentUserIdOrNoneDep
 from api.mglyph.services import MalleableGlyphServiceDep
 
 from api.mglyph.schemas import MGlyphPublicDTO, MGlyphPublicSimpleDTO, MGlyphCreateDTOAsForm, MglyphFilterParamsAsQuery
@@ -45,9 +45,9 @@ async def read_malleable_glyphs(
 
 
 @router.get("/{mglyph_id}")
-async def read_malleable_glyph(mglyph_id: UUID, mglyph_service: MalleableGlyphServiceDep) -> MGlyphPublicDTO:
+async def read_malleable_glyph(mglyph_id: UUID, current_user_id: CurrentUserIdOrNoneDep, mglyph_service: MalleableGlyphServiceDep) -> MGlyphPublicDTO:
     try:
-        mglyph = await mglyph_service.get_malleable_glyph_by_id(mglyph_id)
+        mglyph = await mglyph_service.get_malleable_glyph_by_id(mglyph_id, current_user_id=current_user_id)
     except NotFoundError as e:
         raise NotFoundError.HTTPException(e)
     return MGlyphPublicDTO.from_model(mglyph)
@@ -55,7 +55,7 @@ async def read_malleable_glyph(mglyph_id: UUID, mglyph_service: MalleableGlyphSe
 
 
 
-@router.post("/{mglyph_id}/upload-file")
-async def upload_mglyph_file(mglyph_id: UUID, file: UploadFile, mglyph_service: MalleableGlyphServiceDep):
-    pass
+# @router.post("/{mglyph_id}/upload-file")
+# async def upload_mglyph_file(mglyph_id: UUID, file: UploadFile, mglyph_service: MalleableGlyphServiceDep):
+#     pass
 

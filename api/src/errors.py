@@ -24,6 +24,8 @@ class ErrorCode(IntEnum):
     BAD_REQUEST_REVOKE_LAST_ADMIN = 208 # Specific code for bad request error when trying to revoke admin role from the last remaining admin user
     BAD_REQUEST_WRONG_STATE = 209 # Specific code for bad request error when trying to perform an action that is not allowed in the current state (e.g., trying to join a challenge that is not open for registration)
     BAD_REQUEST_ADD_ANSWERS = 210 # Specific code for bad request error when adding answers fails (e.g., due to database constraints, invalid data, etc.)
+    BAD_REQUEST_CREATE_MGLYPH_NO_CHALLENGE_OR_ROUND = 211 # Specific code for bad request error when trying to submit a malleable glyph for a challenge that does not exist or does not have any evaluation rounds
+    BAD_REQUEST_CREATE_MGLYPH_USER_NOT_SOLVER = 212 # Specific code for bad request error when trying to submit a malleable glyph for a challenge that the user is not a solver in
     # UNAUTHORIZED errors (400-499)
     UNAUTHORIZED_BASE = 400 # Base code for unauthorized errors
     UNAUTHORIZED_INVALID_TOKEN = 401 # Specific code for unauthorized access due to invalid token

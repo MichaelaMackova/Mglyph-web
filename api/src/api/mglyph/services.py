@@ -65,10 +65,12 @@ class MalleableGlyphService:
         self.file_service = file_service
 
 
-    async def get_malleable_glyph_by_id(self, mglyph_id: UUID) -> MalleableGlyphModel:
+    async def get_malleable_glyph_by_id(self, mglyph_id: UUID, current_user_id: UUID | None) -> MalleableGlyphModel:
         db_mglyph = await self.malleable_glyph_repository.get_malleable_glyph_by_id(mglyph_id, load_options=MalleableGlyphRepository.LoadOptions.all_options())
         if not db_mglyph:
             raise mglyph_errors.NotFoundError("Malleable Glyph", mglyph_errors.ErrorCode.NOT_FOUND_ID)
+        if db_mglyph.submission_time is None and db_mglyph.creator_id != current_user_id:
+            raise mglyph_errors.BadRequestError("Malleable Glyph is not submitted yet and can only be accessed by the creator", mglyph_errors.ErrorCode.BAD_REQUEST_WRONG_STATE)
         return db_mglyph
 
     
@@ -77,7 +79,7 @@ class MalleableGlyphService:
             short_name_contains=filters.short_name_contains,
             long_name_contains=filters.long_name_contains,
             creator_id=filters.creator_id,
-            is_submitted=filters.is_submitted
+            is_submitted=True # Only return submitted malleable glyphs in the listing endpoint
         )
         paginated_mglyphs_db = await self.malleable_glyph_repository.get_paginated_malleable_glyphs(filters=filter_params, page=page, size=size)
         return paginated_mglyphs_db
@@ -94,18 +96,18 @@ class MalleableGlyphService:
         
         db_challenge = await self.challenge_repository.get_challenge_by_id(mglyph_create_dto.challenge_id, load_options=ChallengeRepository.LoadOptions(load_solvers=True))
         if not db_challenge:
-            raise mglyph_errors.BadRequestError("Challenge with given ID does not exist")# TODO: mglyph_errors.ErrorCode.BAD_REQUEST_INVALID_REFERENCE)
+            raise mglyph_errors.BadRequestError("Challenge with given ID does not exist", mglyph_errors.ErrorCode.BAD_REQUEST_CREATE_MGLYPH_NO_CHALLENGE_OR_ROUND)
         if not db_challenge.solvers or (db_challenge.solvers and current_user_id not in [solver.id for solver in db_challenge.solvers]):
-            raise mglyph_errors.BadRequestError("User is not a solver in the specified challenge")# TODO: mglyph_errors.ErrorCode.BAD_REQUEST_INVALID_REFERENCE)
+            raise mglyph_errors.BadRequestError("User is not a solver in the specified challenge", mglyph_errors.ErrorCode.BAD_REQUEST_CREATE_MGLYPH_USER_NOT_SOLVER)
         if db_challenge.submissions_ended:
-            raise mglyph_errors.BadRequestError("Submissions for this challenge have ended")# TODO: mglyph_errors.ErrorCode.BAD_REQUEST_INVALID_STATE)
+            raise mglyph_errors.BadRequestError("Submissions for this challenge have ended", mglyph_errors.ErrorCode.BAD_REQUEST_WRONG_STATE)
 
         db_first_eval_round = await self.evaluation_round_repository.get_first_round_in_challenge(challenge_id)  # Check if challenge has at least one evaluation round
         if not db_first_eval_round:
-            raise mglyph_errors.BadRequestError("Challenge has no evaluation rounds")#, mglyph_errors.ErrorCode.BAD_REQUEST_INVALID_REFERENCE)
+            raise mglyph_errors.BadRequestError("Challenge has no evaluation rounds", mglyph_errors.ErrorCode.BAD_REQUEST_CREATE_MGLYPH_NO_CHALLENGE_OR_ROUND)
         
         if await self.malleable_glyph_repository.does_user_have_mglyph_in_challenge(current_user_id, challenge_id):
-            raise mglyph_errors.BadRequestError("User has already submitted a malleable glyph for this challenge")# TODO: , mglyph_errors.ErrorCode.BAD_REQUEST_INVALID_REFERENCE)
+            raise mglyph_errors.BadRequestError("User has already submitted a malleable glyph for this challenge", mglyph_errors.ErrorCode.BAD_REQUEST_ALREADY_DONE)
         
 
         zip_file_db = await self.file_service.create_mglyph_file(zip_file, commit=False)

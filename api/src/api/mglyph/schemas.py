@@ -16,7 +16,6 @@ class MglyphFilterParams(BaseModel):
     short_name_contains: Optional[str] = None
     long_name_contains: Optional[str] = None
     creator_id: Optional[UUID] = None
-    is_submitted: Optional[bool] = None
 
 MglyphFilterParamsAsQuery = Annotated[MglyphFilterParams, Depends()]
 
