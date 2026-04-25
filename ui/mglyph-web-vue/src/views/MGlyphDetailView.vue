@@ -97,7 +97,9 @@
           </v-tabs-window-item>
           <v-tabs-window-item value="code">
             <div class="card-content-container">
-              <div v-if="mglyphData.is_code_public && mglyphData.code">{{ mglyphData.code }}</div>
+              <div v-if="mglyphData.is_code_public && mglyphData.code" class="code">
+                {{ mglyphData.code }}
+              </div>
               <div v-else>
                 <PopupNote
                   message="The code for this malleable glyph is not available."
@@ -210,6 +212,10 @@ fetchGlyphData()
 .glyph-small-image {
   width: 100px;
   aspect-ratio: 1/1;
+}
+
+.code {
+  font-family: 'Courier New', Courier, monospace;
 }
 
 .v-tab {
