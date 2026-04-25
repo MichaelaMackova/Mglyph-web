@@ -365,6 +365,14 @@ class ChallengeService:
         return await self.mglyph_evaluation_repository.get_paginated_mglyph_evaluations_in_challenge_round(last_round.id, only_submitted=True, order_by=order_by, page=page, size=size, load_options=MGlyphEvaluationRepository.LoadOptions(load_malleable_glyph=True, load_malleable_glyph_creator=True))
     
 
+    async def get_user_relationship_to_challenge(self, challenge_id: UUID, user_id: UUID | None) -> dict:
+        user_relationship_to_challenge = await self.challenge_repository.get_user_relationship_for_challenges(user_id=user_id, challenge_ids=[challenge_id])
+        user_relationship = user_relationship_to_challenge.get(challenge_id, None)
+        if user_relationship is None:
+            raise mglyph_errors.NotFoundError("Challenge", mglyph_errors.ErrorCode.NOT_FOUND_ID)
+        return user_relationship
+
+
     async def delete_challenge(self, challenge_id: UUID):
         challenge_db = await self.challenge_repository.get_challenge_by_id(challenge_id)
         if not challenge_db:

@@ -102,6 +102,7 @@ class ChallengeRepository(RepositoryInterface):
                 - value: dict with keys:
                     is_solver: bool
                     has_submitted_mglyph: bool
+                    malleable_glyph_id: UUID | None
                     is_active_evaluator: bool
                     evaluator_state: {invitation_state: InvitationState, invitation_type: InvitationType} | None
                     waiting_for_evaluation: bool
@@ -114,11 +115,16 @@ class ChallengeRepository(RepositoryInterface):
             ))\
             .outerjoin(AnswerModel, AnswerModel.mglyph_evaluator_id == MGlyphEvaluatorModel.id)\
             .where(AnswerModel.id.is_(None)).exists()
-
-        submitted_mglyph_exists_subq = select(MGlyphEvaluationModel.malleable_glyph_id)\
-            .join(EvaluationRoundModel, and_(MGlyphEvaluationModel.evaluation_round_id == EvaluationRoundModel.id, EvaluationRoundModel.challenge_id == ChallengeModel.id, EvaluationRoundModel.sequence_number == 1))\
-            .join(MalleableGlyphModel, and_(MGlyphEvaluationModel.malleable_glyph_id == MalleableGlyphModel.id, MalleableGlyphModel.submission_time.is_not(None), MalleableGlyphModel.creator_id == user_id))\
-            .exists()
+        
+        uploaded_mglyph_subq = select(
+                MGlyphEvaluationModel.malleable_glyph_id,
+                MalleableGlyphModel.submission_time,
+                EvaluationRoundModel.challenge_id
+            )\
+            .select_from(MGlyphEvaluationModel)\
+            .join(EvaluationRoundModel, and_(MGlyphEvaluationModel.evaluation_round_id == EvaluationRoundModel.id, EvaluationRoundModel.sequence_number == 1))\
+            .join(MalleableGlyphModel, and_(MGlyphEvaluationModel.malleable_glyph_id == MalleableGlyphModel.id, MalleableGlyphModel.creator_id == user_id))\
+            .subquery()
         
         select_exec = select(
                         ChallengeModel.id,
@@ -127,8 +133,9 @@ class ChallengeRepository(RepositoryInterface):
                             (ChallengeSolverModel.solver_id == user_id, True),
                             else_=False).label("is_solver"),
                         case(
-                            (submitted_mglyph_exists_subq, True),
+                            (uploaded_mglyph_subq.c.submission_time.is_not(None), True),
                             else_=False).label("has_submitted_mglyph"),
+                        uploaded_mglyph_subq.c.malleable_glyph_id.label("malleable_glyph_id"),
                         case(
                             (user_id is None, False),
                             (and_(ChallengeEvaluatorModel.evaluator_id == user_id, ChallengeEvaluatorModel.invitation_state == InvitationState.confirmed), True),
@@ -139,6 +146,7 @@ class ChallengeRepository(RepositoryInterface):
                             (mglyph_evaluator_without_answer_exists_subq, True),
                             else_=False).label("waiting_for_evaluation")
                     )\
+            .outerjoin(uploaded_mglyph_subq, uploaded_mglyph_subq.c.challenge_id == ChallengeModel.id)\
             .outerjoin(ChallengeSolverModel, and_(ChallengeSolverModel.challenge_id == ChallengeModel.id, ChallengeSolverModel.solver_id == user_id))\
             .outerjoin(ChallengeEvaluatorModel, and_(ChallengeEvaluatorModel.challenge_id == ChallengeModel.id, ChallengeEvaluatorModel.evaluator_id == user_id))\
             .where(ChallengeModel.id.in_(challenge_ids))
@@ -147,10 +155,11 @@ class ChallengeRepository(RepositoryInterface):
         user_relationships = result.all()
 
         user_relationships_per_challenge = {}
-        for challenge_id, is_solver, has_submitted_mglyph, is_active_evaluator, invitation_type, invitation_state, waiting_for_evaluation in user_relationships:
+        for challenge_id, is_solver, has_submitted_mglyph, malleable_glyph_id, is_active_evaluator, invitation_type, invitation_state, waiting_for_evaluation in user_relationships:
             user_relationships_per_challenge[challenge_id] = {
                 "is_solver": is_solver,
                 "has_submitted_mglyph": has_submitted_mglyph,
+                "malleable_glyph_id": malleable_glyph_id,
                 "is_active_evaluator": is_active_evaluator,
                 "evaluator_state": {
                     "invitation_state": invitation_state,

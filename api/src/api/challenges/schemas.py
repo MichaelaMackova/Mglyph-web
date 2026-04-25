@@ -101,7 +101,12 @@ class ChallengePublicSimpleDTO(ChallengeBase):
 class ChallengeUserSolverRelationshipType(Enum):
     NONE = "none"
     REGISTERED = "registered"
+    MGLYPH_UPLOADED = "mglyph_uploaded"
     MGLYPH_SUBMITTED = "mglyph_submitted"
+
+class ChallengeUserSolverRelationship(BaseModel):
+    relationship_type: ChallengeUserSolverRelationshipType
+    malleable_glyph_id: UUID | None
 
 class ChallengeUserEvaluatorRelationshipType(Enum):
     NONE = "none"
@@ -123,14 +128,16 @@ class ChallengeUserEvaluatorRelationship(BaseModel):
 
 
 class ChallengeUserRelationshipDTO(BaseModel):
-    solver_relationship: ChallengeUserSolverRelationshipType
+    solver_relationship: ChallengeUserSolverRelationship
     evaluator_relationship: ChallengeUserEvaluatorRelationship | None
 
     @staticmethod
-    def from_relationship_flags(is_solver: bool, has_submitted_mglyph: bool, is_active_evaluator: bool, evaluator_state: EvaluatorInvitationInfo | None, waiting_for_evaluation: bool) -> "ChallengeUserRelationshipDTO":
+    def from_relationship_flags(is_solver: bool, has_submitted_mglyph: bool, malleable_glyph_id: UUID|None, is_active_evaluator: bool, evaluator_state: EvaluatorInvitationInfo | None, waiting_for_evaluation: bool) -> "ChallengeUserRelationshipDTO":
         if is_solver:
-            if has_submitted_mglyph:
-                solver_relationship = ChallengeUserSolverRelationshipType.MGLYPH_SUBMITTED
+            if malleable_glyph_id is not None:
+                solver_relationship = ChallengeUserSolverRelationshipType.MGLYPH_UPLOADED
+                if has_submitted_mglyph:
+                    solver_relationship = ChallengeUserSolverRelationshipType.MGLYPH_SUBMITTED
             else:
                 solver_relationship = ChallengeUserSolverRelationshipType.REGISTERED
         else:
@@ -157,7 +164,10 @@ class ChallengeUserRelationshipDTO(BaseModel):
                 evaluator_relationship = ChallengeUserEvaluatorRelationshipType.NONE
 
         return ChallengeUserRelationshipDTO(
-            solver_relationship=solver_relationship,
+            solver_relationship=ChallengeUserSolverRelationship(
+                relationship_type=solver_relationship,
+                malleable_glyph_id=malleable_glyph_id
+            ),
             evaluator_relationship=ChallengeUserEvaluatorRelationship(
                 relationship_type=evaluator_relationship,
                 invitation_info=evaluator_state if evaluator_state else None)

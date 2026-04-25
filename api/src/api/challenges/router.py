@@ -62,6 +62,7 @@ async def read_challenges(
             user_relationship=ChallengeUserRelationshipDTO.from_relationship_flags(
                 is_solver=item["user_relationship"]["is_solver"],
                 has_submitted_mglyph=item["user_relationship"]["has_submitted_mglyph"],
+                malleable_glyph_id=item["user_relationship"]["malleable_glyph_id"],
                 is_active_evaluator=item["user_relationship"]["is_active_evaluator"],
                 evaluator_state=EvaluatorInvitationInfo(
                     invitation_type=item["user_relationship"]["evaluator_state"]["invitation_type"],
@@ -97,6 +98,7 @@ async def read_challenges_where_user_is_participant(
             user_relationship=ChallengeUserRelationshipDTO.from_relationship_flags(
                 is_solver=item["user_relationship"]["is_solver"],
                 has_submitted_mglyph=item["user_relationship"]["has_submitted_mglyph"],
+                malleable_glyph_id=item["user_relationship"]["malleable_glyph_id"],
                 is_active_evaluator=item["user_relationship"]["is_active_evaluator"],
                 evaluator_state=EvaluatorInvitationInfo(
                     invitation_type=item["user_relationship"]["evaluator_state"]["invitation_type"],
@@ -158,6 +160,7 @@ async def read_challenge(challenge_id: UUID, current_user_id: CurrentUserIdOrNon
         user_relationship=ChallengeUserRelationshipDTO.from_relationship_flags(
                 is_solver=user_relationship["is_solver"],
                 has_submitted_mglyph=user_relationship["has_submitted_mglyph"],
+                malleable_glyph_id=user_relationship["malleable_glyph_id"],
                 is_active_evaluator=user_relationship["is_active_evaluator"],
                 evaluator_state=EvaluatorInvitationInfo(
                     invitation_type=user_relationship["evaluator_state"]["invitation_type"],
@@ -168,9 +171,29 @@ async def read_challenge(challenge_id: UUID, current_user_id: CurrentUserIdOrNon
         )
 
 
-@router.patch("/{challenge_id}")
-def update_challenge(challenge_id: UUID):
-    pass
+# @router.patch("/{challenge_id}")
+# def update_challenge(challenge_id: UUID):
+#     pass
+
+
+@router.get("/{challenge_id}/user-relationship")
+async def get_user_relationship_to_challenge(
+    challenge_id: UUID,
+    current_user_id: CurrentUserIdOrNoneDep,
+    challenge_service: ChallengeServiceDep
+) -> ChallengeUserRelationshipDTO:
+    user_relationship = await challenge_service.get_user_relationship_to_challenge(challenge_id, current_user_id)
+    return ChallengeUserRelationshipDTO.from_relationship_flags(
+                is_solver=user_relationship["is_solver"],
+                has_submitted_mglyph=user_relationship["has_submitted_mglyph"],
+                malleable_glyph_id=user_relationship["malleable_glyph_id"],
+                is_active_evaluator=user_relationship["is_active_evaluator"],
+                evaluator_state=EvaluatorInvitationInfo(
+                    invitation_type=user_relationship["evaluator_state"]["invitation_type"],
+                    invitation_state=user_relationship["evaluator_state"]["invitation_state"])
+                    if user_relationship["evaluator_state"] else None,
+                waiting_for_evaluation=user_relationship["waiting_for_evaluation"]
+            )
 
 
 @router.get("/{challenge_id}/glyphs")
