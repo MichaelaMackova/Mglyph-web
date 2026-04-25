@@ -47,10 +47,15 @@ async def read_malleable_glyphs(
 @router.get("/{mglyph_id}")
 async def read_malleable_glyph(mglyph_id: UUID, current_user_id: CurrentUserIdOrNoneDep, mglyph_service: MalleableGlyphServiceDep) -> MGlyphPublicDTO:
     try:
-        mglyph = await mglyph_service.get_malleable_glyph_by_id(mglyph_id, current_user_id=current_user_id)
+        mglyph = await mglyph_service.get_malleable_glyph_by_id(mglyph_id, current_user_id=UUID(current_user_id) if current_user_id else None)
     except NotFoundError as e:
         raise NotFoundError.HTTPException(e)
     return MGlyphPublicDTO.from_model(mglyph)
+
+
+@router.post("/{mglyph_id}/submit", status_code=status.HTTP_200_OK, response_description="Malleable Glyph submitted successfully")
+async def submit_mglyph(mglyph_id: UUID, current_user_id: CurrentUserIdDep, mglyph_service: MalleableGlyphServiceDep):
+    await mglyph_service.submit_malleable_glyph(mglyph_id, UUID(current_user_id))
 
 
 

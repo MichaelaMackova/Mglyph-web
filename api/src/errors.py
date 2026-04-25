@@ -35,6 +35,7 @@ class ErrorCode(IntEnum):
     # FORBIDDEN errors (500-599)
     FORBIDDEN_BASE = 500 # Base code for forbidden errors
     FORBIDDEN_NOT_ADMIN = 501 # Specific code for forbidden access due to lack of admin privileges
+    FORBIDDEN_NOT_CREATOR = 502 # Specific code for forbidden access due to user not being the creator of a resource (e.g., trying to submit a malleable glyph that the user did not create)
     # SERVER errors (600-699)
     SERVER_ERROR_BASE = 600 # Base code for server errors
     SERVER_ERROR_FILE_SAVE_FAILED = 601 # Specific code for server error when saving a file fails (e.g., due to file system issues, permission issues, etc.)

@@ -7,6 +7,7 @@ from uuid import UUID
 from datetime import datetime
 import errors as mglyph_errors
 from db.pagination import PagedResponse
+from utils import get_current_utc_time
 # Models
 from db.models.malleableGlyphModel import MalleableGlyphModel
 from db.models.mglyphEvaluationModel import MGlyphEvaluationModel
@@ -130,6 +131,23 @@ class MalleableGlyphService:
         return db_mglyph
     
 
+    async def submit_malleable_glyph(self, mglyph_id: UUID, current_user_id: UUID):
+        db_mglyph = await self.malleable_glyph_repository.get_malleable_glyph_by_id(mglyph_id, load_options=MalleableGlyphRepository.LoadOptions(load_evaluation_challenge=True, load_mglyph_evaluation_links=True))
+        if not db_mglyph:
+            raise mglyph_errors.NotFoundError("Malleable Glyph", mglyph_errors.ErrorCode.NOT_FOUND_ID)
+        if db_mglyph.creator_id != current_user_id:
+            raise mglyph_errors.ForbiddenError("Only the creator of the malleable glyph can submit it.", mglyph_errors.ErrorCode.FORBIDDEN_NOT_CREATOR)
+        if db_mglyph.submission_time is not None:
+            raise mglyph_errors.BadRequestError("Malleable Glyph has already been submitted", mglyph_errors.ErrorCode.BAD_REQUEST_ALREADY_DONE)
+        
+        challenge = db_mglyph.mglyph_evaluation_links[0].evaluation_round.challenge
+        if challenge.submissions_ended:
+            raise mglyph_errors.BadRequestError("Submissions for this challenge have ended", mglyph_errors.ErrorCode.BAD_REQUEST_WRONG_STATE)
+
+        db_mglyph.submission_time = get_current_utc_time()
+        self.db_session.add(db_mglyph)
+        await self.db_session.commit()
+        
 
     
 

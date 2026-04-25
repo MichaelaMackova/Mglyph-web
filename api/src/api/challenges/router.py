@@ -151,7 +151,7 @@ async def get_my_challenge_evaluator_invites(
              })
 async def read_challenge(challenge_id: UUID, current_user_id: CurrentUserIdOrNoneDep, challenge_service: ChallengeServiceDep) -> ChallengePublicDTO:
     try:
-        challenge, user_relationship = await challenge_service.get_challenge_by_id_with_user_relationship(challenge_id, current_user_id)
+        challenge, user_relationship = await challenge_service.get_challenge_by_id_with_user_relationship(challenge_id, UUID(current_user_id) if current_user_id else None)
     except NotFoundError as e:
         raise NotFoundError.HTTPException(e)
     
@@ -182,7 +182,7 @@ async def get_user_relationship_to_challenge(
     current_user_id: CurrentUserIdOrNoneDep,
     challenge_service: ChallengeServiceDep
 ) -> ChallengeUserRelationshipDTO:
-    user_relationship = await challenge_service.get_user_relationship_to_challenge(challenge_id, current_user_id)
+    user_relationship = await challenge_service.get_user_relationship_to_challenge(challenge_id, UUID(current_user_id) if current_user_id else None)
     return ChallengeUserRelationshipDTO.from_relationship_flags(
                 is_solver=user_relationship["is_solver"],
                 has_submitted_mglyph=user_relationship["has_submitted_mglyph"],
