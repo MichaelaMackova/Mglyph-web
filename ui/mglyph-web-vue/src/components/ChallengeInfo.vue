@@ -23,7 +23,10 @@
 
     <div class="state-and-user-info">
       <SolverIcon
-        v-show="props.user_solver_relationship && props.user_solver_relationship !== 'none'"
+        v-show="
+          props.user_solver_relationship &&
+          props.user_solver_relationship !== ChallengeUserSolverRelationshipType.none
+        "
       />
       <EvaluatorIcon v-show="isActiveEvaluator()" />
       <ChallengeState :state="props.state" />

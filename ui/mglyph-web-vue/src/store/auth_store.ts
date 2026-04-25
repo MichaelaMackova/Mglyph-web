@@ -2,9 +2,10 @@ import { defineStore } from 'pinia'
 import { mglyphClient } from '@/clients/mglyph_client'
 import { jwtDecode, type JwtPayload } from 'jwt-decode'
 import { ref } from 'vue'
+import type { UUID } from 'crypto'
 
 class LoggedUser {
-  id: number
+  id: UUID
   username: string
   email: string
   role: string
@@ -12,7 +13,7 @@ class LoggedUser {
   picture_url: string | null
 
   constructor(
-    id: number,
+    id: UUID,
     username: string,
     email: string,
     role: string = 'user',

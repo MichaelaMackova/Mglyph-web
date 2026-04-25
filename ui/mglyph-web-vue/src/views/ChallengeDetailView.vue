@@ -107,7 +107,8 @@
           <button
             v-if="
               challengeData.challenge.state === ChallengeStateEnum.open &&
-              challengeData.user_relationship!.user_solver_relationship! ===
+              challengeData.user_relationship?.user_solver_relationship &&
+              challengeData.user_relationship.user_solver_relationship.relationship_type ===
                 ChallengeUserSolverRelationshipType.registered
             "
             class="user-button"
@@ -118,17 +119,36 @@
               <span class="icon"><i class="fa-solid fa-upload"></i></span>
             </div>
           </button>
-          <!-- TODO: check if it works properly and find glyph -->
-          <!-- <button
-              v-if="
-              challengeData.challenge.state === ChallengeStateEnum.open &&
-                challengeData.user_relationship!.user_solver_relationship! ===
-                ChallengeUserSolverRelationshipType.mglyph_submitted
-              "
-              class="user-button"
-            >
-              Show My Malleable Glyph
-            </button> -->
+          <button
+            v-if="challengeData.user_relationship?.user_solver_relationship?.malleable_glyph_id"
+            class="user-button"
+            @click="
+              () => {
+                router.push({
+                  name: 'MGlyphDetail',
+                  params: {
+                    id: challengeData!.user_relationship!.user_solver_relationship!
+                      .malleable_glyph_id,
+                  },
+                })
+              }
+            "
+          >
+            <div class="label-with-icon">
+              <span class="label">
+                Show My Malleable Glyph
+                <span
+                  class="not-submitted"
+                  v-if="
+                    challengeData.user_relationship.user_solver_relationship.relationship_type !==
+                    ChallengeUserSolverRelationshipType.mglyph_submitted
+                  "
+                  >(!NOT SUBMITTED!)</span
+                >
+              </span>
+              <span class="icon"><i title="Participant" class="fa-solid fa-shapes"></i></span>
+            </div>
+          </button>
           <button
             v-if="
               !isActiveUserEvaluator() &&
@@ -351,8 +371,8 @@ async function fetchPaginatedGlyphsData(
 
 function isUserSolver(): boolean {
   return (
-    (challengeData.value?.user_relationship?.user_solver_relationship &&
-      challengeData.value?.user_relationship?.user_solver_relationship !==
+    (challengeData.value?.user_relationship?.user_solver_relationship?.relationship_type &&
+      challengeData.value.user_relationship.user_solver_relationship.relationship_type !==
         ChallengeUserSolverRelationshipType.none) ||
     false
   )
@@ -673,6 +693,10 @@ fetchChallengeData()
     display: flex;
     align-items: center;
   }
+}
+
+.not-submitted {
+  color: rgb(var(--md-sys-color-error, 186, 26, 26));
 }
 
 .glyph-table {

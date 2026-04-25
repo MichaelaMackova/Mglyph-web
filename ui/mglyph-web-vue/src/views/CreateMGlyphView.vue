@@ -216,7 +216,6 @@ async function submitForm(isFormValid: boolean | null): Promise<void> {
   }
 
   try {
-    console.log('Submitting form')
     const response = await createMGlyph()
     popupStore.addPopup(
       `Malleable Glyph "${response.data.long_name}" created successfully!`,

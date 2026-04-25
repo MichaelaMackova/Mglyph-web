@@ -33,7 +33,9 @@
           :end_time="challenge_info.challenge.evaluation_deadline"
           :state="challenge_info.challenge.state"
           :challengeGlyphs="challenge_info.glyphs"
-          :user_solver_relationship="challenge_info.user_relationship?.user_solver_relationship"
+          :user_solver_relationship="
+            challenge_info.user_relationship?.user_solver_relationship?.relationship_type
+          "
           :user_evaluator_relationship="
             challenge_info.user_relationship?.user_evaluator_relationship
           "

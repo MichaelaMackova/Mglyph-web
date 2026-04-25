@@ -96,6 +96,7 @@ class FilterOption {
 enum ChallengeUserSolverRelationshipType {
   none = 'none',
   registered = 'registered',
+  mglyph_uploaded = 'mglyph_uploaded',
   mglyph_submitted = 'mglyph_submitted',
 }
 
@@ -106,8 +107,20 @@ function getChallengeUserSolverRelationshipTypeFromString(
     return ChallengeUserSolverRelationshipType.registered
   } else if (relationship === 'mglyph_submitted') {
     return ChallengeUserSolverRelationshipType.mglyph_submitted
+  } else if (relationship === 'mglyph_uploaded') {
+    return ChallengeUserSolverRelationshipType.mglyph_uploaded
   } else {
     return ChallengeUserSolverRelationshipType.none
+  }
+}
+
+class ChallengeUserSolverRelationship {
+  relationship_type: ChallengeUserSolverRelationshipType
+  malleable_glyph_id?: UUID
+
+  constructor(relationship_type: ChallengeUserSolverRelationshipType, malleable_glyph_id?: UUID) {
+    this.relationship_type = relationship_type
+    this.malleable_glyph_id = malleable_glyph_id
   }
 }
 
@@ -148,7 +161,7 @@ class ChallengeMiniDetail {
   challenge: ChallengeSimple
   glyphs: ChallengeGlyph[]
   user_relationship: {
-    user_solver_relationship?: ChallengeUserSolverRelationshipType
+    user_solver_relationship?: ChallengeUserSolverRelationship
     user_evaluator_relationship?: ChallengeUserEvaluatorRelationshipType
   } | null
 
@@ -156,7 +169,7 @@ class ChallengeMiniDetail {
     challenge: ChallengeSimple,
     glyphs: ChallengeGlyph[],
     user_relationship: {
-      user_solver_relationship?: ChallengeUserSolverRelationshipType
+      user_solver_relationship?: ChallengeUserSolverRelationship
       user_evaluator_relationship?: ChallengeUserEvaluatorRelationshipType
     } | null,
   ) {
@@ -178,8 +191,11 @@ class ChallengeMiniDetail {
       return ChallengeGlyph.fromAPIResponse(glyph)
     })
     const user_relationship = {
-      user_solver_relationship: getChallengeUserSolverRelationshipTypeFromString(
-        apiResponse.user_relationship?.solver_relationship ?? 'none',
+      user_solver_relationship: new ChallengeUserSolverRelationship(
+        getChallengeUserSolverRelationshipTypeFromString(
+          apiResponse.user_relationship?.solver_relationship.relationship_type ?? 'none',
+        ),
+        apiResponse.user_relationship?.solver_relationship.malleable_glyph_id,
       ),
       user_evaluator_relationship: getChallengeUserEvaluatorRelationshipTypeFromString(
         apiResponse.user_relationship?.evaluator_relationship?.relationship_type ?? 'none',
@@ -192,14 +208,14 @@ class ChallengeMiniDetail {
 class ChallengeDetail {
   challenge: ChallengeSimple
   user_relationship: {
-    user_solver_relationship?: ChallengeUserSolverRelationshipType
+    user_solver_relationship?: ChallengeUserSolverRelationship
     user_evaluator_relationship?: ChallengeUserEvaluatorRelationshipType
   } | null
 
   constructor(
     challenge: ChallengeSimple,
     user_relationship: {
-      user_solver_relationship?: ChallengeUserSolverRelationshipType
+      user_solver_relationship?: ChallengeUserSolverRelationship
       user_evaluator_relationship?: ChallengeUserEvaluatorRelationshipType
     } | null,
   ) {
@@ -220,8 +236,11 @@ class ChallengeDetail {
       apiResponse.state,
     )
     const user_relationship = {
-      user_solver_relationship: getChallengeUserSolverRelationshipTypeFromString(
-        apiResponse.user_relationship?.solver_relationship ?? 'none',
+      user_solver_relationship: new ChallengeUserSolverRelationship(
+        getChallengeUserSolverRelationshipTypeFromString(
+          apiResponse.user_relationship?.solver_relationship.relationship_type ?? 'none',
+        ),
+        apiResponse.user_relationship?.solver_relationship.malleable_glyph_id,
       ),
       user_evaluator_relationship: getChallengeUserEvaluatorRelationshipTypeFromString(
         apiResponse.user_relationship?.evaluator_relationship?.relationship_type ?? 'none',
@@ -272,7 +291,7 @@ class MGlyphDetail {
   short_name: string
   long_name: string
   last_updated: Date
-  submission_time: Date
+  submission_time: Date | null
   file_id: UUID
   author: User
   code: string | null
@@ -285,7 +304,7 @@ class MGlyphDetail {
     short_name: string,
     long_name: string,
     last_updated: Date,
-    submission_time: Date,
+    submission_time: Date | null,
     file_id: UUID,
     author: User,
     code: string | null,
@@ -312,7 +331,7 @@ class MGlyphDetail {
       apiResponse.short_name,
       apiResponse.long_name,
       new Date(apiResponse.last_updated_time),
-      new Date(apiResponse.submission_time),
+      apiResponse.submission_time ? new Date(apiResponse.submission_time) : null,
       apiResponse.zip_file_id,
       new User(apiResponse.creator.id, apiResponse.creator.username),
       apiResponse.code,
@@ -502,6 +521,7 @@ export {
   PaginatedData,
   FilterOption,
   ChallengeUserSolverRelationshipType,
+  ChallengeUserSolverRelationship,
   ChallengeUserEvaluatorRelationshipType,
   ChallengeDetail,
   MGlyphDetail,

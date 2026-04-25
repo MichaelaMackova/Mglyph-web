@@ -5,6 +5,14 @@
     </div>
     <div v-else-if="errorOccurred || !mglyphData" class="main-top-margin main-bottom-margin">
       <PopupNote
+        v-if="forbidden"
+        message="You do not have permission to see this glyph."
+        type="error"
+        :closable="false"
+        width="max-content"
+      />
+      <PopupNote
+        v-else
         message="An error occurred while fetching glyph data. Please try again later."
         type="error"
         :closable="false"
@@ -34,7 +42,12 @@
           }}</RouterLink>
         </div>
         <div class="info-piece">
-          <span class="label">Submitted:</span> {{ mglyphData.submission_time.toLocaleString() }}
+          <span class="label">Submitted:</span>
+          {{
+            mglyphData.submission_time
+              ? mglyphData.submission_time.toLocaleString()
+              : 'Not yet submitted'
+          }}
         </div>
         <div class="info-piece">
           <span class="label">Score:</span>
@@ -44,6 +57,17 @@
               : 'N/A'
           }}
         </div>
+      </div>
+
+      <div
+        class="button-container"
+        v-if="
+          authStore.user &&
+          authStore.user.id === mglyphData.author.id &&
+          !mglyphData.submission_time
+        "
+      >
+        <button class="submit-button" :disabled="false" @click="onSubmitInChallenge">Submit Glyph</button> <!-- TODO: disabled on challenge not in submission state -->
       </div>
 
       <div class="cards-container">
@@ -127,6 +151,7 @@ import { MGlyphDetail } from '@/services/types'
 import { fetchZipFileAsArrayBuffer, unzip, type ZipFileContent } from '@/services/zip-file-utils'
 import { useRouter } from 'vue-router'
 import { ref } from 'vue'
+import { authStore, popupStore } from '@/main'
 const router = useRouter()
 
 const currentTab = ref<'static' | 'dynamic' | 'code'>('static')
@@ -134,6 +159,7 @@ const isLoading = ref<boolean>(true)
 const errorOccurred = ref<boolean>(false)
 const isLoadingZip = ref<boolean>(true)
 const errorOccurredZip = ref<boolean>(false)
+const forbidden = ref<boolean>(false)
 
 const mglyphData = ref<MGlyphDetail | null>(null)
 const mglyphZipFile = ref<ZipFileContent | null>(null)
@@ -143,9 +169,10 @@ async function fetchGlyphData() {
   errorOccurred.value = false
   isLoadingZip.value = true
   errorOccurredZip.value = false
+  forbidden.value = false
   try {
     const response = await mglyphClient.get(`/mglyph/${router.currentRoute.value.params.id}`, {
-      authorizeEndpoint: false,
+      authorizeEndpoint: authStore.user ? true : false,
     })
     mglyphData.value = MGlyphDetail.fromAPIResponse(response.data)
 
@@ -156,13 +183,46 @@ async function fetchGlyphData() {
       console.error('Error fetching or unzipping glyph zip file:', zipError)
       errorOccurredZip.value = true
     }
-  } catch (error) {
-    console.error('Error fetching glyph data:', error)
+  } catch (error: any) {
     errorOccurred.value = true
     errorOccurredZip.value = true
+    if (error.response && error.response.data && error.response.data.err_code) {
+      if (error.response.data.err_code === 209) {
+        forbidden.value = true
+        return
+      }
+    }
+    console.error('Error fetching glyph data:', error)
   } finally {
     isLoading.value = false
     isLoadingZip.value = false
+  }
+}
+
+async function onSubmitInChallenge() {
+  const confirm = window.confirm(
+    'Are you sure you want to submit this glyph to the challenge? This action cannot be undone.',
+  )
+
+  if (!confirm) {
+    return
+  }
+
+  try {
+    await mglyphClient.post(
+      `/mglyph/${router.currentRoute.value.params.id}/submit`,
+      {},
+      {
+        authorizeEndpoint: true,
+      },
+    )
+    fetchGlyphData()
+  } catch (error) {
+    console.error('Error submitting glyph to challenge:', error)
+    popupStore.addPopup(
+      'An error occurred while submitting the glyph to the challenge. Please try again later.',
+      popupStore.PopupTypeEnum.error,
+    )
   }
 }
 
@@ -188,6 +248,36 @@ fetchGlyphData()
   .label {
     font-weight: bold;
     margin-right: 4px;
+  }
+}
+
+.button-container {
+  margin: 20px 0;
+  display: flex;
+  justify-content: center;
+}
+
+.submit-button {
+  background-color: rgb(var(--md-sys-color-secondary, 0, 175, 185));
+  color: rgb(var(--md-sys-color-on-secondary, 255, 255, 255));
+  border: none;
+  padding: 8px 16px;
+  border-radius: 500px;
+  cursor: pointer;
+  font-size: 1rem;
+
+  &:hover {
+    background-color: color-mix(
+      in srgb,
+      rgb(var(--md-sys-color-secondary, 0, 175, 185)),
+      rgb(var(--md-sys-color-on-secondary, 255, 255, 255)) 10%
+    );
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    -webkit-filter: grayscale(1);
+    opacity: 0.5;
   }
 }
 
