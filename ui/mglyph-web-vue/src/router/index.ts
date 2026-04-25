@@ -9,6 +9,7 @@ import MyInvitesView from '@/views/MyInvitesView.vue'
 import AdminInvitesView from '@/views/AdminInvitesView.vue'
 import ChallengeEvaluationView from '@/views/ChallengeEvaluationView.vue'
 import SelfEvaluationView from '@/views/SelfEvaluationView.vue'
+import CreateMGlyphView from '@/views/CreateMGlyphView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -32,6 +33,11 @@ const router = createRouter({
       path: '/challenge/:id/evaluation',
       name: 'ChallengeEvaluation',
       component: ChallengeEvaluationView,
+    },
+    {
+      path: '/challenge/:id/create-mglyph',
+      name: 'CreateMGlyph',
+      component: CreateMGlyphView,
     },
     {
       path: '/my-challenges',

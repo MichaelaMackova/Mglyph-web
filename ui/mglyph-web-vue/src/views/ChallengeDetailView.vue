@@ -479,9 +479,7 @@ async function onParticipantSignUpClick() {
 }
 
 function onUploadGlyphClick() {
-  console.log('Upload glyph clicked')
-  // TODO:
-  // router.push({ name: 'MGlyphUpload', params: { challengeId: router.currentRoute.value.params.id } })
+  router.push({ name: 'CreateMGlyph', params: { id: router.currentRoute.value.params.id } })
 }
 
 async function onEvaluatorSignUpClick() {

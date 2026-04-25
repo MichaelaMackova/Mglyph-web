@@ -44,7 +44,10 @@ import {
   VSlider,
   VForm,
   VTextField,
+  VTextarea,
   VAutocomplete,
+  VSwitch,
+  VFileInput,
 } from 'vuetify/components'
 
 const minimalTheme = {
@@ -79,7 +82,10 @@ const vuetify = createVuetify({
     VSlider,
     VForm,
     VTextField,
+    VTextarea,
     VAutocomplete,
+    VSwitch,
+    VFileInput,
   },
   theme: {
     defaultTheme: 'minimalTheme',
