@@ -10,6 +10,7 @@ import AdminInvitesView from '@/views/AdminInvitesView.vue'
 import ChallengeEvaluationView from '@/views/ChallengeEvaluationView.vue'
 import SelfEvaluationView from '@/views/SelfEvaluationView.vue'
 import CreateMGlyphView from '@/views/CreateMGlyphView.vue'
+import AdminPrivilegesView from '@/views/AdminPrivilegesView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -63,6 +64,11 @@ const router = createRouter({
       path: '/admin-invites',
       name: 'AdminInvites',
       component: AdminInvitesView,
+    },
+    {
+      path: '/admin-privileges',
+      name: 'AdminPrivileges',
+      component: AdminPrivilegesView,
     },
     {
       path: '/evaluation',

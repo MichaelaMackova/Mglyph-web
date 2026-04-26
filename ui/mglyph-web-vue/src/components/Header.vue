@@ -59,6 +59,11 @@
             ><span ref="adminInvitesLinkRef">Admin invites</span></RouterLink
           >
         </li>
+        <li v-if="authStore.user?.role === 'admin'">
+          <RouterLink :to="{ name: 'AdminPrivileges' }"
+            ><span ref="adminPrivilegesLinkRef">Admin privileges</span></RouterLink
+          >
+        </li>
         <hr />
         <li @click="toggleTheme">
           <span v-show="currentTheme === 'light'"><i class="fa-solid fa-moon"></i> Dark</span>
