@@ -96,9 +96,10 @@ AnswerServiceDep = Annotated[AnswerService, Depends(get_answer_service)]
 
 
 class ChallengeEvaluatorService:
-    def __init__(self, db_session: AsyncSession, challenge_evaluator_repository: ChallengeEvaluatorRepository):
+    def __init__(self, db_session: AsyncSession, challenge_evaluator_repository: ChallengeEvaluatorRepository, evaluation_round_repository: EvaluationRoundRepository):
         self.db_session = db_session
         self.challenge_evaluator_repository = challenge_evaluator_repository
+        self.evaluation_round_repository = evaluation_round_repository
 
 
     async def change_invitation_state_of_challenge_evaluator(self, challenge_id: UUID, evaluator_user_id: UUID, new_state: InvitationState, confirm_old_state: InvitationState | None = None, confirm_invitation_type: InvitationType | None = None) -> ChallengeEvaluatorModel:
@@ -113,6 +114,9 @@ class ChallengeEvaluatorService:
             raise mglyph_errors.BadRequestError("Challenge Evaluator state does not match", mglyph_errors.ErrorCode.BAD_REQUEST_WRONG_STATE)
         challenge_evaluator_db.invitation_state = new_state
         self.db_session.add(challenge_evaluator_db)
+        if new_state == InvitationState.confirmed and challenge_evaluator_db.challenge.submissions_ended:
+            last_round = await self.evaluation_round_repository.get_last_round_in_challenge(challenge_id)
+            await self.challenge_evaluator_repository.assign_random_mglyphs_to_evaluator(challenge_evaluator_db.id, last_round.id, max_num_mglyphs=3, commit=False)
         await self.db_session.commit()
         return challenge_evaluator_db
 
@@ -153,8 +157,8 @@ class ChallengeEvaluatorService:
         )
         return paged_challenge_evaluators
 
-def get_challenge_evaluator_service(db_session: SessionDep, challenge_evaluator_repository: ChallengeEvaluatorRepositoryDep):
-    return ChallengeEvaluatorService(db_session, challenge_evaluator_repository)
+def get_challenge_evaluator_service(db_session: SessionDep, challenge_evaluator_repository: ChallengeEvaluatorRepositoryDep, evaluation_round_repository: EvaluationRoundRepositoryDep):
+    return ChallengeEvaluatorService(db_session, challenge_evaluator_repository, evaluation_round_repository)
 
 ChallengeEvaluatorServiceDep = Annotated[ChallengeEvaluatorService, Depends(get_challenge_evaluator_service)]
 

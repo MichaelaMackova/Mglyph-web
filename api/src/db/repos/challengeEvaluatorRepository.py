@@ -2,7 +2,7 @@ from typing import Annotated
 from fastapi import Depends
 from db.database import SessionDep
 from sqlalchemy.ext.asyncio.session import AsyncSession
-from sqlmodel import select, case
+from sqlmodel import select, case, insert, func, literal_column
 from sqlalchemy import Select
 from sqlalchemy.orm import selectinload, joinedload, aliased
 from uuid import UUID
@@ -13,6 +13,9 @@ from db.pagination import paginate, PaginationParams, PagedResponse
 from db.models.challengeEvaluatorModel import ChallengeEvaluatorModel, InvitationType, InvitationState
 from db.models.challengeModel import ChallengeModel
 from db.models.userModel import UserModel
+from db.models.mglyphEvaluationModel import MGlyphEvaluationModel
+from db.models.malleableGlyphModel import MalleableGlyphModel
+from db.models.mglyphEvaluatorModel import MGlyphEvaluatorModel
 
 
 
@@ -128,6 +131,42 @@ class ChallengeEvaluatorRepository(RepositoryInterface):
         pagination_params = PaginationParams(page=page, size=size)
         result = await paginate(self.db_session, statement, ChallengeEvaluatorModel, pagination_params)
         return result
+
+    async def assign_random_mglyphs_to_evaluator(self, challenge_evaluator_id: UUID, challenge_round: UUID, max_num_mglyphs: int, commit: bool = True):
+        # Get evaluator count for each mglyph_evaluation
+        mglyph_evaluators_counts_subq = select(
+                MGlyphEvaluationModel.id,
+                func.count(MGlyphEvaluatorModel.id).label("evaluator_count")
+            )\
+            .outerjoin(MGlyphEvaluatorModel, MGlyphEvaluatorModel.mglyph_evaluation_id == MGlyphEvaluationModel.id)\
+            .where(MGlyphEvaluationModel.evaluation_round_id == challenge_round)\
+            .group_by(MGlyphEvaluationModel.id)\
+            .subquery()
+
+        mglyphs_to_evaluate_subq = select(
+                MGlyphEvaluationModel.id
+            )\
+            .join(MalleableGlyphModel, MGlyphEvaluationModel.malleable_glyph_id == MalleableGlyphModel.id)\
+            .join(mglyph_evaluators_counts_subq, mglyph_evaluators_counts_subq.c.id == MGlyphEvaluationModel.id)\
+            .where(
+                MGlyphEvaluationModel.evaluation_round_id == challenge_round,
+                MalleableGlyphModel.submission_time.is_not(None)
+            )\
+            .order_by(mglyph_evaluators_counts_subq.c.evaluator_count, func.random())\
+            .limit(max_num_mglyphs)\
+            .subquery()
+        
+        insert_stmt = insert(MGlyphEvaluatorModel).from_select(
+            ["challenge_evaluator_id", "mglyph_evaluation_id", "id"],
+            select(
+                literal_column( '\'' + str(challenge_evaluator_id) + '\''),
+                mglyphs_to_evaluate_subq.c.id,
+                func.gen_random_uuid()
+            )
+        )
+        await self.db_session.execute(insert_stmt)
+        if commit:
+            await self.db_session.commit()
 
 
 def get_challenge_evaluator_repository(db_session: SessionDep):
