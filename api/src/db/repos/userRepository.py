@@ -67,15 +67,22 @@ class UserRepository(RepositoryInterface):
                 self, 
                 username_contains: Optional[str] = None,
                 email_contains: Optional[str] = None,
+                is_admin: Optional[bool] = None
             ):
             self.username_contains = username_contains
             self.email_contains = email_contains
+            self.is_admin = is_admin
 
         def apply_filters_to_statement(self, statement: Select) -> Select:
             if self.username_contains:
                 statement = statement.where(UserModel.username.ilike(f"%{self.username_contains}%"))
             if self.email_contains:
                 statement = statement.where(UserModel.email.ilike(f"%{self.email_contains}%"))
+            if self.is_admin is not None:
+                if self.is_admin:
+                    statement = statement.where(UserModel.role == UserRole.admin)
+                else:
+                    statement = statement.where(UserModel.role != UserRole.admin)
             return statement
 
     async def get_user_by_id(self, user_id: UUID, load_options: LoadOptions = LoadOptions()) -> UserModel | None:
