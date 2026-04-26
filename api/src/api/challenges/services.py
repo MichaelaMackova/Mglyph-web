@@ -335,6 +335,8 @@ class ChallengeService:
             raise mglyph_errors.BadRequestError("Malleable glyph submissions for this challenge already ended", mglyph_errors.ErrorCode.BAD_REQUEST_ALREADY_DONE)
         challenge_db.submissions_ended = True
         self.db_session.add(challenge_db)
+        challenge_round = await self.evaluation_round_repository.get_last_round_in_challenge(challenge_id)
+        await self.challenge_repository.assign_evaluators_to_mglyphs_in_challenge_round(challenge_round.id, commit=False)
         await self.db_session.commit()
         challenge_db = await self.challenge_repository.get_challenge_by_id(challenge_id, load_options=ChallengeRepository.LoadOptions(load_creator=True, load_solvers=True, load_challenge_evaluator_links=True, load_evaluation_rounds=True))
         return challenge_db

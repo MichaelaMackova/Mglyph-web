@@ -2,7 +2,7 @@ from typing import Annotated, Literal
 from fastapi import Depends
 from db.database import SessionDep
 from sqlalchemy.ext.asyncio.session import AsyncSession
-from sqlmodel import select, or_, and_, case, func
+from sqlmodel import select, or_, and_, case, func, insert, true, false
 from sqlalchemy.orm import selectinload, joinedload
 from uuid import UUID
 from db.repos.interface import RepositoryInterface
@@ -249,6 +249,63 @@ class ChallengeRepository(RepositoryInterface):
             })
         )
         return result
+
+
+    async def assign_evaluators_to_mglyphs_in_challenge_round(self, challenge_round_id: UUID, commit: bool = True):
+        # Get all mglyphs that need evaluation
+        mglyphs_to_evaluate_subq = select(
+                MGlyphEvaluationModel.id,
+                func.row_number().over().label("row_num"),
+                func.count().over().label("mglyph_count")
+            )\
+            .join(MalleableGlyphModel, MGlyphEvaluationModel.malleable_glyph_id == MalleableGlyphModel.id)\
+            .where(
+                MGlyphEvaluationModel.evaluation_round_id == challenge_round_id,
+                MalleableGlyphModel.submission_time.is_not(None)
+            )\
+            .order_by(func.random())\
+            .subquery()
+        
+        # Get all active evaluators for the challenge
+        active_evaluators_subq = select(
+                ChallengeEvaluatorModel.id,
+                func.row_number().over().label("row_num"),
+                func.count().over().label("active_evaluator_count")
+            )\
+            .where(
+                ChallengeEvaluatorModel.challenge_id == select(EvaluationRoundModel.challenge_id).where(EvaluationRoundModel.id == challenge_round_id).scalar_subquery(),
+                ChallengeEvaluatorModel.invitation_state == InvitationState.confirmed
+            )\
+            .order_by(func.random())\
+            .subquery()
+        
+        # Create (bulk-insert) assignments using round-robin assignment
+        insert_stmt = insert(MGlyphEvaluatorModel).from_select(
+            ["challenge_evaluator_id", "mglyph_evaluation_id", "id"],
+            select(
+                active_evaluators_subq.c.id,
+                mglyphs_to_evaluate_subq.c.id,
+                func.gen_random_uuid()
+            ).select_from(active_evaluators_subq)\
+            .join(mglyphs_to_evaluate_subq, true())\
+            .where(
+                # if mglyph_count >= active_evaluator_count, assign mglyphs to evaluators in round-robin fashion
+                # if mglyph_count < active_evaluator_count, assign at least one mglyph to each evaluator in round-robin fashion until we run out of mglyphs
+                case( 
+                    (active_evaluators_subq.c.active_evaluator_count == 0, false()),
+                    (mglyphs_to_evaluate_subq.c.mglyph_count == 0, false()),
+                    (
+                        mglyphs_to_evaluate_subq.c.mglyph_count >= active_evaluators_subq.c.active_evaluator_count,
+                        (active_evaluators_subq.c.row_num - 1) == (mglyphs_to_evaluate_subq.c.row_num - 1) // func.ceiling((mglyphs_to_evaluate_subq.c.mglyph_count / active_evaluators_subq.c.active_evaluator_count))
+                    ),
+                    else_=(mglyphs_to_evaluate_subq.c.row_num - 1) == ((active_evaluators_subq.c.row_num - 1) % func.ceiling((active_evaluators_subq.c.active_evaluator_count / mglyphs_to_evaluate_subq.c.mglyph_count)))
+                ) # row_num starts from 1, so subtract 1 to make it start from 0 for modulo operation
+            )
+        )
+        await self.db_session.execute(insert_stmt)
+        if commit:
+            await self.db_session.commit()
+
 
 
 def get_challenge_repository(db_session: SessionDep):
