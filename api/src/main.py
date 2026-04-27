@@ -42,8 +42,6 @@ tags_metadata = [
     {"name": "challenges", "description": "Challenge-related routes"},
     {"name": "mglyph", "description": "Mglyph-related routes"},
     {"name": "users", "description": "User-related routes"},
-    {"name": "heroes", "description": "Hero-related routes"},
-    {"name": "count", "description": "Counting-related routes"},
 ]
 
 app = FastAPI(
@@ -88,8 +86,6 @@ def read_root():
 # ===== API ROUTERS =====
 
 # NOTE: Import routers
-from api.heroes.router import router as heroes_router
-from api.count.router import router as count_router
 from api.auth.router import router as auth_router
 from api.challenges.router import router as challenges_router
 from api.users.router import router as users_router
@@ -97,8 +93,6 @@ from api.mglyph.router import router as mglyph_router
 from api.file.router import router as file_router
 
 app.include_router(auth_router)
-app.include_router(count_router)
-app.include_router(heroes_router)
 app.include_router(challenges_router)
 app.include_router(users_router)
 app.include_router(mglyph_router)

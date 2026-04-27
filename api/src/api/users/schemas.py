@@ -29,7 +29,6 @@ class UserPublicDTO(UserBase):
     id: UUID
     role: UserRole
     creation_time: datetime
-    count: int #TODO: remove this field, it's only for testing purposes
 
     @staticmethod
     def from_model(userModel: UserModel) -> "UserPublicDTO":
@@ -38,8 +37,7 @@ class UserPublicDTO(UserBase):
             username=userModel.username,
             role=userModel.role,
             email=userModel.email,
-            creation_time=userModel.creation_time,
-            count=userModel.count
+            creation_time=userModel.creation_time
         )
 
 class UserCreateDTO(UserBase):

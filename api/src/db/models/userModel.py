@@ -32,7 +32,6 @@ class UserModel(SQLModel, table=True):
     email: str = Field(index=True, unique=True)
     google_sub: str | None = Field(index=True, unique=True)
     creation_time: datetime = Field(default_factory=get_current_utc_time, sa_type=DateTime(timezone=True))
-    count: int = Field(default=0) #TODO: remove this field, it's only for testing purposes
 
     # Relationships
     solver_challenges: list["challengeModel.ChallengeModel"] = Relationship(back_populates="solvers", link_model=challengeSolverModel.ChallengeSolverModel, sa_relationship_kwargs=dict(lazy='raise_on_sql'))
