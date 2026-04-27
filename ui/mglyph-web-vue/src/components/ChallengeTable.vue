@@ -10,7 +10,7 @@
     </thead>
     <tbody>
       <tr v-for="glyph in props.glyphs" :key="glyph.id">
-        <td>{{ glyph.rank }}</td>
+        <td :title="glyph.rank ? undefined : 'Not yet evaluated'">{{ glyph.rank ?? '-'}}</td>
         <td>{{ glyph.author.username }}</td>
         <td>
           <div class="glyph-image-container">

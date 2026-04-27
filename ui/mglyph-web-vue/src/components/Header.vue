@@ -9,7 +9,7 @@
         <li><RouterLink :to="{ name: 'Home' }">Home</RouterLink></li>
         <li><RouterLink :to="{ name: 'Home' }">About</RouterLink></li>
         <li><RouterLink :to="{ name: 'Challenges' }">Challenges</RouterLink></li>
-        <li><RouterLink :to="{ name: 'SelfEvaluation' }">Glyph Evaluation</RouterLink></li>
+        <!-- EXTENSION: <li><RouterLink :to="{ name: 'SelfEvaluation' }">Glyph Evaluation</RouterLink></li> -->
       </ul>
 
       <div class="login-container">
