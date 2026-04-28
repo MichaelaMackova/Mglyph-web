@@ -9,6 +9,7 @@ from datetime import datetime, timedelta, timezone
 import errors as mglyph_errors
 from db.pagination import PagedResponse
 from calculate_score import calculate_score
+from utils import get_current_utc_time
 
 from db.models.challengeModel import ChallengeModel
 from db.models.userModel import UserModel
@@ -71,7 +72,6 @@ class AnswerService:
         """
         NOTE: challenge_evaluator_id is id of ChallengeEvaluatorModel
         """
-        # TODO: check if glyph is submitted in the challenge and if the evaluator is assigned to evaluate it
         answers_data = []
         for answer in answers:
             answer_data = answer.model_dump()
@@ -109,9 +109,9 @@ class ChallengeEvaluatorService:
         if challenge_evaluator_db.challenge.challenge_finished:
             raise mglyph_errors.BadRequestError("Challenge has already ended", mglyph_errors.ErrorCode.BAD_REQUEST_WRONG_STATE)
         if confirm_invitation_type is not None and challenge_evaluator_db.invitation_type != confirm_invitation_type:
-            raise mglyph_errors.BadRequestError("Challenge Evaluator invitation type does not match", mglyph_errors.ErrorCode.BAD_REQUEST_WRONG_STATE)
+            raise mglyph_errors.BadRequestError("Challenge Evaluator invitation type does not match", mglyph_errors.ErrorCode.BAD_REQUEST_WRONG_INVITATION_TYPE)
         if confirm_old_state is not None and challenge_evaluator_db.invitation_state != confirm_old_state:
-            raise mglyph_errors.BadRequestError("Challenge Evaluator state does not match", mglyph_errors.ErrorCode.BAD_REQUEST_WRONG_STATE)
+            raise mglyph_errors.BadRequestError("Challenge Evaluator state does not match", mglyph_errors.ErrorCode.BAD_REQUEST_WRONG_EVALUATOR_STATE)
         challenge_evaluator_db.invitation_state = new_state
         self.db_session.add(challenge_evaluator_db)
         if new_state == InvitationState.confirmed and challenge_evaluator_db.challenge.submissions_ended:
@@ -165,15 +165,6 @@ ChallengeEvaluatorServiceDep = Annotated[ChallengeEvaluatorService, Depends(get_
 
 
 
-# TODO: při přidělování challenge evaluator to mglyph (new mglyph evaluator) check if glyph is submitted
-
-
-
-# TODO: přidat kontroly:
-#           - challenge creation_time < glyph_submit_deadline < first evaluation round estimated_end_time
-#           - při přidávání solvera zkontrolovat, že nejsou uzavřené submissiony
-#           - při updatu zkontrolovat, že nenastane stav (submissions_ended = False and challenge_finished = True)
-#           - při updatu zkontrolovat, že se nemění submissions_ended nebo challenge_finished z True na False
 
 class ChallengeService:
     def __init__(
@@ -294,6 +285,10 @@ class ChallengeService:
             is_valid_unique_params = await self.challenge_repository.validate_unique_challenge_params(name=challenge_data["name"])
             if not is_valid_unique_params:
                 raise mglyph_errors.BadRequestError("Challenge with the same name already exists", mglyph_errors.ErrorCode.BAD_REQUEST_CREATE_CHALLENGE_NAME_TAKEN)
+            if challenge.glyph_submit_deadline <= get_current_utc_time():
+                raise mglyph_errors.BadRequestError("Glyph submit deadline must be in the future", mglyph_errors.ErrorCode.BAD_REQUEST_CHALLENGE_SUBMISSION_DEADLINE_IN_PAST)
+            if challenge.first_evaluation_round.estimated_end_time <= challenge.glyph_submit_deadline:
+                raise mglyph_errors.BadRequestError("First evaluation round estimated end time must be after glyph submit deadline", mglyph_errors.ErrorCode.BAD_REQUEST_CHALLENGE_ROUND_DEADLINE_BEFORE_SUBMISSION_DEADLINE)
             current_user = await self.db_session.get(UserModel, current_user_id)
             if not current_user:
                 raise mglyph_errors.NotFoundError("User", mglyph_errors.ErrorCode.NOT_FOUND_ID)
@@ -314,6 +309,7 @@ class ChallengeService:
 
 
     async def update_challenge(self, challenge_id: UUID, challenge_update: ChallengeUpdateDTO) -> ChallengeModel:
+        # NOTE: Currently not used, before using check if there are any edge cases that are not handled
         challenge_db = await self.challenge_repository.get_challenge_by_id(challenge_id)
         if not challenge_db:
             raise mglyph_errors.NotFoundError("Challenge", mglyph_errors.ErrorCode.NOT_FOUND_ID)
@@ -321,6 +317,8 @@ class ChallengeService:
         is_valid_unique_params = await self.challenge_repository.validate_unique_challenge_params(name=challenge_data["name"], exclude_challenge_id=challenge_id)
         if not is_valid_unique_params:
             raise mglyph_errors.BadRequestError("Challenge with the same name already exists", mglyph_errors.ErrorCode.BAD_REQUEST_CREATE_CHALLENGE_NAME_TAKEN)
+        if challenge_update.glyph_submit_deadline is not None and challenge_update.glyph_submit_deadline <= get_current_utc_time():
+            raise mglyph_errors.BadRequestError("Glyph submit deadline must be in the future", mglyph_errors.ErrorCode.BAD_REQUEST_CHALLENGE_SUBMISSION_DEADLINE_IN_PAST)
         challenge_db.sqlmodel_update(challenge_data)
         self.db_session.add(challenge_db)
         await self.db_session.commit()
@@ -420,8 +418,8 @@ class ChallengeService:
             raise mglyph_errors.NotFoundError("User", mglyph_errors.ErrorCode.NOT_FOUND_ID)
         for link in challenge_db.challenge_evaluator_links:
             if link.evaluator_id == evaluator_id:
-                # TODO: ? is volunteer_pending and not is_volunteer -> change state to confirmed
-                # TODO: ? if invited_pending and is_volunteer -> change state to confirmed
+                # EXTENSION: if volunteer_pending and not is_volunteer -> change state to confirmed
+                # EXTENSION: if invited_pending and is_volunteer -> change state to confirmed
                 raise mglyph_errors.BadRequestError("User is already an evaluator of this challenge", mglyph_errors.ErrorCode.BAD_REQUEST_ALREADY_DONE)
         await self.challenge_evaluator_service.create_challenge_evaluator(challenge_id, evaluator_id, is_volunteer)
         challenge_db = await self.challenge_repository.get_challenge_by_id(challenge_db.id, load_options=ChallengeRepository.LoadOptions.all_options())

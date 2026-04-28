@@ -48,7 +48,7 @@ async def read_challenges(
     page: Annotated[int, Query(ge=1)] = 1,
     size: Annotated[int, Query(ge=1, le=100)] = 20
 ) -> PagedResponse[ChallengePublicMiniDetailDTO]:
-    #TODO: získat glyfy i z jiných kol než jen z aktuálního?
+    # EXTENSION: get mglyphs from more rounds, not only the current one
     challenges_with_glyphs_and_user_relationship = await challenge_service.get_paginated_challenges_with_glyphs_and_user_relationship(filters=filter_params, current_user_id=UUID(current_user_id) if current_user_id else None, glyph_count=glyph_count, page=page, size=size)
     challenges_with_glyphs_and_user_relationship.items = [
         ChallengePublicMiniDetailDTO(
@@ -171,6 +171,7 @@ async def read_challenge(challenge_id: UUID, current_user_id: CurrentUserIdOrNon
         )
 
 
+# EXTENSION:
 # @router.patch("/{challenge_id}")
 # def update_challenge(challenge_id: UUID):
 #     pass
@@ -259,9 +260,10 @@ async def confirm_volunteer_evaluator(challenge_id: UUID, evaluator_user_id: UUI
     except NotFoundError as e:
         raise NotFoundError.HTTPException(e)
     except BadRequestError as e:
-        # TODO: zkontrolovat error code a vrátit lepší odpověď (popřípadě nový error code) - if "state does not match" -> not a volunteer_pending -> jiný err code?
-        if e.err_code == ErrorCode.BAD_REQUEST_WRONG_STATE:
-            raise BadRequestError.HTTPException(BadRequestError("Challenge Evaluator is not in volunteer_pending state", ErrorCode.BAD_REQUEST_WRONG_STATE))
+        if e.err_code == ErrorCode.BAD_REQUEST_WRONG_EVALUATOR_STATE:
+            raise BadRequestError.HTTPException(BadRequestError("Challenge Evaluator does not have a pending invitation", ErrorCode.BAD_REQUEST_WRONG_EVALUATOR_STATE))
+        if e.err_code == ErrorCode.BAD_REQUEST_WRONG_INVITATION_TYPE:
+            raise BadRequestError.HTTPException(BadRequestError("Challenge Evaluator is not a volunteer", ErrorCode.BAD_REQUEST_WRONG_INVITATION_TYPE))
         raise BadRequestError.HTTPException(e)
 
 
@@ -272,9 +274,10 @@ async def reject_volunteer_evaluator(challenge_id: UUID, evaluator_user_id: UUID
     except NotFoundError as e:
         raise NotFoundError.HTTPException(e)
     except BadRequestError as e:
-        # TODO: zkontrolovat error code a vrátit lepší odpověď (popřípadě nový error code) - if "state does not match" -> not a volunteer_pending -> jiný err code?
-        if e.err_code == ErrorCode.BAD_REQUEST_WRONG_STATE:
-            raise BadRequestError.HTTPException(BadRequestError("Challenge Evaluator is not in volunteer_pending state", ErrorCode.BAD_REQUEST_WRONG_STATE))
+        if e.err_code == ErrorCode.BAD_REQUEST_WRONG_EVALUATOR_STATE:
+            raise BadRequestError.HTTPException(BadRequestError("Challenge Evaluator does not have a pending invitation", ErrorCode.BAD_REQUEST_WRONG_EVALUATOR_STATE))
+        if e.err_code == ErrorCode.BAD_REQUEST_WRONG_INVITATION_TYPE:
+            raise BadRequestError.HTTPException(BadRequestError("Challenge Evaluator is not a volunteer", ErrorCode.BAD_REQUEST_WRONG_INVITATION_TYPE))
         raise BadRequestError.HTTPException(e)
 
 
@@ -285,9 +288,10 @@ async def confirm_evaluator_invite(challenge_id: UUID, current_user_id: CurrentU
     except NotFoundError as e:
         raise NotFoundError.HTTPException(e)
     except BadRequestError as e:
-        # TODO: zkontrolovat error code a vrátit lepší odpověď (popřípadě nový error code) - if "state does not match" -> not a volunteer_pending -> jiný err code?
-        if e.err_code == ErrorCode.BAD_REQUEST_WRONG_STATE:
-            raise BadRequestError.HTTPException(BadRequestError("Challenge Evaluator is not in invited_pending state", ErrorCode.BAD_REQUEST_WRONG_STATE))
+        if e.err_code == ErrorCode.BAD_REQUEST_WRONG_EVALUATOR_STATE:
+            raise BadRequestError.HTTPException(BadRequestError("Challenge Evaluator does not have a pending invitation", ErrorCode.BAD_REQUEST_WRONG_EVALUATOR_STATE))
+        if e.err_code == ErrorCode.BAD_REQUEST_WRONG_INVITATION_TYPE:
+            raise BadRequestError.HTTPException(BadRequestError("Challenge Evaluator was not sent an invitation", ErrorCode.BAD_REQUEST_WRONG_INVITATION_TYPE))
         raise BadRequestError.HTTPException(e)
 
 
@@ -298,9 +302,10 @@ async def reject_evaluator_invite(challenge_id: UUID, current_user_id: CurrentUs
     except NotFoundError as e:
         raise NotFoundError.HTTPException(e)
     except BadRequestError as e:
-        # TODO: zkontrolovat error code a vrátit lepší odpověď (popřípadě nový error code) - if "state does not match" -> not a volunteer_pending -> jiný err code?
-        if e.err_code == ErrorCode.BAD_REQUEST_WRONG_STATE:
-            raise BadRequestError.HTTPException(BadRequestError("Challenge Evaluator is not in invited_pending state", ErrorCode.BAD_REQUEST_WRONG_STATE))
+        if e.err_code == ErrorCode.BAD_REQUEST_WRONG_EVALUATOR_STATE:
+            raise BadRequestError.HTTPException(BadRequestError("Challenge Evaluator does not have a pending invitation", ErrorCode.BAD_REQUEST_WRONG_EVALUATOR_STATE))
+        if e.err_code == ErrorCode.BAD_REQUEST_WRONG_INVITATION_TYPE:
+            raise BadRequestError.HTTPException(BadRequestError("Challenge Evaluator was not sent an invitation", ErrorCode.BAD_REQUEST_WRONG_INVITATION_TYPE))
         raise BadRequestError.HTTPException(e)
 
 

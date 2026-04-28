@@ -111,8 +111,7 @@ class MGlyphPublicDTO(MGlyphBase):
     creator: UserPublicSimpleDTO
     challenge: ChallengeSimpleDTO
     last_evaluation: MGlyphEvaluationPublicSimpleDTO
-    # TODO: add evaluations or rank? (and report flags ?)
-    #report_flags: list[MGlyphReportFlagPublicDTO]
+    # EXTENSION: report_flags: list[MGlyphReportFlagPublicDTO]
 
     @staticmethod
     def from_model(mglyph_model: MalleableGlyphModel) -> "MGlyphPublicDTO":

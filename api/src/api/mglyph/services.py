@@ -118,7 +118,8 @@ class MalleableGlyphService:
             db_mglyph = MalleableGlyphModel.model_validate(mglyph_data)
             db_mglyph.id = None  # Ensure ID is None for new records
         except ValidationError as e:
-            # TODO: Remove file from storage if malleable glyph creation fails after file upload
+            # Remove file from storage if malleable glyph creation fails after file upload
+            self.file_service.delete_file_from_storage(zip_file_db.path)
             raise mglyph_errors.BadRequestError(f"Invalid malleable glyph data after processing: {e}")
         
         self.db_session.add(db_mglyph)

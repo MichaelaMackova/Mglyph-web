@@ -6,7 +6,7 @@ import errors as mglyph_errors
 
 from settings import JWT_ACCESS_SECRET_KEY, JWT_REFRESH_SECRET_KEY, JWT_ACCESS_TOKEN_EXPIRE_MINUTES, JWT_REFRESH_TOKEN_EXPIRE_MINUTES
 
-ALGORITHM = "HS256" # TODO: .env?
+ALGORITHM = "HS256"
 
 class TokenPayload(BaseModel):
     exp: datetime

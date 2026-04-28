@@ -56,9 +56,28 @@ class FileService:
         return fileName
 
 
+    def __validate_mglyph_file_type(self, file: UploadFile):
+        VALID_MIME_TYPES = ["application/zip", "application/x-zip-compressed"]
+        VALID_EXTENSIONS = [".zip", ".mglyph"]
+        file_extension = Path(file.filename).suffix.lower()
+        if file.content_type not in VALID_MIME_TYPES or file_extension not in VALID_EXTENSIONS:
+            raise mglyph_errors.BadRequestError("Invalid file type. Only ZIP and .mglyph files are allowed.", error_code=mglyph_errors.ErrorCode.BAD_REQUEST_INVALID_FILE_TYPE)
+
+    def __validate_file_size(self, file: UploadFile, max_size_mb: int = 100):
+        file.file.seek(0, os.SEEK_END)  # Move the cursor to the end of the file to get its size
+        file_size = file.file.tell()  # Get the file size in bytes
+        file.file.seek(0)  # Reset the cursor back to the beginning of the file
+        if file_size > max_size_mb * (1024 * 1024): # Convert max_size_mb to bytes for comparison
+            raise mglyph_errors.BadRequestError(f"File size exceeds the maximum allowed limit of {max_size_mb} MB.", error_code=mglyph_errors.ErrorCode.BAD_REQUEST_FILE_TOO_LARGE)
+
     async def create_mglyph_file(self, upload_file: UploadFile, commit: bool = True) -> FileModel:
-        # TODO: Save the uploaded file to a temporary location, do checks, and save to final location
+        self.__validate_mglyph_file_type(upload_file)
+        self.__validate_file_size(upload_file, max_size_mb=500)
+
+        # EXTENSION: Save the uploaded file to a temporary location, do additional checks, and save to final location
+        # Save the file to the destination directory with a unique filename
         original_filename = upload_file.filename
+        original_file_type = upload_file.content_type
         destination_dir = Path(os.path.join(DATA_PATH, "files"))
         if not destination_dir.is_dir():
             destination_dir.mkdir(parents=True, exist_ok=True)
@@ -75,7 +94,7 @@ class FileService:
         file_db = FileModel(
             id=None,
             filename=original_filename,
-            content_type="application/zip",
+            content_type=original_file_type,
             path=destination.as_posix()
         )
         self.db_session.add(file_db)
@@ -95,6 +114,14 @@ class FileService:
         if not Path(file_db.path).is_file():
             raise mglyph_errors.NotFoundError("File on disk")
         return file_db
+
+    async def delete_file_from_storage(self, file_path: str):
+        file_path = Path(file_path)
+        try:
+            if file_path.is_file():
+                file_path.unlink()
+        except Exception as e:
+            raise mglyph_errors.MGlyphApiError(f"Failed to delete file from storage: {e}", error_code=mglyph_errors.ErrorCode.SERVER_ERROR_FILE_SAVE_FAILED)
 
 
 def get_file_service(db_session: SessionDep, file_repository: FileRepositoryDep) -> FileService:

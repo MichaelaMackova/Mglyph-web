@@ -26,6 +26,12 @@ class ErrorCode(IntEnum):
     BAD_REQUEST_ADD_ANSWERS = 210 # Specific code for bad request error when adding answers fails (e.g., due to database constraints, invalid data, etc.)
     BAD_REQUEST_CREATE_MGLYPH_NO_CHALLENGE_OR_ROUND = 211 # Specific code for bad request error when trying to submit a malleable glyph for a challenge that does not exist or does not have any evaluation rounds
     BAD_REQUEST_CREATE_MGLYPH_USER_NOT_SOLVER = 212 # Specific code for bad request error when trying to submit a malleable glyph for a challenge that the user is not a solver in
+    BAD_REQUEST_WRONG_EVALUATOR_STATE = 213 # Specific code for bad request error when trying to change the state of a challenge evaluator but the current state does not match the expected old state (e.g., trying to confirm a volunteer evaluator but their current state is not pending)
+    BAD_REQUEST_WRONG_INVITATION_TYPE = 214 # Specific code for bad request error when trying to change the state of a challenge evaluator but the invitation type does not match the expected type (e.g., trying to confirm a volunteer evaluator but the invitation type is not volunteer)
+    BAD_REQUEST_CHALLENGE_SUBMISSION_DEADLINE_IN_PAST = 215 # Specific code for bad request error when trying to create or update a challenge with a glyph submission deadline that is in the past
+    BAD_REQUEST_CHALLENGE_ROUND_DEADLINE_BEFORE_SUBMISSION_DEADLINE = 216 # Specific code for bad request error when trying to create or update a challenge with a first evaluation round estimated end time that is before the glyph submission deadline
+    BAD_REQUEST_INVALID_FILE_TYPE = 217 # Specific code for bad request error when trying to upload a file with an invalid file type
+    BAD_REQUEST_FILE_TOO_LARGE = 218 # Specific code for bad request error when trying to upload a file that exceeds the maximum allowed size
     # UNAUTHORIZED errors (400-499)
     UNAUTHORIZED_BASE = 400 # Base code for unauthorized errors
     UNAUTHORIZED_INVALID_TOKEN = 401 # Specific code for unauthorized access due to invalid token
