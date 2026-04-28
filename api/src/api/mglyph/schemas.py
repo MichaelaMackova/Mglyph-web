@@ -5,6 +5,7 @@ from uuid import UUID
 from datetime import datetime
 
 from api.users.schemas import UserPublicSimpleDTO
+from api.challenges.challenge_state_schema import ChallengeState
 
 from db.models.malleableGlyphModel import MalleableGlyphModel
 from db.models.mglyphEvaluationModel import MGlyphEvaluationModel
@@ -92,12 +93,14 @@ class MGlyphEvaluationPublicSimpleDTO(BaseModel):
 class ChallengeSimpleDTO(BaseModel):
     id: UUID
     name: str
+    state: ChallengeState
 
     @staticmethod
     def from_model(challengeModel: ChallengeModel) -> "ChallengeSimpleDTO":
         return ChallengeSimpleDTO(
             id=challengeModel.id,
             name=challengeModel.name,
+            state=ChallengeState.from_model_params(challengeModel.challenge_finished, challengeModel.submissions_ended),
         )
 
 

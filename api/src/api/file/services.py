@@ -57,7 +57,7 @@ class FileService:
 
 
     def __validate_mglyph_file_type(self, file: UploadFile):
-        VALID_MIME_TYPES = ["application/zip", "application/x-zip-compressed"]
+        VALID_MIME_TYPES = ["application/zip", "application/x-zip-compressed", "application/octet-stream"]
         VALID_EXTENSIONS = [".zip", ".mglyph"]
         file_extension = Path(file.filename).suffix.lower()
         if file.content_type not in VALID_MIME_TYPES or file_extension not in VALID_EXTENSIONS:

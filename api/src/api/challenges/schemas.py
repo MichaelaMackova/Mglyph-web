@@ -5,6 +5,7 @@ from uuid import UUID
 from datetime import datetime, timedelta
 from enum import Enum
 
+from api.challenges.challenge_state_schema import ChallengeState
 from api.users.schemas import UserPublicSimpleDTO
 from api.mglyph.schemas import MGlyphEvaluationPublicDTO
 
@@ -35,34 +36,6 @@ class EvaluationRoundPublicDTO(BaseModel):
             next_round_id=evaluationRoundModel.next_round_id
         )
 
-
-class ChallengeState(str, Enum):
-    open = "open"
-    evaluating = "evaluating"
-    finished = "finished"
-
-    @staticmethod
-    def from_model_params(challenge_finished: bool, submissions_ended: bool) -> "ChallengeState":
-        if challenge_finished:
-            return ChallengeState.finished
-        elif submissions_ended:
-            return ChallengeState.evaluating
-        else:
-            return ChallengeState.open
-        
-    def to_model_params(self) -> tuple[bool, bool]:
-        """
-        Converts the ChallengeState back to the corresponding model parameters.
-
-        Returns:
-            tuple: A tuple of (challenge_finished, submissions_ended) corresponding to the ChallengeState.
-        """
-        if self == ChallengeState.finished:
-            return (True, True)
-        elif self == ChallengeState.evaluating:
-            return (False, True)
-        else:
-            return (False, False)
 
 class ChallengeFilterParams(BaseModel):
     name_contains: Optional[str] = Field(Query(default=None, description="Filter challenges whose name contains the specified string (case-insensitive)."))
