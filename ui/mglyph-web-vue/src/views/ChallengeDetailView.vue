@@ -210,7 +210,7 @@
         </div>
       </div>
 
-      <!-- NOTE: possible expansion: choose round (implement multiple rounds) -->
+      <!-- EXTENSION: choose round (implement multiple rounds) -->
       <div v-if="challengeData.challenge.state !== ChallengeStateEnum.open" class="glyph-table">
         <v-data-table-server
           :items="glyphsData || []"
@@ -363,7 +363,10 @@ async function fetchPaginatedGlyphsData(
     glyphsCurrentPage.value = response.data.page
   } catch (error) {
     console.error('Error fetching glyphs data:', error)
-    // TODO: Add popup error message
+    popupStore.addPopup(
+      'An error occurred while fetching glyphs data. Please try again later.',
+      popupStore.PopupTypeEnum.error,
+    )
   } finally {
     glyphsLoading.value = false
   }

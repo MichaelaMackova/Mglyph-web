@@ -7,8 +7,8 @@
         width="max-content"
       />
     </div>
-    <!-- TODO: není přihlášený jako solver -->
-    <!-- TODO: již uploadnul mglyph -->
+    <!-- EXTENSION: error when user not a solver -->
+    <!-- EXTENSION: error when user is a solver but glyph is already created -->
     <div v-else>
       <h1>Create Malleable Glyph</h1>
       <CustomForm
@@ -232,11 +232,19 @@ async function submitForm(isFormValid: boolean | null): Promise<void> {
           popupStore.PopupTypeEnum.error,
         )
       }
-      // TODO: handle other specific error codes (e.g., invalid file format, missing fields, name is not unique, etc.)
-      // if (error.response.data.err_code === 205) {
-      //   challengeNameInput.value.errorMessages = ['A challenge with this name already exists.']
-      //   return
-      // }
+      if (error.response.data.err_code === 217) {
+        fileInput.value.errorMessages = [
+          'Invalid file format. Please upload a valid .zip or .mglyph file.',
+        ]
+        return
+      }
+      if (error.response.data.err_code === 218) {
+        fileInput.value.errorMessages = [
+          error.response.data.message ||
+            'The uploaded file is too large. Please upload a smaller file.',
+        ]
+        return
+      }
     }
     console.error('Error creating challenge:', error)
     popupStore.addPopup(

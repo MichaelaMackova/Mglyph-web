@@ -296,7 +296,7 @@ class MGlyphDetail {
   author: User
   code: string | null
   is_code_public: boolean
-  challenge: { id: UUID; title: string }
+  challenge: { id: UUID; title: string; state: ChallengeStateEnum }
   evaluation: { id: UUID; rank: number; score: number }
 
   constructor(
@@ -309,7 +309,7 @@ class MGlyphDetail {
     author: User,
     code: string | null,
     is_code_public: boolean,
-    challenge: { id: UUID; title: string },
+    challenge: { id: UUID; title: string; state: ChallengeStateEnum },
     evaluation: { id: UUID; rank: number; score: number },
   ) {
     this.id = id
@@ -336,7 +336,11 @@ class MGlyphDetail {
       new User(apiResponse.creator.id, apiResponse.creator.username),
       apiResponse.code,
       apiResponse.is_code_public,
-      { id: apiResponse.challenge.id, title: apiResponse.challenge.name },
+      {
+        id: apiResponse.challenge.id,
+        title: apiResponse.challenge.name,
+        state: getChallengeStateEnumFromString(apiResponse.challenge.state),
+      },
       {
         id: apiResponse.last_evaluation.id,
         rank: apiResponse.last_evaluation.rank,

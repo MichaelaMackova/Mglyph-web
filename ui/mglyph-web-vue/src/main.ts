@@ -7,10 +7,6 @@ import router from './router'
 
 const app = createApp(App)
 
-// // Allow CORS TODO: odstranit
-// axios.defaults.withCredentials = true
-// axios.defaults.baseURL = env.get('API_URL').required(true).asUrlString() // the FastAPI backend
-
 // Pinia
 import { createPinia } from 'pinia'
 import { useAuthStore } from './store/auth_store'

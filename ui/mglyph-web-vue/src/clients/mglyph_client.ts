@@ -16,9 +16,6 @@ const mglyphClient = axios.create({
   paramsSerializer: {
     indexes: null, // Prevent brackets in query strings for arrays
   },
-  // headers: {
-  //   'Content-Type': 'application/json',
-  // }, TODO:
 })
 
 // Add a request interceptor to attach the JWT token to outgoing requests

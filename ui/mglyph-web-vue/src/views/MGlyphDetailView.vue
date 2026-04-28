@@ -67,7 +67,18 @@
           !mglyphData.submission_time
         "
       >
-        <button class="submit-button" :disabled="false" @click="onSubmitInChallenge">Submit Glyph</button> <!-- TODO: disabled on challenge not in submission state -->
+        <button
+          class="submit-button"
+          :disabled="mglyphData.challenge.state !== ChallengeStateEnum.open"
+          :title="
+            mglyphData.challenge.state !== ChallengeStateEnum.open
+              ? 'You can only submit glyphs to challenges that are currently open.'
+              : undefined
+          "
+          @click="onSubmitInChallenge"
+        >
+          Submit Glyph
+        </button>
       </div>
 
       <div class="cards-container">
@@ -147,7 +158,7 @@ import MGlyphDynamicIcon from '@/components/icons/MGlyphDynamicIcon.vue'
 import MGlyphStaticTab from '@/components/MGlyphStaticTab.vue'
 import MGlyphDynamicTab from '@/components/MGlyphDynamicTab.vue'
 import { mglyphClient } from '@/clients/mglyph_client'
-import { MGlyphDetail } from '@/services/types'
+import { MGlyphDetail, ChallengeStateEnum } from '@/services/types'
 import { fetchZipFileAsArrayBuffer, unzip, type ZipFileContent } from '@/services/zip-file-utils'
 import { useRouter } from 'vue-router'
 import { ref } from 'vue'

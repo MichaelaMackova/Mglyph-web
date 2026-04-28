@@ -109,7 +109,6 @@ function onAnswer(answer: 'greater' | 'equal' | 'less') {
 }
 
 function saveAnswer(answer: 'greater' | 'equal' | 'less', calculatedDistance: number) {
-  // TODO: kontrola
   let currentGlyph = props.mglyphs[currentGlyphIndex.value || 0]!
   let newAnswer = new EvaluateAnswer(
     currentGlyph.info.id,

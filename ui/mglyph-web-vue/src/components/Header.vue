@@ -255,7 +255,7 @@ function createGoogleAccount() {
 }
 
 function logout() {
-  // TODO: Clear the session on the backend
+  // EXTENSION: Clear the session on the backend
   googleCredential = null
   authStore.logout()
   window.location.reload()
@@ -263,7 +263,7 @@ function logout() {
 /* ==================== END - LOGIN AUTH ==================== */
 
 /* ==================== CREATE USER TOGGLE ==================== */
-// TODO: odstranit celý create
+// TODO: (NOT USED) delete anything related to creation of accounts
 const loginCreateUserVisible = ref<boolean>(false)
 const loginCreateUserEl = useTemplateRef('loginCreateUserPromptRef')
 

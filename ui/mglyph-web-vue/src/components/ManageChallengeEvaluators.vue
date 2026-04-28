@@ -116,7 +116,7 @@ const isInviting = ref<boolean>(false)
 const numberOfFetchedUsers = 10
 
 async function fetchUsers(searchTerm: string) {
-  // TODO: get participation info for each user (e.g. is the user already an evaluator for the challenge)
+  // EXTENSION: get participation info for each user (e.g. is the user already an evaluator for the challenge)
   loading.value = true
   try {
     const response = await mglyphClient.get('/users', {
