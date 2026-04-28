@@ -73,4 +73,6 @@ Useful alembic commands:
     alembic upgrade <previous>:<current> --sql
     ```
 
+# Note
+Possible extensions are in the comments and are prepended with `EXTENSION:`
 
