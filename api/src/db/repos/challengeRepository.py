@@ -298,7 +298,7 @@ class ChallengeRepository(RepositoryInterface):
                         mglyphs_to_evaluate_subq.c.mglyph_count >= active_evaluators_subq.c.active_evaluator_count,
                         (active_evaluators_subq.c.row_num - 1) == (mglyphs_to_evaluate_subq.c.row_num - 1) // func.ceiling((mglyphs_to_evaluate_subq.c.mglyph_count / active_evaluators_subq.c.active_evaluator_count))
                     ),
-                    else_=(mglyphs_to_evaluate_subq.c.row_num - 1) == ((active_evaluators_subq.c.row_num - 1) % func.ceiling((active_evaluators_subq.c.active_evaluator_count / mglyphs_to_evaluate_subq.c.mglyph_count)))
+                    else_=(mglyphs_to_evaluate_subq.c.row_num - 1) == ((active_evaluators_subq.c.row_num - 1) % mglyphs_to_evaluate_subq.c.mglyph_count)
                 ) # row_num starts from 1, so subtract 1 to make it start from 0 for modulo operation
             )
         )
