@@ -61,7 +61,7 @@ const minimalTheme = {
     'dragged-opacity': 0.08,
     'theme-overlay-multiplier': 1.5,
   },
-  colors: false,
+  colors: false as any, // NOTE: Type assertion to any to bypass type checking, empty object still sets some colors
 }
 
 const vuetify = createVuetify({
@@ -99,7 +99,7 @@ app.use(vue3GoogleLogin, {
   clientId: env.get('GOOGLE_CLIENT_ID').required(true).asString(),
   scopes:
     'email profile https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email openid',
-})
+} as any) // NOTE: Type assertion to any to bypass type checking for the options object, options type is not complete (scopes is missing) and causes type errors
 
 app.use(router)
 app.mount('#app')

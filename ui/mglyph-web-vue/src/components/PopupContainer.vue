@@ -2,9 +2,9 @@
   <div class="popup-container">
     <PopupNote
       v-for="(n, index) in popupStore.popups.length"
-      :key="popupStore.popups[index].id"
-      :message="popupStore.popups[index].message"
-      :type="popupStore.popups[index].type"
+      :key="popupStore.popups[index]!.id"
+      :message="popupStore.popups[index]!.message"
+      :type="popupStore.popups[index]!.type"
       :closeCallback="() => popupStore.removePopup(index)"
     />
   </div>
