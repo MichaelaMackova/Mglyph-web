@@ -72,17 +72,20 @@
   </v-data-table-server>
 </template>
 
-<script lang="ts" setup>
+<script
+  lang="ts"
+  setup
+  generic="
+    ChallengeEvaluator extends {
+      id: UUID
+      invitation_state: InvitationStateEnum
+      invitation_type: InvitationTypeEnum
+    }
+  "
+>
 import { InvitationStateEnum, InvitationTypeEnum } from '@/services/types'
 import { ref } from 'vue'
 import type { UUID } from 'crypto'
-
-interface ChallengeEvaluator {
-  id: UUID
-  invitation_state: InvitationStateEnum
-  invitation_type: InvitationTypeEnum
-  [key: string]: any
-}
 
 interface Props {
   challengeEvaluators: ChallengeEvaluator[]
