@@ -10,36 +10,38 @@
       </p>
       <p v-else-if="props.errorOccurred">An error occurred while fetching challenges.</p>
     </div>
-    <div v-else-if="props.challenges.length === 0" class="main-padding">
-      <p>No challenges available.</p>
-    </div>
     <div v-else>
-      <div v-if="props.showAddNewButton" class="challenge-info-container main-padding">
-        <div class="add-new" @click="props.onAddNewButtonClicked">
-          <div><i class="fa-solid fa-circle-plus fa-2x"></i></div>
-          <div>Add New Challenge</div>
-        </div>
+      <div v-if="props.challenges.length === 0" class="main-padding">
+        <p>No challenges available.</p>
       </div>
-      <div
-        class="challenge-info-container main-padding"
-        v-for="challenge_info in props.challenges"
-        :key="challenge_info.challenge.id"
-      >
-        <ChallengeInfo
-          :id="challenge_info.challenge.id"
-          :title="challenge_info.challenge.title"
-          :start_time="challenge_info.challenge.start_time"
-          :submission_deadline="challenge_info.challenge.submission_deadline"
-          :end_time="challenge_info.challenge.evaluation_deadline"
-          :state="challenge_info.challenge.state"
-          :challengeGlyphs="challenge_info.glyphs"
-          :user_solver_relationship="
-            challenge_info.user_relationship?.user_solver_relationship?.relationship_type
-          "
-          :user_evaluator_relationship="
-            challenge_info.user_relationship?.user_evaluator_relationship
-          "
-        />
+      <div>
+        <div v-if="props.showAddNewButton" class="challenge-info-container main-padding">
+          <div class="add-new" @click="props.onAddNewButtonClicked">
+            <div><i class="fa-solid fa-circle-plus fa-2x"></i></div>
+            <div>Add New Challenge</div>
+          </div>
+        </div>
+        <div
+          class="challenge-info-container main-padding"
+          v-for="challenge_info in props.challenges"
+          :key="challenge_info.challenge.id"
+        >
+          <ChallengeInfo
+            :id="challenge_info.challenge.id"
+            :title="challenge_info.challenge.title"
+            :start_time="challenge_info.challenge.start_time"
+            :submission_deadline="challenge_info.challenge.submission_deadline"
+            :end_time="challenge_info.challenge.evaluation_deadline"
+            :state="challenge_info.challenge.state"
+            :challengeGlyphs="challenge_info.glyphs"
+            :user_solver_relationship="
+              challenge_info.user_relationship?.user_solver_relationship?.relationship_type
+            "
+            :user_evaluator_relationship="
+              challenge_info.user_relationship?.user_evaluator_relationship
+            "
+          />
+        </div>
       </div>
     </div>
 
