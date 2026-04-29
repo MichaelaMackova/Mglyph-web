@@ -10,7 +10,12 @@
     </thead>
     <tbody>
       <tr v-for="glyph in props.glyphs" :key="glyph.id">
-        <td :title="glyph.rank ? undefined : 'Not yet evaluated'">{{ glyph.rank ?? '-'}}</td>
+        <td :title="glyph.rank ? undefined : 'Not yet evaluated'">
+          {{ glyph.rank ?? '-' }}
+          <span v-if="glyph.score !== null" title="Score" class="score-info"
+            >({{ glyph.score }})</span
+          >
+        </td>
         <td>{{ glyph.author.username }}</td>
         <td>
           <div class="glyph-image-container">
@@ -61,7 +66,7 @@ th {
   );
 
   &.rank {
-    width: 60px;
+    width: 100px;
   }
 
   &.author {
@@ -76,6 +81,12 @@ th {
   &.flags {
     width: 100px;
   }
+}
+
+.score-info {
+  font-size: 85%;
+  font-style: italic;
+  opacity: 0.75;
 }
 
 .glyph-image-container {

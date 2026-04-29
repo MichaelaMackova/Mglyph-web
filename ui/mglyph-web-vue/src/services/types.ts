@@ -54,14 +54,23 @@ class User {
 
 class ChallengeGlyph {
   id: UUID
-  rank: number
+  rank: number | null
+  score: number | null
   author: User
   file_id: UUID
   flags: string[]
 
-  constructor(id: UUID, rank: number, author: User, file_id: UUID, flags: string[]) {
+  constructor(
+    id: UUID,
+    rank: number | null,
+    score: number | null,
+    author: User,
+    file_id: UUID,
+    flags: string[],
+  ) {
     this.id = id
     this.rank = rank
+    this.score = score
     this.author = author
     this.file_id = file_id
     this.flags = flags
@@ -71,6 +80,7 @@ class ChallengeGlyph {
     return new ChallengeGlyph(
       apiResponse.malleable_glyph.id,
       apiResponse.rank,
+      apiResponse.score,
       new User(
         apiResponse.malleable_glyph.creator.id,
         apiResponse.malleable_glyph.creator.username,

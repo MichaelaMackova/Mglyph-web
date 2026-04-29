@@ -52,11 +52,8 @@
         }}
       </div>
 
-      <div
-        v-if="authStore.user && challengeData.challenge.state !== ChallengeStateEnum.finished"
-        class="buttons-container"
-      >
-        <div class="admin-container" v-if="authStore.user.role === 'admin'">
+      <div v-if="showButtons()" class="buttons-container">
+        <div class="admin-container" v-if="authStore.user?.role === 'admin'">
           <div class="admin-buttons-container">
             <button
               class="admin-button"
@@ -95,7 +92,11 @@
         </div>
         <div class="user-buttons-container">
           <button
-            v-if="challengeData.challenge.state === ChallengeStateEnum.open && !isUserSolver()"
+            v-if="
+              challengeData.challenge.state === ChallengeStateEnum.open &&
+              !isUserSolver() &&
+              !isChallengeFinished()
+            "
             class="user-button"
             @click="onParticipantSignUpClick"
           >
@@ -106,6 +107,7 @@
           </button>
           <button
             v-if="
+              !isChallengeFinished() &&
               challengeData.challenge.state === ChallengeStateEnum.open &&
               challengeData.user_relationship?.user_solver_relationship &&
               challengeData.user_relationship.user_solver_relationship.relationship_type ===
@@ -120,7 +122,7 @@
             </div>
           </button>
           <button
-            v-if="challengeData.user_relationship?.user_solver_relationship?.malleable_glyph_id"
+            v-if="isGlyphUploaded()"
             class="user-button"
             @click="
               () => {
@@ -140,7 +142,7 @@
                 <span
                   class="not-submitted"
                   v-if="
-                    challengeData.user_relationship.user_solver_relationship.relationship_type !==
+                    challengeData.user_relationship!.user_solver_relationship!.relationship_type !==
                     ChallengeUserSolverRelationshipType.mglyph_submitted
                   "
                   >(!NOT SUBMITTED!)</span
@@ -151,6 +153,7 @@
           </button>
           <button
             v-if="
+              !isChallengeFinished() &&
               !isActiveUserEvaluator() &&
               challengeData.user_relationship?.user_evaluator_relationship !==
                 ChallengeUserEvaluatorRelationshipType.pending_invited
@@ -167,6 +170,7 @@
           </button>
           <button
             v-if="
+              !isChallengeFinished() &&
               !isActiveUserEvaluator() &&
               challengeData.user_relationship?.user_evaluator_relationship ===
                 ChallengeUserEvaluatorRelationshipType.pending_invited
@@ -182,6 +186,7 @@
           </button>
           <button
             v-if="
+              !isChallengeFinished() &&
               !isActiveUserEvaluator() &&
               challengeData.user_relationship?.user_evaluator_relationship ===
                 ChallengeUserEvaluatorRelationshipType.pending_invited
@@ -197,6 +202,7 @@
           </button>
           <button
             v-if="
+              !isChallengeFinished() &&
               challengeData.challenge.state === ChallengeStateEnum.progress &&
               isActiveUserEvaluator()
             "
@@ -210,13 +216,20 @@
         </div>
       </div>
 
+      <div
+        v-if="authStore.user && challengeData.challenge.state !== ChallengeStateEnum.finished"
+        class="buttons-container"
+      >
+        <div class="user-buttons-container"></div>
+      </div>
+
       <!-- EXTENSION: choose round (implement multiple rounds) -->
       <div v-if="challengeData.challenge.state !== ChallengeStateEnum.open" class="glyph-table">
         <v-data-table-server
           :items="glyphsData || []"
           :items-length="10"
           :headers="[
-            { title: '#', key: 'rank' },
+            { title: 'Rank (Score)', key: 'rank' },
             { title: 'Author', key: 'author' },
             { title: 'Glyph', key: 'glyph', sortable: false },
             { title: 'Flags', key: 'flags', sortable: false },
@@ -238,6 +251,9 @@
         >
           <template v-slot:item.rank="{ item }">
             {{ item.rank !== null ? item.rank : '-' }}
+            <span v-if="item.score !== null" title="Score" class="score-info"
+              >({{ item.score }})</span
+            >
           </template>
 
           <template v-slot:item.author="{ item }">
@@ -392,6 +408,21 @@ function isActiveUserEvaluator(): boolean {
           ChallengeUserEvaluatorRelationshipType.evaluation_finished)) ||
     false
   )
+}
+
+function isChallengeFinished(): boolean {
+  return (
+    challengeData.value !== null &&
+    challengeData.value.challenge.state === ChallengeStateEnum.finished
+  )
+}
+
+function isGlyphUploaded(): boolean {
+  return !!challengeData.value?.user_relationship?.user_solver_relationship?.malleable_glyph_id
+}
+
+function showButtons(): boolean {
+  return authStore.user !== null && (!isChallengeFinished() || isGlyphUploaded())
 }
 
 function getVolunteerButtonIsDisabledAndTitle(): { disabled: boolean; title: string | undefined } {
@@ -710,6 +741,13 @@ fetchChallengeData()
     height: 100px;
     width: 100px;
   }
+}
+
+.score-info {
+  /*font-size: 0.9em;*/
+  font-style: italic;
+  opacity: 0.75;
+  margin-left: 4px;
 }
 
 /* == table styles == */
