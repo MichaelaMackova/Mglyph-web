@@ -48,7 +48,7 @@ async def read_user_by_id(
     return UserPublicDTO.from_model(user)
 
 
-@router.patch("/{user_id}/give-admin-role/",
+@router.patch("/{user_id}/give-admin-role",
               responses={
                 NotFoundError.http_code: NotFoundError.response_dict(),
                 BadRequestError.http_code: BadRequestError.response_dict()
@@ -67,7 +67,7 @@ async def give_admin_role(
     return UserPublicSimpleDTO.from_model(user)
 
 
-@router.patch("/{user_id}/revoke-admin-role/",
+@router.patch("/{user_id}/revoke-admin-role",
               responses={
                 NotFoundError.http_code: NotFoundError.response_dict(),
                 BadRequestError.http_code: BadRequestError.response_dict()
