@@ -11,6 +11,7 @@ import ChallengeEvaluationView from '@/views/ChallengeEvaluationView.vue'
 import SelfEvaluationView from '@/views/SelfEvaluationView.vue'
 import CreateMGlyphView from '@/views/CreateMGlyphView.vue'
 import AdminPrivilegesView from '@/views/AdminPrivilegesView.vue'
+import AboutView from '@/views/AboutView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -19,6 +20,11 @@ const router = createRouter({
       path: '/',
       name: 'Home',
       component: HomeView,
+    },
+    {
+      path: '/about',
+      name: 'About',
+      component: AboutView,
     },
     {
       path: '/challenges',

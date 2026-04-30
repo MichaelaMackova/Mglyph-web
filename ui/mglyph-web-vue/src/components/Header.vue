@@ -7,7 +7,7 @@
 
       <ul class="nav">
         <li><RouterLink :to="{ name: 'Home' }">Home</RouterLink></li>
-        <li><RouterLink :to="{ name: 'Home' }">About</RouterLink></li>
+        <li><RouterLink :to="{ name: 'About' }">About</RouterLink></li>
         <li><RouterLink :to="{ name: 'Challenges' }">Challenges</RouterLink></li>
         <!-- EXTENSION: <li><RouterLink :to="{ name: 'SelfEvaluation' }">Glyph Evaluation</RouterLink></li> -->
       </ul>
