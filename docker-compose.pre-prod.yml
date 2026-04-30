@@ -18,6 +18,8 @@ services:
     build: 
       context: ./api
       dockerfile: ./Prod.Dockerfile
+    volumes:
+      - ./api/src/data/files:/code/src/data/files
     ports:
       - 8888:8888
     read_only: false

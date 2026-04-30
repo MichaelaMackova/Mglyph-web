@@ -9,14 +9,18 @@ services:
   api:
     depends_on:
       - db
+    restart: unless-stopped
     build: 
       context: ./api
       dockerfile: ./Prod.Dockerfile
+    volumes:
+      - api_data_files_prod:/code/src/data/files
     ports:
       - 8888:8888
 
   db:
     image: postgres:18-alpine
+    restart: always
     environment:
       POSTGRES_USER_FILE: /run/secrets/postgres_user
       POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
@@ -29,6 +33,7 @@ services:
       - db_data_prod:/var/lib/postgresql/data
 
   ui:
+    restart: unless-stopped
     build: 
       context: ./ui
       dockerfile: ./Prod.Dockerfile
@@ -37,6 +42,7 @@ services:
 
 volumes:
   db_data_prod:
+  api_data_files_prod:
 
 secrets:
   postgres_password:
