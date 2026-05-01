@@ -11,6 +11,8 @@ import db.models.mglyphEvaluationModel as mglyphEvaluationModel
 class EvaluationRoundModel(SQLModel, table=True):
     __tablename__ = "evaluation_round"
 
+    # NOTE: Round has ended when a next round is created (not None) or when challenge is set as finished.
+
     id: UUID = Field(primary_key=True, default_factory=uuid4)
     sequence_number: int = Field() # The sequence number of the evaluation round for a specific challenge, starting from 1
     estimated_end_time: datetime = Field(sa_type=DateTime(timezone=True))
